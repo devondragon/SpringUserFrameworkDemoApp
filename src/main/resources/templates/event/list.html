@@ -1,0 +1,38 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+
+<head>
+    <title th:utext="#{page.title.events}">Events</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <section id="main_content" class="my-5">
+            <div class="container">
+                <h1 class="text-center mb-4" th:utext="#{page.title.events}">Events</h1>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    <!-- Event Card Template -->
+                    <div class="col" th:each="event : ${events}">
+                        <div class="card h-100 shadow-sm">
+                            <img th:src="${event.imageUrl}" class="card-img-top" alt="Event Image" th:alt="${event.name}">
+                            <div class="card-body">
+                                <h5 class="card-title" th:text="${event.name}">Event Name</h5>
+                                <p class="card-text text-muted" th:text="${event.description}">Event description goes here...</p>
+                                <p class="card-text">
+                                    <strong>Date:</strong> <span th:text="${#temporals.format(event.date, 'MMMM dd, yyyy')}">Event Date</span>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Location:</strong> <span th:text="${event.location}">Event Location</span>
+                                </p>
+                                <a th:href="@{/events/{id}(id=${event.id})}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End Event Card Template -->
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+
+</html>

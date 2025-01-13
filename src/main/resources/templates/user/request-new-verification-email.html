@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+
+<head>
+	<title th:utext="#{page.title.registration-resend-verification}">Send New Verification Email</title>
+</head>
+
+<body>
+	<div layout:fragment="content">
+		<section id="main_content" class="my-5">
+			<div class="container">
+				<div class="text-center mb-4">
+					<h1 th:utext="#{label.form.resend-registration-token}">Resend Verification Email</h1>
+				</div>
+
+				<div class="card shadow-sm mx-auto" style="max-width: 600px;">
+					<div class="card-body">
+						<p th:if="${expired}" th:utext="#{registration.error.token-expired}" class="text-danger">
+							Your token has expired. Please enter your email to resend the verification link.
+						</p>
+						<p th:unless="${expired}" th:utext="#{registration.error.token-invalid}" class="text-danger">
+							Your token is invalid. Please enter your email to resend the verification link.
+						</p>
+
+						<!-- Error Messages -->
+						<div id="globalError" class="alert alert-danger d-none text-center" role="alert"></div>
+						<div id="alreadyEnabledMessage" class="alert alert-warning d-none text-center" role="alert">
+							<p
+								th:utext="#{registration.error.already-verified(${@environment.getProperty('user.security.loginPageURI')}, ${@environment.getProperty('user.security.forgotPasswordURI')})}">
+							</p>
+						</div>
+
+						<!-- Form -->
+						<form id="resendVerificationForm" th:action="@{/user/resendRegistrationToken}" method="POST">
+							<div class="mb-3">
+								<label for="email" class="form-label" th:utext="#{label.user.email}">Email</label>
+								<input type="email" id="email" name="email" class="form-control" required>
+								<div id="emailError" class="form-text text-danger d-none"></div>
+							</div>
+
+							<div class="d-grid">
+								<button type="submit" class="btn btn-primary" th:utext="#{label.form.submit}">Resend Email</button>
+							</div>
+						</form>
+
+						<div class="text-center mt-3">
+							<a th:href="@{/login}" th:utext="#{label.form.loginLink}" class="text-decoration-none">Back to Login</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<script type="module" th:src="@{/js/user/resend-verification.js}"></script>
+	</div>
+</body>
+
+</html>

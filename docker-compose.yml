@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  myapp-db:
+    image: mariadb:latest
+    container_name: springuser-db  #
+    volumes:
+      - userdb:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: springuser
+      MYSQL_USER: springuser
+      MYSQL_PASSWORD: springuser
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "springuser", "-pspringuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailserver:
+    image: docker.io/mailserver/docker-mailserver:latest
+    container_name: springuser-mail
+    hostname: mailserver
+    domainname: local
+    env_file: mailserver.env
+    ports:
+      - "25:25"
+      - "587:587"
+    volumes:
+      - maildata:/var/mail
+      - mailstate:/var/mail-state
+      - maillogs:/var/log/mail
+      - ./config/:/tmp/docker-mailserver/${SELINUX_LABEL}
+    environment:
+      PERMIT_DOCKER: connected-networks
+      ONE_DIR: 1
+      DMS_DEBUG: 1
+      SPOOF_PROTECTION: 0
+      REPORT_RECIPIENT: 1
+      ENABLE_SPAMASSASSIN: 0
+      ENABLE_CLAMAV: 0
+      ENABLE_FAIL2BAN: 1
+      ENABLE_POSTGREY: 0
+      SMTP_ONLY: 1
+    cap_add:
+      - NET_ADMIN
+      - SYS_PTRACE
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "25"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  myapp-main:
+    image: spring-user-framework-demo
+    container_name: springuser-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      myapp-db:
+        condition: service_healthy
+      mailserver:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://myapp-db:3306/springuser?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: springuser
+      SPRING_DATASOURCE_PASSWORD: springuser
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_MAIL_HOST: mailserver
+      SPRING_MAIL_PORT: 25
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "false"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  maildata:
+  mailstate:
+  maillogs:
+  userdb:

@@ -1,0 +1,57 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="header">
+	<nav class="navbar navbar-expand-lg navbar-light bg-light">
+		<div class="container">
+			<a class="navbar-brand" href="/">Events R Us</a>
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
+				aria-expanded="false" aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse" id="navbarNav">
+				<ul class="navbar-nav me-auto">
+					<li class="nav-item">
+						<a class="nav-link" href="/events">Events</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="/about">About</a>
+					</li>
+				</ul>
+				<ul class="navbar-nav">
+					<!-- Non-Logged-In State -->
+					<li class="nav-item" sec:authorize="!isAuthenticated()">
+						<a class="nav-link" th:href="${@environment.getProperty('user.security.loginPageURI')}">
+							<i class="bi bi-box-arrow-in-right"></i> Login
+						</a>
+					</li>
+					<li class="nav-item dropdown" sec:authorize="!isAuthenticated()">
+						<a class="nav-link dropdown-toggle" href="#" id="guestDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+							<i class="bi bi-list"></i>
+						</a>
+						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="guestDropdown">
+							<li><a class="dropdown-item" th:href="${@environment.getProperty('user.security.registrationURI')}">Register</a></li>
+							<li><a class="dropdown-item" th:href="${@environment.getProperty('user.security.forgotPasswordURI')}">Forgot Password</a>
+							</li>
+						</ul>
+					</li>
+
+					<!-- Logged-In State -->
+					<li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+						<a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown"
+							aria-expanded="false">
+							<i class="bi bi-person-circle"></i> Account
+						</a>
+						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+							<li><a class="dropdown-item" th:href="${@environment.getProperty('user.security.updateUserURI')}">Update Account</a></li>
+							<li><a class="dropdown-item" th:href="@{/user/update-password.html}">Change Password</a></li>
+							<li>
+								<form th:action="@{/user/logout}" method="POST" class="d-inline">
+									<button class="dropdown-item" type="submit">Logout</button>
+								</form>
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+</div>

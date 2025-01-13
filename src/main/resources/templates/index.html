@@ -1,0 +1,99 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+
+<head>
+	<title th:utext="#{page.title.home}">Home Page</title>
+</head>
+
+<body>
+	<div layout:fragment="content">
+		<section id="main_content">
+			<div class="content">
+				<!-- General Message -->
+				<div th:if="${message != null}" class="alert alert-info" th:utext="${message}">message</div>
+
+				<!-- Welcome Message for Authenticated Users -->
+				<div sec:authorize="isAuthenticated()" class="text-center my-4">
+					<div class="alert alert-success d-inline-block shadow-sm p-3">
+						<h5 class="mb-0">
+							<span th:utext="#{message.welcome}"></span>
+							<strong><span sec:authentication="principal.user.firstName"></span></strong>!
+						</h5>
+					</div>
+				</div>
+
+				<div class="text-center my-5">
+					<h1>Welcome to Events R Us</h1>
+					<p class="lead text-muted">
+						Organize, manage, and participate in events effortlessly with our simple and intuitive platform.
+					</p>
+					<a href="/event/" class="btn btn-primary btn-lg mt-3">View Upcoming Events</a>
+				</div>
+
+				<!-- Section for Features -->
+				<div class="container my-5">
+					<div class="row text-center">
+						<div class="col-md-4">
+							<div class="card border-0">
+								<div class="card-body">
+									<h5 class="card-title">Explore Events</h5>
+									<p class="card-text text-muted">
+										Discover exciting events tailored just for you. Stay updated on the latest happenings.
+									</p>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="card border-0">
+								<div class="card-body">
+									<h5 class="card-title">Register with Ease</h5>
+									<p class="card-text text-muted">
+										Sign up for events in just a few clicks. Manage all your registrations in one place.
+									</p>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="card border-0">
+								<div class="card-body">
+									<h5 class="card-title">Organize Seamlessly</h5>
+									<p class="card-text text-muted">
+										Create and manage events effortlessly. Track registrations and communicate with attendees.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Call to Action -->
+				<div class="text-center my-5" sec:authorize="!isAuthenticated()">
+					<p class="text-muted">
+						Ready to get started? Sign up or log in to begin your journey with us.
+					</p>
+					<a th:href="${@environment.getProperty('user.security.registrationURI')}" class="btn btn-outline-primary">Sign Up</a>
+					<a th:href="${@environment.getProperty('user.security.loginPageURI')}" class="btn btn-outline-secondary">Log In</a>
+
+				</div>
+
+				<!-- Demo Disclaimer Block -->
+				<div class="bg-light text-center py-4 border-top px-3">
+					<p class="text-muted">
+						<strong>Note:</strong> This is a demo application built to showcase the <strong>SpringUserFramework</strong> library.
+						Its primary purpose is to demonstrate user management features such as registration, login, role-based access control, and
+						secure content
+						handling.
+					</p>
+					<p class="text-muted">
+						For more information about <strong>SpringUserFramework</strong>, visit the <a
+							href="https://github.com/devondragon/SpringUserFramework/" target="_blank" class="text-decoration-none">GitHub
+							repository</a>.
+					</p>
+				</div>
+			</div>
+		</section>
+
+	</div>
+</body>
+
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+
+<head>
+	<title th:utext="#{page.title.registration-pending-verification}">Registration Pending Verification</title>
+</head>
+
+<body>
+	<div layout:fragment="content">
+		<section id="main_content" class="my-5">
+			<div class="container">
+				<div class="text-center mb-4">
+					<h1 th:utext="#{registration.success.thank-you}">Thank You!</h1>
+				</div>
+
+				<div class="card shadow-sm mx-auto" style="max-width: 600px;">
+					<div class="card-body text-center">
+						<p class="lead text-muted" th:utext="#{registration.success.verification-pending}">
+							Your registration was successful. Please check your email to verify your account.
+						</p>
+						<p class="text-muted">
+							If you didn't receive the email, check your spam folder or <a href="/resend-verification-email"
+								class="text-decoration-none">click here</a> to resend the verification email.
+						</p>
+					</div>
+				</div>
+
+				<div class="text-center mt-4">
+					<a href="/" class="btn btn-primary">Go to Home</a>
+					<a th:href="${@environment.getProperty('user.security.loginPageURI')}" class="btn btn-outline-secondary">Log In</a>
+				</div>
+			</div>
+		</section>
+	</div>
+</body>
+
+</html>

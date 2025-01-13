@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+
+<head>
+	<title th:utext="#{page.title.registration-complete}">Registration Complete!</title>
+</head>
+
+<body>
+
+	<div layout:fragment="content">
+		<section id="main_content" class="my-5">
+			<div class="container text-center">
+				<!-- Success Message -->
+				<div class="card shadow-sm">
+					<div class="card-header bg-success text-white">
+						<h2 th:utext="#{registration.success.thank-you}">Registration Complete!</h2>
+					</div>
+					<div class="card-body">
+						<p th:utext="#{registration.success.logged-in-next-steps}">
+							Your account has been successfully created. Please follow the next steps to get started.
+						</p>
+						<a th:href="@{/index.html}" class="btn btn-primary mt-3" th:utext="#{label.pages.home.title}">
+							Go to Home Page
+						</a>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+</body>
+
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+
+<head>
+	<title th:utext="#{page.title.login}">Login</title>
+</head>
+
+<body>
+	<div layout:fragment="content">
+		<section id="main_content" class="my-5">
+			<div class="container">
+				<div class="row justify-content-center">
+					<div class="col-md-8 col-lg-6">
+						<div class="card shadow-sm">
+							<!-- Error Message -->
+							<div th:if="${errormessage != null}" class="alert alert-danger text-center" role="alert">
+								<strong>Holy smokes!</strong> <span th:text="${errormessage}"></span>
+							</div>
+
+							<!-- Card Header -->
+							<div class="card-header text-center">
+								<h5 th:utext="#{label.form.login-title}">Log in with</h5>
+							</div>
+
+							<!-- Social Login Buttons -->
+							<div class="card-body text-center">
+								<div th:if="${facebookEnabled}" class="mb-3">
+									<a class="btn btn-outline-primary w-100 mb-2" th:href="@{/oauth2/authorization/facebook}">
+										<i class="bi bi-facebook me-2"></i> Login with Facebook
+									</a>
+								</div>
+								<div th:if="${googleEnabled}" class="mb-3">
+									<a class="btn btn-outline-danger w-100 mb-2" th:href="@{/oauth2/authorization/google}">
+										<i class="bi bi-google me-2"></i> Login with Google
+									</a>
+								</div>
+								<p class="text-muted mb-3">or</p>
+
+								<!-- Login Form -->
+								<form th:action="${@environment.getProperty('user.security.loginActionURI')}" method="POST">
+									<div class="row mb-3">
+										<div class="col-md-6">
+											<label for="username" class="form-label" th:utext="#{label.form.login-email}">Email</label>
+										</div>
+										<div class="col-md-6">
+											<input type="email" id="username" name="username" class="form-control" required
+												th:placeholder="#{label.form.login-email}" aria-label="Email">
+										</div>
+									</div>
+									<div class="row mb-3">
+										<div class="col-md-6">
+											<label for="password" class="form-label" th:utext="#{label.form.login-pass}">Password</label>
+										</div>
+										<div class="col-md-6">
+											<input type="password" id="password" name="password" class="form-control" required
+												th:placeholder="#{label.form.login-pass}" aria-label="Password">
+										</div>
+									</div>
+									<div class="d-grid">
+										<button type="submit" th:utext="#{action.login}" class="btn btn-primary">
+											Log In
+										</button>
+									</div>
+								</form>
+
+								<!-- Links -->
+								<p class="mt-3 mb-0 text-center">
+									<a th:href="${@environment.getProperty('user.security.registrationURI')}" class="text-decoration-none">
+										Need to create an account? Register
+									</a>
+								</p>
+								<p class="mb-0 text-center">
+									<a th:href="${@environment.getProperty('user.security.forgotPasswordURI')}" class="text-decoration-none">
+										Forgot Password?
+									</a>
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		<script type="module" th:src="@{/js/user/login.js}"></script>
+	</div>
+</body>
+
+</html>
