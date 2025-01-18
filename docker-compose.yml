@@ -13,11 +13,14 @@ services:
       MYSQL_PASSWORD: springuser
     ports:
       - "3306:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "springuser", "-pspringuser"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
+  myapp-db-adminer:    
+    image: adminer
+    container_name: springuser-db-adminer
+    ports:      
+      - "8081:8080"
+    depends_on:
+      - myapp-db
 
   mailserver:
     image: docker.io/mailserver/docker-mailserver:latest
@@ -47,11 +50,6 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_PTRACE
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "25"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
 
   myapp-main:
     image: spring-user-framework-demo
@@ -60,14 +58,13 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      myapp-db:
-        condition: service_healthy
-      mailserver:
-        condition: service_healthy
+      - myapp-db
+      - myapp-db-adminer
+      - mailserver
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://myapp-db:3306/springuser?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_URL: jdbc:mariadb://myapp-db:3306/springuser?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: springuser
       SPRING_DATASOURCE_PASSWORD: springuser
       SPRING_PROFILES_ACTIVE: dev
