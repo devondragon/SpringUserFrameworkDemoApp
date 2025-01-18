@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   myapp-db:
-    image: mariadb:latest
+    image: mariadb:11.6.2
     container_name: springuser-db  #
     volumes:
       - userdb:/var/lib/mysql
@@ -13,14 +13,13 @@ services:
       MYSQL_PASSWORD: springuser
     ports:
       - "3306:3306"
-
-  myapp-db-adminer:    
-    image: adminer
-    container_name: springuser-db-adminer
-    ports:      
-      - "8081:8080"
-    depends_on:
-      - myapp-db
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      start_period: 1m
+      start_interval: 10s
+      interval: 1m
+      timeout: 5s
+      retries: 3
 
   mailserver:
     image: docker.io/mailserver/docker-mailserver:latest
@@ -50,6 +49,11 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_PTRACE
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "25"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   myapp-main:
     image: spring-user-framework-demo
@@ -58,9 +62,10 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - myapp-db
-      - myapp-db-adminer
-      - mailserver
+      myapp-db:
+        condition: service_healthy
+      mailserver:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
