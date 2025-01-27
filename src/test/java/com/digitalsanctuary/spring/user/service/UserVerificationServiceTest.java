@@ -15,6 +15,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,10 +42,7 @@ public class UserVerificationServiceTest {
         testToken = new VerificationToken();
         testToken.setUser(testUser);
 
-        userVerificationService = new UserVerificationService(
-                userRepository,
-                verificationTokenRepository
-        );
+        userVerificationService = new UserVerificationService(userRepository, verificationTokenRepository);
     }
 
     @Test
@@ -62,11 +61,21 @@ public class UserVerificationServiceTest {
     }
 
     @Test
-    void validateVerificationToken_returnsExpiredIfTokenExpired() {
-        testToken.setExpiryDate(getExpirationDate(0));
-        when(verificationTokenRepository.findByToken(anyString())).thenReturn(testToken);
-        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(anyString());
+    public void testValidateVerificationToken_ExpiredToken() {
+        String token = "expiredToken";
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUser(new User());
+
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DATE, -1); // Set expiry date to yesterday
+        verificationToken.setExpiryDate(cal.getTime());
+
+        when(verificationTokenRepository.findByToken(token)).thenReturn(verificationToken);
+
+        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(token);
         Assertions.assertEquals(result, UserService.TokenValidationResult.EXPIRED);
+        verify(verificationTokenRepository, times(1)).delete(verificationToken);
     }
 
     @Test
