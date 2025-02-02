@@ -59,7 +59,7 @@ spring:
     properties: # Hibernate properties
       hibernate:
         dialect: org.hibernate.dialect.MariaDBDialect # Hibernate dialect
-        "[globally_quoted_identifiers]": false # Globally quoted identifiers
+       # "[globally_quoted_identifiers]": false # Globally quoted identifiers
     show-sql: 'false' # Enable or disable SQL logging
   application: # Application configuration
     name: User Framework Demo # Application name

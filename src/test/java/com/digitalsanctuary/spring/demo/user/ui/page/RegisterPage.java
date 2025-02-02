@@ -1,4 +1,4 @@
-package com.digitalsanctuary.spring.user.ui.page;
+package com.digitalsanctuary.spring.demo.user.ui.page;
 
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
@@ -25,6 +25,7 @@ public class RegisterPage {
     public RegisterPage(String url) {
         Selenide.open(url);
     }
+
     /**
      * Filling register form and click signUp button
      */
