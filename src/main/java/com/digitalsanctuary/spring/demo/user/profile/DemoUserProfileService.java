@@ -7,6 +7,7 @@ import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.profile.UserProfileService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A demo implementation of the {@link UserProfileService} interface for managing user profiles in a Spring Boot application.
@@ -105,6 +106,7 @@ import lombok.RequiredArgsConstructor;
  * @see DemoUserProfile
  * @see User
  */
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -179,6 +181,29 @@ public class DemoUserProfileService implements UserProfileService<DemoUserProfil
         EventRegistration registration = new EventRegistration();
         registration.setEvent(event);
         profile.addEventRegistration(registration);
+        return profileRepository.save(profile);
+    }
+
+    /**
+     * Unregisters the given profile from a specific event.
+     *
+     * <p>
+     * This method demonstrates how to extend profile functionality with application-specific logic.
+     *
+     * @param profile the profile to unregister from the event
+     * @param event the event to unregister from
+     * @return the updated profile without the event registration
+     * @throws IllegalArgumentException if the profile or event is null
+     */
+    public DemoUserProfile unregisterFromEvent(DemoUserProfile profile, Event event) {
+        if (profile == null) {
+            throw new IllegalArgumentException("Profile must not be null");
+        }
+        if (event == null) {
+            throw new IllegalArgumentException("Event must not be null");
+        }
+        profile.removeEventRegistration(event);
+        log.info("Unregistered profile {} from event {}", profile.getId(), event.getId());
         return profileRepository.save(profile);
     }
 }

@@ -1,5 +1,7 @@
 package com.digitalsanctuary.spring.demo.event;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -18,8 +20,8 @@ public class Event {
     private String name;
     private String description;
     private String location;
-    private String date;
-    private String time;
+    private LocalDate date;
+    private LocalTime time;
 
     /**
      * Override the equals method to compare the id of the Event object

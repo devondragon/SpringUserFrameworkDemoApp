@@ -14,7 +14,6 @@
                     <!-- Event Card Template -->
                     <div class="col" th:each="event : ${events}">
                         <div class="card h-100 shadow-sm">
-                            <img th:src="${event.imageUrl}" class="card-img-top" alt="Event Image" th:alt="${event.name}">
                             <div class="card-body">
                                 <h5 class="card-title" th:text="${event.name}">Event Name</h5>
                                 <p class="card-text text-muted" th:text="${event.description}">Event description goes here...</p>

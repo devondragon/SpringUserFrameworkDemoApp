@@ -1,6 +1,8 @@
 package com.digitalsanctuary.spring.demo.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -26,8 +28,8 @@ public class EventRepositoryTest {
         event.setName("Concert");
         event.setDescription("Music concert");
         event.setLocation("Stadium");
-        event.setDate("2023-12-01");
-        event.setTime("18:00");
+        event.setDate(LocalDate.parse("2023-12-01"));
+        event.setTime(LocalTime.parse("18:00"));
 
         Event savedEvent = eventRepository.save(event);
 
@@ -41,8 +43,8 @@ public class EventRepositoryTest {
         event.setName("Concert");
         event.setDescription("Music concert");
         event.setLocation("Stadium");
-        event.setDate("2023-12-01");
-        event.setTime("18:00");
+        event.setDate(LocalDate.parse("2023-12-01"));
+        event.setTime(LocalTime.parse("18:00"));
 
         Event savedEvent = eventRepository.save(event);
         Optional<Event> foundEvent = eventRepository.findById(savedEvent.getId());
@@ -57,15 +59,15 @@ public class EventRepositoryTest {
         event1.setName("Concert");
         event1.setDescription("Music concert");
         event1.setLocation("Stadium");
-        event1.setDate("2023-12-01");
-        event1.setTime("18:00");
+        event1.setDate(LocalDate.parse("2023-12-01"));
+        event1.setTime(LocalTime.parse("18:00"));
 
         Event event2 = new Event();
         event2.setName("Meetup");
         event2.setDescription("Tech meetup");
         event2.setLocation("Conference Hall");
-        event2.setDate("2023-12-05");
-        event2.setTime("10:00");
+        event2.setDate(LocalDate.parse("2023-12-05"));
+        event2.setTime(LocalTime.parse("10:00"));
 
         eventRepository.save(event1);
         eventRepository.save(event2);

@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,8 +44,8 @@ public class EventControllerTest {
         event.setName("Concert");
         event.setDescription("Music concert");
         event.setLocation("Stadium");
-        event.setDate("2023-12-01");
-        event.setTime("18:00");
+        event.setDate(LocalDate.parse("2023-12-01"));
+        event.setTime(LocalTime.parse("18:00"));
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.digitalsanctuary.spring.demo.user.profile;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.digitalsanctuary.spring.demo.event.Event;
 import com.digitalsanctuary.spring.user.profile.BaseUserProfile;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -30,5 +31,21 @@ public class DemoUserProfile extends BaseUserProfile {
     public void removeEventRegistration(EventRegistration registration) {
         eventRegistrations.remove(registration);
         registration.setUserProfile(null);
+    }
+
+    public void removeEventRegistration(Event event) {
+        eventRegistrations.removeIf(reg -> reg.getEvent().equals(event));
+    }
+
+    public boolean isRegisteredForEvent(Event event) {
+        return eventRegistrations.stream().anyMatch(reg -> reg.getEvent().equals(event));
+    }
+
+    public void removeEventRegistration(Long eventId) {
+        eventRegistrations.removeIf(reg -> reg.getEvent().getId().equals(eventId));
+    }
+
+    public boolean isRegisteredForEvent(Long eventId) {
+        return eventRegistrations.stream().anyMatch(reg -> reg.getEvent().getId().equals(eventId));
     }
 }

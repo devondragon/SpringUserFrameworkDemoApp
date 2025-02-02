@@ -2,13 +2,17 @@ package com.digitalsanctuary.spring.demo.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.ui.Model;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.digitalsanctuary.spring.demo.event.EventService;
 
 @Slf4j
 @RequiredArgsConstructor
 @Controller
 public class PageController {
+
+    private final EventService eventService;
 
     /**
      * Home Page.
@@ -27,7 +31,14 @@ public class PageController {
      * @return the path to the event listing page
      */
     @GetMapping({"/event/", "/event/list.html"})
-    public String eventList() {
+    public String eventList(Model model) {
+        log.info("PageController.eventList: called.");
+        try {
+            log.debug("events: {}", eventService.getAllEvents());
+            model.addAttribute("events", eventService.getAllEvents());
+        } catch (Exception e) {
+            log.error("Error getting events", e);
+        }
         return "/event/list";
     }
 
