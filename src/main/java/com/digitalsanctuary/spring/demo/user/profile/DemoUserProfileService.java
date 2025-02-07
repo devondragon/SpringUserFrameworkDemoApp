@@ -170,6 +170,7 @@ public class DemoUserProfileService implements UserProfileService<DemoUserProfil
      * @return the updated profile with the event registration
      * @throws IllegalArgumentException if the profile or event is null
      */
+    @Transactional // added to ensure the session remains active
     public DemoUserProfile registerForEvent(DemoUserProfile profile, Event event) {
         if (profile == null) {
             throw new IllegalArgumentException("Profile must not be null");

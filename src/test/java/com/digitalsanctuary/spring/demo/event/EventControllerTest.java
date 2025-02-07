@@ -23,7 +23,7 @@ import com.digitalsanctuary.spring.demo.SecurityTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ActiveProfiles("test")
-@WebMvcTest(EventController.class) // Focus ONLY on the EventController
+@WebMvcTest(EventAPIController.class) // Focus ONLY on the EventController
 public class EventControllerTest {
 
     @Autowired
