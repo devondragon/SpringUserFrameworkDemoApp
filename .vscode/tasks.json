@@ -1,0 +1,37 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start ngrok",
+            "type": "shell",
+            "command": "ngrok http ${NGROK_DOMAIN:+--domain=$NGROK_DOMAIN} 8080",
+            "options": {
+                "env": {
+                    "NGROK_DOMAIN": "${config:NGROK.DOMAIN}"
+                }
+            },
+            "presentation": {
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            }
+        },
+        {
+            "label": "Start mitmproxy",
+            "type": "shell",
+            "command": "mitmproxy --mode reverse:http://localhost:35729 -p 35739",
+            "presentation": {
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            }
+        },
+        {
+            "label": "Start Dev Tools",
+            "dependsOn": [
+                "Start ngrok",
+                "Start mitmproxy"
+            ]
+        }
+    ]
+}

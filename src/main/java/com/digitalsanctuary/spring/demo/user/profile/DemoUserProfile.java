@@ -2,7 +2,6 @@ package com.digitalsanctuary.spring.demo.user.profile;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.builder.ToStringExclude;
 import com.digitalsanctuary.spring.demo.event.Event;
 import com.digitalsanctuary.spring.user.profile.BaseUserProfile;
 import jakarta.persistence.CascadeType;

@@ -133,3 +133,5 @@ application-local.yml
 
 
 /project_concatenated.txt
+.env
+.vscode/settings.json
