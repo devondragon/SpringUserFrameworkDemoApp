@@ -87,7 +87,7 @@ Tests are currently not working. This will be fixed in the future.  For now, jus
 #### **Database**
 The demo uses MariaDB as the default database. You can quickly spin up a MariaDB instance using Docker:
 ```bash
-docker run -p 127.0.0.1:3306:3306 --name springuserframework \
+docker run -p 127.0.0.1:3307:3306 --name springuserframework \
   -e MARIADB_ROOT_PASSWORD=springuserroot \
   -e MARIADB_DATABASE=springuser \
   -e MARIADB_USER=springuser \

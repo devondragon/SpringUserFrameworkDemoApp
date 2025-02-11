@@ -30,6 +30,11 @@
 										<i class="bi bi-google me-2"></i> Register with Google
 									</a>
 								</div>
+								<div th:if="${keycloakEnabled}" class="mb-3">
+									<a class="btn btn-outline-danger w-100 mb-2" th:href="@{/oauth2/authorization/keycloak}">
+										<i class="bi bi-code-square me-2"></i> Register with Keycloak
+									</a>
+								</div>
 								<p class="text-muted mb-4 text-center">or</p>
 
 								<!-- Error Message -->
