@@ -1,4 +1,3 @@
-// File: /js/user/update-user.js
 import { showMessage, clearErrors } from "/js/shared.js";
 
 document.addEventListener("DOMContentLoaded", () => {
