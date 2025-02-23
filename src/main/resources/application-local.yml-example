@@ -12,6 +12,13 @@ logging:
         security: DEBUG # Set logging level for security
 
 spring:
+  application:
+    name: Spring User Framework Demo App # Change this as per your convenience
+  datasource:
+    driverClassName: org.mariadb.jdbc.Driver # If you use mariadb database
+    password: mydatabaseuserpassword
+    url: jdbc:mariadb://mymariadb:3306/mydb?createDatabaseIfNotExist=true
+    username: mydatabaseuser
   mail: # Mail configuration
     username: AAAAAAAAA # Mail server username
     password: BBBBBBBBBBB # Mail server password
@@ -39,6 +46,25 @@ spring:
               - email # Request email scope for OAuth2
               - public_profile # Request public_profile scope for OAuth2
             client-name: Facebook # Name of the OAuth2 client
+          keycloak:
+            client-id: ds-spring-user-framework-demo # Keycloak client ID for OAuth2
+            client-secret: ******************************* # Keycloak client secret for OAuth2
+            authorization-grant-type: authorization_code # Authorization grant type for OAuth2
+            redirect-uri: 'https://yourtestdomain.ngrok.io/login/oauth2/code/{registrationId}' # Redirect URI for OAuth2
+            scope:
+              - email # Request email scope for OAuth2
+              - profile # Request profile scope for OAuth2
+              - openid # Request oidc scope for OAuth2
+            client-name: Keycloak # Name of the OAuth2 client
+            provider: keycloak
+        provider:
+          keycloak: # https://www.keycloak.org/securing-apps/oidc-layers
+            issuer-uri: http://keycloak.domain.name/realms/myrealmname
+            authorization-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/auth
+            token-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/token
+            user-info-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/userinfo
+            user-name-attribute: preferred_username # https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
+            jwk-set-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/certs
         #   apple:   # This isn't working currently
         #     client-id: com.digitalsanctuary.springuserapp
         #     client-secret: XXXXXX
@@ -80,6 +106,7 @@ spring:
         period: 0
 
 server:
+  #port: 8081 #change your server port here if 8080 can't be assigned for whatsoever reason
   servlet:
     session:
       cookie:
