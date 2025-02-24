@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,7 +44,6 @@ public class EventPageController {
      *
      * @return the path to the event details page
      */
-    @PreAuthorize("hasAuthority('REGISTER_FOR_EVENT_PRIVILEGE')")
     @GetMapping("/event/{eventId}/details.html")
     public String eventDetails(@PathVariable("eventId") String eventId, Model model) {
         try {

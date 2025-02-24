@@ -60,7 +60,7 @@
         </section>
         <script type="text/javascript" th:inline="javascript">
             function registerForEvent() {
-                var eventId = /*[[${event.id}]]*/ '[[${event.id}]]'; // Correct the variable assignment
+                var eventId = /*[[${event.id}]]*/ '[[${event.id}]]';
                 fetch('/api/events/' + eventId + '/register', {
                     method: 'POST', headers: {
                         "Content-Type": "application/json",
@@ -71,20 +71,23 @@
                     .then(response => {
                         if (response.ok) {
                             alert('Registration successful');
+                            window.location.reload();
                         } else {
                             alert('Registration failed');
+                            window.location.reload();
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
                         alert('An error occurred');
+                        window.location.reload();
                     });
             }
 
             function unregisterFromEvent() {
                 var eventId = /*[[${event.id}]]*/ '[[${event.id}]]';
                 fetch('/api/events/' + eventId + '/unregister', {
-                    method: 'POST', // or use appropriate method for unregistering
+                    method: 'POST',
                     headers: {
                         "Content-Type": "application/json",
                         [document.querySelector("meta[name='_csrf_header']").content]:
@@ -94,13 +97,16 @@
                     .then(response => {
                         if (response.ok) {
                             alert('Unregistration successful');
+                            window.location.reload();
                         } else {
                             alert('Unregistration failed');
+                            window.location.reload();
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
                         alert('An error occurred');
+                        window.location.reload();
                     });
             }
         </script>

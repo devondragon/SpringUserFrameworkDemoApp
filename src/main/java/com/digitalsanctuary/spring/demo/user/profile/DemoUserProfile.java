@@ -35,8 +35,13 @@ public class DemoUserProfile extends BaseUserProfile {
         registration.setUserProfile(null);
     }
 
-    public void removeEventRegistration(Event event) {
-        eventRegistrations.removeIf(reg -> reg.getEvent().equals(event));
+    public EventRegistration removeEventRegistration(Event event) {
+        EventRegistration registration =
+                eventRegistrations.stream().filter(reg -> reg.getEvent().getId().equals(event.getId())).findFirst().orElse(null);
+        if (registration != null) {
+            eventRegistrations.remove(registration);
+        }
+        return registration;
     }
 
     public boolean isRegisteredForEvent(Event event) {
