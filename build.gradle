@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '3.4.2'
+  id 'org.springframework.boot' version '3.4.3'
   id 'io.spring.dependency-management' version '1.1.7'
   id "com.github.ben-manes.versions" version "0.52.0"
 
@@ -51,14 +51,14 @@ dependencies {
     implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0'
 
     // OpenAPI (Swagger)
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5'
 
     // DigitalSanctuary Spring User Framework
     implementation 'com.digitalsanctuary:ds-spring-user-framework:3.1.0-SNAPSHOT'
 
     // Runtime dependencies
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.2'
     runtimeOnly 'org.postgresql:postgresql'
 
     // Utility libraries
@@ -79,8 +79,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation group: 'com.codeborne', name: 'selenide', version: '7.7.1'
-    testImplementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '5.9.2'
+    testImplementation group: 'com.codeborne', name: 'selenide', version: '7.7.3'
+    testImplementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '5.9.3'
 }
 
 test {
