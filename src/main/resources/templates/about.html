@@ -1,0 +1,78 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
+
+<head>
+    <title th:utext="#{page.title.about}">About Us</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <section id="main_content" class="my-5">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header text-center">
+                                <h1 class="text-primary" th:utext="#{page.about.title}">About Events R Us</h1>
+                            </div>
+                            <div class="card-body text-center">
+                                <p class="lead text-muted" th:utext="#{page.about.introduction}">
+                                    Events R Us is your premier platform for creating, managing, and attending real-world or virtual events.
+                                    Whether you're organizing a local meetup, a large conference, or an online webinar, we make event
+                                    management seamless and engaging.
+                                </p>
+
+                                <hr>
+
+                                <h3 class="text-secondary" th:utext="#{page.about.our_mission}">Our Mission</h3>
+                                <p th:utext="#{page.about.mission_text}">
+                                    Our mission is to connect people through meaningful events. We empower organizers with powerful tools
+                                    to create unforgettable experiences and provide attendees with a seamless way to discover and register
+                                    for events that matter to them.
+                                </p>
+
+                                <h3 class="text-secondary" th:utext="#{page.about.what_we_offer}">What We Offer</h3>
+                                <ul class="list-group list-group-flush text-left">
+                                    <li class="list-group-item">
+                                        <i class="bi bi-calendar-event"></i> Easy event creation and management
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="bi bi-people"></i> Seamless attendee registration
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="bi bi-broadcast"></i> Support for both in-person and virtual events
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="bi bi-bar-chart"></i> Analytics and insights to improve your events
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="bi bi-lock"></i> Secure and reliable event hosting
+                                    </li>
+                                </ul>
+
+                                <hr>
+
+                                <h3 class="text-secondary" th:utext="#{page.about.join_us}">Join Us</h3>
+                                <p th:utext="#{page.about.join_text}">
+                                    Whether you're an event organizer or an enthusiastic attendee, Events R Us is here to enhance your
+                                    experience. Join us today and be a part of a thriving community of event lovers!
+                                </p>
+
+                                <p class="mt-4">
+                                    <a th:href="@{/}" class="btn btn-primary">
+                                        <i class="bi bi-house-door"></i> Go to Home
+                                    </a>
+                                    <a th:href="@{/events}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-calendar3"></i> Explore Events
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+
+</html>

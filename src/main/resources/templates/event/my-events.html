@@ -2,17 +2,17 @@
 <html xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}">
 
 <head>
-    <title th:utext="#{page.title.events}">Events</title>
+    <title th:utext="#{page.title.my.events}">My Events</title>
 </head>
 
 <body>
     <div layout:fragment="content">
         <section id="main_content" class="my-5">
             <div class="container">
-                <h1 class="text-center mb-4" th:utext="#{page.title.events}">Events</h1>
+                <h1 class="text-center mb-4" th:utext="#{page.title.my.events}">My Events</h1>
                 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                     <!-- Event Card Template -->
-                    <div class="col" th:each="event : ${events}">
+                    <div class="col" th:each="event : ${myEvents}">
                         <div class="card h-100 shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title" th:text="${event.name}">Event Name</h5>

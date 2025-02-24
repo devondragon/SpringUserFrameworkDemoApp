@@ -22,34 +22,34 @@ public class PageController {
     }
 
     /**
-     * Event Listing page
+     * About Page.
      *
-     * @return the path to the event listing page
+     * @return the path to the about page
      */
-    @GetMapping({"/event/", "/event/list.html"})
-    public String eventList() {
-        return "/event/list";
-    }
-
-
-    /**
-     * Event Details Page
-     *
-     * @return the path to the event details page
-     */
-    @GetMapping("/event/details.html")
-    public String eventDtails() {
-        return "/event/details";
+    @GetMapping("/about.html")
+    public String about() {
+        return "about";
     }
 
     /**
-     * Event Creation Page
+     * Privacy Page.
      *
-     * @return the path to the event creation page
+     * @return the path to the privacy page
      */
-    @GetMapping("/event/create.html")
-    public String eventCreate() {
-        return "/event/create";
+    @GetMapping("/privacy.html")
+    public String privacy() {
+        return "privacy";
     }
+
+    /**
+     * Terms Page.
+     *
+     * @return the path to the terms page
+     */
+    @GetMapping("/terms.html")
+    public String terms() {
+        return "terms";
+    }
+
 
 }
