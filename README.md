@@ -67,6 +67,11 @@ Tests are currently not working. This will be fixed in the future.  For now, jus
      ```
    - Update the file with your local database credentials, email server settings, and SSO keys.
 
+   - For using Keycloak copy the provided example configuration:
+     ```bash
+     cp src/main/resources/application-docker-keycloak.yml-example src/main/resources/application-docker-keycloak.yml
+     ```
+
 3. **Run the Application**:
    - Using Gradle:
      ```bash
@@ -75,6 +80,10 @@ Tests are currently not working. This will be fixed in the future.  For now, jus
    - Or using Docker Compose:
      ```bash
      docker-compose up --build
+     ```
+   - Using Docker Compose with Keycloak stack:
+     ```bash
+     docker-compose up -f docker-compose-keycloak.yml --build
      ```
 
 4. **Access the Application**:
@@ -134,11 +143,44 @@ To enable SSO:
                client-secret: YOUR_FACEBOOK_CLIENT_SECRET
                redirect-uri: "{baseUrl}/login/oauth2/code/facebook"
    ```
-
 3. Use a tool like [ngrok](https://ngrok.com/) for local testing of OAuth callbacks:
    ```bash
    ngrok http 8080
    ```
+
+---
+
+#### **SSO OIDC with Keycloak**
+To enable SSO:
+1. Create OIDC client in Keycloak admin console.
+2. Update your `application-docker-keycloak.yml`:
+   ```yaml
+   spring:
+     security:
+       oauth2:
+         client:
+            registration:
+              keycloak:
+                client-id: ${DS_SPRING_USER_KEYCLOAK_CLIENT_ID} # Keycloak client ID for OAuth2
+                client-secret: ${DS_SPRING_USER_KEYCLOAK_CLIENT_SECRET} # Keycloak client secret for OAuth2
+                authorization-grant-type: authorization_code # Authorization grant type for OAuth2
+                scope:
+                  - email # Request email scope for OAuth2
+                  - profile # Request profile scope for OAuth2
+                  - openid # Request oidc scope for OAuth2
+                client-name: Keycloak # Name of the OAuth2 client
+                provider: keycloak
+            provider:
+              keycloak: # https://www.keycloak.org/securing-apps/oidc-layers
+                issuer-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_ISSUER_URI}
+                authorization-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_AUTHORIZATION_URI}
+                token-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_TOKEN_URI}
+                user-info-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_USER_INFO_URI}
+                user-name-attribute: preferred_username # https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
+                jwk-set-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_JWK_SET_URI}
+   ```
+3. Refer to `keycloak.env` for default values for the above environment variables
+4. You can directly start with Keycloak using the default realm provided in this project under `keycloak/realm/realm-export.json` that comes pre configured with a OIDC client and secret for this application Keycloak
 
 ---
 
@@ -155,6 +197,11 @@ To launch the stack:
 docker-compose up --build
 ```
 
+To launch the Keycloak stack:
+```bash
+docker-compose up -f docker-compose-keycloak.yml --build
+```
+
 **Note**: Test emails sent from the local Postfix server may not be accepted by all email providers. Use a real SMTP server for production use.
 
 ---
@@ -164,6 +211,10 @@ docker-compose up --build
 #### Spring Boot DevTools
 This project supports **Spring Boot DevTools** for live reload and auto-restart. If you are working with HTTPS locally, follow these steps to enable live reload:
 1. Set the following property in `application.yml`:
+   ```yaml
+   spring.devtools.livereload.https=true
+   ```
+   Or when using Keycloak stack set the following property in `application-docker-keycloak.yml`:
    ```yaml
    spring.devtools.livereload.https=true
    ```

@@ -11,9 +11,9 @@ services:
       MYSQL_DATABASE: springuser
       MYSQL_USER: springuser
       MYSQL_PASSWORD: springuser
-      MYSQL_TCP_PORT: 3306
+      MYSQL_TCP_PORT: 3307
     ports:
-      - "3306:3306"
+      - "3307:3307"
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       start_period: 1m
@@ -69,6 +69,7 @@ services:
         condition: service_healthy
     ports:
       - "8081:8080"
+    env_file: keycloak.env
     environment:
       SPRING_DATASOURCE_URL: jdbc:mariadb://myapp-db:3307/springuser?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: springuser
@@ -79,14 +80,52 @@ services:
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "false"
+      DS_SPRING_USER_KEYCLOAK_CLIENT_ID: ds-spring-user-framework-demo
+      DS_SPRING_USER_KEYCLOAK_CLIENT_SECRET: FTp1j7sGvc4g3MFdghEX4n7RPhbu86PQ
+      DS_SPRING_USER_KEYCLOAK_PROVIDER_ISSUER_URI: http://keycloak:8080/realms/master
+      DS_SPRING_USER_KEYCLOAK_PROVIDER_AUTHORIZATION_URI: http://keycloak:8080/realms/master/protocol/openid-connect/auth
+      DS_SPRING_USER_KEYCLOAK_PROVIDER_TOKEN_URI: http://keycloak:8080/realms/master/protocol/openid-connect/token
+      DS_SPRING_USER_KEYCLOAK_PROVIDER_USER_INFO_URI: http://keycloak:8080/realms/master/protocol/openid-connect/userinfo
+      DS_SPRING_USER_KEYCLOAK_PROVIDER_JWK_SET_URI: http://keycloak:8080/realms/master/protocol/openid-connect/certs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
 
+  keycloak:
+    container_name: keycloak.openid-provider
+    image: quay.io/keycloak/keycloak:25.0.6
+    command:
+      - start
+      - --verbose
+      - --import-realm
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "9001:9000"
+    volumes:
+      - ./keycloak/ssl:/opt/keycloak/ssl/
+      - ./keycloak/realm:/opt/keycloak/data/import/
+    env_file: keycloak.env
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB_URL: jdbc:mariadb://myapp-db:3307/springuser
+      KC_DB_USERNAME: springuser
+      KC_DB_PASSWORD: springuser
+    healthcheck:
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/auth/health/live']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    depends_on:
+      myapp-db:
+        condition: service_healthy
+
 volumes:
   maildata:
   mailstate:
   maillogs:
   userdb:
+  keycloak:
