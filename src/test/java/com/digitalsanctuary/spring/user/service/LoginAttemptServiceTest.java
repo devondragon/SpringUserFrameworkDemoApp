@@ -41,7 +41,7 @@ class LoginAttemptServiceTest {
 
         // Manually construct the service with mocked dependencies
         loginAttemptService = new LoginAttemptService(userRepository);
-        loginAttemptService.setMaxFailedLoginAttempts(failedLoginAttempts);
+        loginAttemptService.setFailedLoginAttempts(failedLoginAttempts);
         loginAttemptService.setAccountLockoutDuration(accountLockoutDuration);
     }
 

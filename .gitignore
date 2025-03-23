@@ -136,3 +136,4 @@ application-local.yml
 .env
 .vscode/settings.json
 /repomix-output.txt
+src/main/resources/application-docker-keycloak.yml

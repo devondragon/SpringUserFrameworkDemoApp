@@ -17,25 +17,20 @@ A comprehensive demonstration application for the [Spring User Framework](https:
     - [Prerequisites](#prerequisites)
     - [Steps](#steps)
   - [Project Structure](#project-structure)
-  - [Setup Guide](#setup-guide)
-    - [Database Setup](#database-setup)
-    - [Email Configuration](#email-configuration)
-    - [OAuth2 Configuration](#oauth2-configuration)
+    - [Configuration Guide](#configuration-guide)
+      - [**Database**](#database)
+      - [**Mail Sending (SMTP)**](#mail-sending-smtp)
+      - [**SSO OIDC with Keycloak**](#sso-oidc-with-keycloak)
   - [Running the Application](#running-the-application)
     - [Running Locally](#running-locally)
       - [Using Gradle](#using-gradle)
       - [Using Maven](#using-maven)
       - [With specific profile](#with-specific-profile)
     - [Running with Docker](#running-with-docker)
-  - [API Documentation](#api-documentation)
-  - [Customization Examples](#customization-examples)
-    - [Custom User Profile](#custom-user-profile)
-    - [Extending with Application Features](#extending-with-application-features)
-  - [Testing](#testing)
-    - [Unit Tests](#unit-tests)
-    - [UI Tests](#ui-tests)
-  - [Contributing](#contributing)
-  - [License](#license)
+    - [Development Tools](#development-tools)
+      - [Spring Boot DevTools](#spring-boot-devtools)
+      - [Resources for Live Reload:](#resources-for-live-reload)
+    - [Notes](#notes)
 
 ## Overview
 
@@ -111,6 +106,11 @@ The application implements an event management system where users can browse, re
 
 4. **Run the application**
 
+   - For using Keycloak copy the provided example configuration:
+     ```bash
+     cp src/main/resources/application-docker-keycloak.yml-example src/main/resources/application-docker-keycloak.yml
+     ```
+
    Using Gradle:
    ```bash
    ./gradlew bootRun
@@ -121,9 +121,15 @@ The application implements an event management system where users can browse, re
    mvn spring-boot:run
    ```
 
-5. **Access the application**
+   - Using Docker Compose with Keycloak stack:
+     ```bash
+     docker-compose up -f docker-compose-keycloak.yml --build
+     ```
 
-   Open your browser and visit http://localhost:8080
+4. **Access the Application**:
+   - Navigate to `http://localhost:8080` in your browser.
+
+---
 
 ## Project Structure
 
@@ -147,27 +153,26 @@ The application implements an event management system where users can browse, re
     └── test/                              # Test classes
 ```
 
-## Setup Guide
 
-### Database Setup
+### Configuration Guide
 
-The application uses MariaDB or MySQL by default. Configure the database connection in `application.yml`:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:mariadb://localhost:3306/springuser?createDatabaseIfNotExist=true
-    username: springuser
-    password: springuser
-    driver-class-name: org.mariadb.jdbc.Driver
+#### **Database**
+The demo uses MariaDB as the default database. You can quickly spin up a MariaDB instance using Docker:
+```bash
+docker run -p 127.0.0.1:3306:3306 --name springuserframework \
+  -e MARIADB_ROOT_PASSWORD=springuserroot \
+  -e MARIADB_DATABASE=springuser \
+  -e MARIADB_USER=springuser \
+  -e MARIADB_PASSWORD=springuser \
+  -d mariadb:latest
 ```
 
-Database schema creation is handled automatically by Hibernate with the `ddl-auto: update` setting.
+If you're running the application in a production-like environment, ensure you set the appropriate database properties in `application.yml` or your active profile.
 
-### Email Configuration
+---
 
-Email functionality is used for verification emails and password reset links. Configure your SMTP server:
-
+#### **Mail Sending (SMTP)**
+The application requires an SMTP server for sending emails (e.g., account verification and password reset). Update the SMTP settings in your configuration file:
 ```yaml
 spring:
   mail:
@@ -176,56 +181,84 @@ spring:
     username: your-username
     password: your-password
     properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
 
 user:
   mail:
     fromAddress: noreply@yourdomain.com
 ```
+```
 
 For local testing, the Docker Compose configuration includes a mail server that captures all outgoing emails.
 
-### OAuth2 Configuration
 
-To enable OAuth2 login with Google and Facebook:
+---
 
-1. Create OAuth 2.0 clients in the Google and Facebook developer consoles
+#### **SSO OAuth2 with Google and Facebook**
+To enable SSO:
+1. Create OAuth credentials in Google and Facebook developer consoles.
+2. Update your `application.yml`:
+   ```yaml
+   spring:
+     security:
+       oauth2:
+         client:
+           registration:
+             google:
+               client-id: YOUR_GOOGLE_CLIENT_ID
+               client-secret: YOUR_GOOGLE_CLIENT_SECRET
+               redirect-uri: "{baseUrl}/login/oauth2/code/google"
+             facebook:
+               client-id: YOUR_FACEBOOK_CLIENT_ID
+               client-secret: YOUR_FACEBOOK_CLIENT_SECRET
+               redirect-uri: "{baseUrl}/login/oauth2/code/facebook"
+   ```
 
-2. Configure the credentials in `application.yml`:
-
-```yaml
-spring:
-  security:
-    oauth2:
-      enabled: true
-      client:
-        registration:
-          google:
-            client-id: your-google-client-id
-            client-secret: your-google-client-secret
-            scope:
-              - email
-              - profile
-          facebook:
-            client-id: your-facebook-client-id
-            client-secret: your-facebook-client-secret
-            scope:
-              - email
-              - public_profile
-```
-
-3. For local testing with OAuth2 callbacks, use a service like [ngrok](https://ngrok.com/) to create a tunnel to your local server:
-
-```bash
-ngrok http 8080
-```
+3. Use a tool like [ngrok](https://ngrok.com/) for local testing of OAuth callbacks:
+   ```bash
+   ngrok http 8080
+   ```
 
 Then update your OAuth2 providers' callback URLs to use the ngrok domain.
+
+
+
+
+#### **SSO OIDC with Keycloak**
+To enable SSO:
+1. Create OIDC client in Keycloak admin console.
+2. Update your `application-docker-keycloak.yml`:
+   ```yaml
+   spring:
+     security:
+       oauth2:
+         client:
+            registration:
+              keycloak:
+                client-id: ${DS_SPRING_USER_KEYCLOAK_CLIENT_ID} # Keycloak client ID for OAuth2
+                client-secret: ${DS_SPRING_USER_KEYCLOAK_CLIENT_SECRET} # Keycloak client secret for OAuth2
+                authorization-grant-type: authorization_code # Authorization grant type for OAuth2
+                scope:
+                  - email # Request email scope for OAuth2
+                  - profile # Request profile scope for OAuth2
+                  - openid # Request oidc scope for OAuth2
+                client-name: Keycloak # Name of the OAuth2 client
+                provider: keycloak
+            provider:
+              keycloak: # https://www.keycloak.org/securing-apps/oidc-layers
+                issuer-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_ISSUER_URI}
+                authorization-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_AUTHORIZATION_URI}
+                token-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_TOKEN_URI}
+                user-info-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_USER_INFO_URI}
+                user-name-attribute: preferred_username # https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
+                jwk-set-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_JWK_SET_URI}
+   ```
+3. Refer to `keycloak.env` for default values for the above environment variables
+4. You can directly start with Keycloak using the default realm provided in this project under `keycloak/realm/realm-export.json` that comes pre configured with a OIDC client and secret for this application Keycloak
+
+---
+
 
 ## Running the Application
 
@@ -254,96 +287,43 @@ The project includes a complete Docker setup with the application, MariaDB datab
 docker-compose up --build
 ```
 
-This will start:
-- The Spring Boot application on port 8080
-- MariaDB database on port 3306
-- Mail server capturing all outgoing emails
-
-## API Documentation
-
-The application includes a Swagger UI for API documentation. After starting the application, visit:
-
-```
-http://localhost:8080/swagger-ui.html
-```
-
-This provides interactive documentation for all REST endpoints.
-
-## Customization Examples
-
-### Custom User Profile
-
-The demo implements a custom user profile with additional fields:
-
-```java
-@Entity
-@Table(name = "demo_user_profile")
-public class DemoUserProfile extends BaseUserProfile {
-    private String favoriteColor;
-    private boolean receiveNewsletter;
-
-    @OneToMany(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<EventRegistration> eventRegistrations = new ArrayList<>();
-
-    // Methods for managing event registrations
-    public void addEventRegistration(EventRegistration registration) {
-        eventRegistrations.add(registration);
-        registration.setUserProfile(this);
-    }
-
-    // ...additional methods...
-}
-```
-
-### Extending with Application Features
-
-The Events feature demonstrates how to build application functionality on top of the user framework:
-
-```java
-@Controller
-public class EventPageController {
-    // Controllers for event-related pages
-}
-
-@RestController
-@RequestMapping("/api/events")
-public class EventAPIController {
-    // REST API for event management
-}
-```
-
-## Testing
-
-NOTE: The tests are not yet complete and are a work in progress.
-
-The project includes several types of tests:
-
-### Unit Tests
+To launch the Keycloak stack:
 ```bash
-./gradlew test
+docker-compose -f docker-compose-keycloak.yml up --build
 ```
 
-### UI Tests
-```bash
-./gradlew uiTest
-```
-
-Note: The UI tests require a running application and browser. Configuration can be adjusted in `application-test.properties`.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+**Note**: Test emails sent from the local Postfix server may not be accepted by all email providers. Use a real SMTP server for production use.
 
 ---
 
-Created by [Devon Hillard](https://github.com/devondragon/) at [Digital Sanctuary](https://www.digitalsanctuary.com/)
+### Development Tools
+
+#### Spring Boot DevTools
+This project supports **Spring Boot DevTools** for live reload and auto-restart. If you are working with HTTPS locally, follow these steps to enable live reload:
+1. Set the following property in `application.yml`:
+   ```yaml
+   spring.devtools.livereload.https=true
+   ```
+
+      Or when using Keycloak stack set the following property in `application-docker-keycloak.yml`:
+   ```yaml
+   spring.devtools.livereload.https=true
+   ```
+
+2. Use a reverse proxy like mitmproxy for HTTPS traffic interception:
+   ```bash
+   mitmproxy --mode reverse:http://localhost:35729 -p 35739
+   ```
+
+#### Resources for Live Reload:
+- [Spring Boot Live Reload](https://www.digitalsanctuary.com/java/springboot-devtools-auto-restart-and-live-reload.html)
+- [HTTPS Live Reload Setup](https://www.digitalsanctuary.com/java/how-to-get-springboot-livereload-working-over-https.html)
+
+---
+
+### Notes
+
+- This demo is based on the principles outlined in the [Baeldung Spring Security Course](https://www.baeldung.com/learn-spring-security-course).
+- Feel free to customize and extend the provided functionality to suit your needs.
+- **Disclaimer**: No warranty or guarantee of functionality, performance, or security is provided. Use at your own risk.
+
