@@ -21,6 +21,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import com.digitalsanctuary.spring.demo.SecurityTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.digitalsanctuary.spring.demo.user.profile.DemoUserProfileService;
+import com.digitalsanctuary.spring.demo.user.profile.session.DemoSessionProfile;
 
 @ActiveProfiles("test")
 @WebMvcTest(EventAPIController.class) // Focus ONLY on the EventController
@@ -31,6 +33,12 @@ public class EventControllerTest {
 
     @MockitoBean
     private EventService eventService; // Mock the service dependency
+
+    @MockitoBean
+    private DemoSessionProfile demoSessionProfile; // Add this mock bean
+
+    @MockitoBean
+    private DemoUserProfileService demoUserProfileService; // Add this mock bean
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -85,5 +93,4 @@ public class EventControllerTest {
     public void testDeleteEvent() throws Exception {
         mockMvc.perform(delete("/api/events/1").with(SecurityTestUtils.mockUserWithCsrf())).andExpect(status().isNoContent());
     }
-
 }
