@@ -199,7 +199,7 @@ docker-compose up --build
 
 To launch the Keycloak stack:
 ```bash
-docker-compose up -f docker-compose-keycloak.yml --build
+docker-compose -f docker-compose-keycloak.yml up --build
 ```
 
 **Note**: Test emails sent from the local Postfix server may not be accepted by all email providers. Use a real SMTP server for production use.
