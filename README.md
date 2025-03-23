@@ -1,86 +1,126 @@
-# SpringUserFramework Demo Application
+# Spring User Framework Demo Application
 
-This **Demo Application** demonstrates the capabilities of the [SpringUserFramework](https://github.com/devondragon/SpringUserFramework), a Java Spring Boot User Management Framework. The application showcases key features such as user registration, login, logout, forgot password flows, and Single Sign-On (SSO) integration with Google and Facebook.
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Java Version](https://img.shields.io/badge/Java-17%2B-brightgreen)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.3-green)](https://spring.io/projects/spring-boot)
 
-The goal of this demo is to provide:
-- A fully functional example of how to integrate the SpringUserFramework into your Spring Boot project.
-- Example configurations for database, email, SSO, and other features.
-- Working frontend pages, build with Bootstrap, for easy customization and extension.
+A comprehensive demonstration application for the [Spring User Framework](https://github.com/devondragon/SpringUserFramework), showcasing how to implement user management features in a Spring Boot web application.
 
----
+![Spring User Framework Demo Screenshot](/docs/images/Register.jpeg)
+
+## Table of Contents
+- [Spring User Framework Demo Application](#spring-user-framework-demo-application)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Features Demonstrated](#features-demonstrated)
+  - [Quick Start](#quick-start)
+    - [Prerequisites](#prerequisites)
+    - [Steps](#steps)
+  - [Project Structure](#project-structure)
+    - [Configuration Guide](#configuration-guide)
+      - [**Database**](#database)
+      - [**Mail Sending (SMTP)**](#mail-sending-smtp)
+      - [**SSO OIDC with Keycloak**](#sso-oidc-with-keycloak)
+  - [Running the Application](#running-the-application)
+    - [Running Locally](#running-locally)
+      - [Using Gradle](#using-gradle)
+      - [Using Maven](#using-maven)
+      - [With specific profile](#with-specific-profile)
+    - [Running with Docker](#running-with-docker)
+    - [Development Tools](#development-tools)
+      - [Spring Boot DevTools](#spring-boot-devtools)
+      - [Resources for Live Reload:](#resources-for-live-reload)
+    - [Notes](#notes)
+
+## Overview
+
+This demo application serves as a reference implementation of the [Spring User Framework](https://github.com/devondragon/SpringUserFramework), showing how to integrate user management features into a real-world Spring Boot application. It includes a complete user interface built with Bootstrap, Thymeleaf templates, and JavaScript.
+
+The application implements an event management system where users can browse, register for, and manage events. This demonstrates how to build application-specific functionality on top of the user management framework.
 
 ## Features Demonstrated
-- **User Management**:
-  - Registration with optional email verification.
-  - Login and logout functionality.
-  - Forgot password workflow.
-- **Security Features**:
-  - CSRF protection (example AJAX implementation included).
-  - Configurable account lockout after multiple failed login attempts.
-- **Audit Logging**:
-  - Framework-generated audit trails for login attempts, role assignments, and security events.
-- **SSO Integration**:
-  - OAuth2 login with Google and Facebook.
-- **Customizable Role and Privilege System**:
-  - Define roles, privileges, and inheritance through configuration.
-- **Configuration Management**:
-  - Example `application.yml` and profile-specific configurations for flexibility.
-- **Docker Setup**:
-  - Docker Compose for running the application with a database and mail server.
 
----
+- **User Management**
+  - Registration with email verification
+  - Login/logout functionality
+  - Password reset workflow
+  - User profile management
+  - Account deletion/disabling
 
-## Note:
+- **Authentication & Security**
+  - Username/password authentication
+  - OAuth2 login with Google and Facebook
+  - Role-based access control
+  - CSRF protection
+  - Security audit logging
 
-### This project is a work in progress
-I have been using it to test the new SpringUserFramework.  I have not tested all the steps in the README, nor started from scratch with this project.  I will be doing that soon.  If you have any issues, please let me know.  Please expect this README, and this project, to be improved in the future.
+- **Application-Specific Features**
+  - Custom user profile with additional fields
+  - Event listing and management
+  - User-to-event registration
+  - Role-based permissions for events
 
+- **Technical Features**
+  - Spring Boot auto-configuration
+  - Thymeleaf templating with fragments
+  - REST API with JSON responses
+  - Responsive Bootstrap UI
+  - Docker integration
 
-### Tests are currently not working
-Tests are currently not working. This will be fixed in the future.  For now, just build with the following command:
-```bash
-./gradlew build -xtest
-```
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
-- JDK 17 or later
-- Gradle or Maven (if building locally)
-- Docker (optional, for running the application with the provided `docker-compose.yml`)
-- MariaDB or other supported database for user storage
+- JDK 17 or higher
+- Maven or Gradle
+- MariaDB or MySQL (or Docker for containerized database)
 
----
+### Steps
 
-### Quickstart
-
-1. **Clone the Repository**:
+1. **Clone the repository**
    ```bash
    git clone https://github.com/devondragon/SpringUserFrameworkDemoApp.git
    cd SpringUserFrameworkDemoApp
    ```
 
-2. **Setup Configuration**:
-   - Copy the provided example configuration:
-     ```bash
-     cp src/main/resources/application-local.yml-example src/main/resources/application-local.yml
-     ```
-   - Update the file with your local database credentials, email server settings, and SSO keys.
+2. **Set up the database**
+
+   Using Docker:
+   ```bash
+   docker run -d --name springuser-db \
+     -e MYSQL_ROOT_PASSWORD=root \
+     -e MYSQL_DATABASE=springuser \
+     -e MYSQL_USER=springuser \
+     -e MYSQL_PASSWORD=springuser \
+     -p 3306:3306 \
+     mariadb:latest
+   ```
+
+3. **Configure application**
+
+   Copy the example configuration:
+   ```bash
+   cp src/main/resources/application-local.yml-example src/main/resources/application-local.yml
+   ```
+
+   Edit the file to update database credentials and other settings as needed.
+
+4. **Run the application**
 
    - For using Keycloak copy the provided example configuration:
      ```bash
      cp src/main/resources/application-docker-keycloak.yml-example src/main/resources/application-docker-keycloak.yml
      ```
 
-3. **Run the Application**:
-   - Using Gradle:
-     ```bash
-     ./gradlew bootRun
-     ```
-   - Or using Docker Compose:
-     ```bash
-     docker-compose up --build
-     ```
+   Using Gradle:
+   ```bash
+   ./gradlew bootRun
+   ```
+
+   Using Maven:
+   ```bash
+   mvn spring-boot:run
+   ```
+
    - Using Docker Compose with Keycloak stack:
      ```bash
      docker-compose up -f docker-compose-keycloak.yml --build
@@ -91,12 +131,35 @@ Tests are currently not working. This will be fixed in the future.  For now, jus
 
 ---
 
+## Project Structure
+
+```
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   └── com/digitalsanctuary/spring/demo/
+    │   │       ├── controller/            # Page controllers
+    │   │       ├── event/                 # Event-related functionality
+    │   │       ├── user/
+    │   │       │   └── profile/           # User profile extensions
+    │   │       └── util/                  # Utility classes
+    │   └── resources/
+    │       ├── static/                    # Static resources (CSS, JS)
+    │       ├── templates/                 # Thymeleaf templates
+    │       │   ├── fragments/             # Reusable template fragments
+    │       │   ├── mail/                  # Email templates
+    │       │   └── user/                  # User management templates
+    │       └── application.yml            # Application configuration
+    └── test/                              # Test classes
+```
+
+
 ### Configuration Guide
 
 #### **Database**
 The demo uses MariaDB as the default database. You can quickly spin up a MariaDB instance using Docker:
 ```bash
-docker run -p 127.0.0.1:3307:3306 --name springuserframework \
+docker run -p 127.0.0.1:3306:3306 --name springuserframework \
   -e MARIADB_ROOT_PASSWORD=springuserroot \
   -e MARIADB_DATABASE=springuser \
   -e MARIADB_USER=springuser \
@@ -115,12 +178,20 @@ spring:
   mail:
     host: smtp.example.com
     port: 587
-    username: your-email@example.com
-    password: your-email-password
+    username: your-username
+    password: your-password
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
+
+user:
+  mail:
+    fromAddress: noreply@yourdomain.com
 ```
+```
+
+For local testing, the Docker Compose configuration includes a mail server that captures all outgoing emails.
+
 
 ---
 
@@ -143,12 +214,16 @@ To enable SSO:
                client-secret: YOUR_FACEBOOK_CLIENT_SECRET
                redirect-uri: "{baseUrl}/login/oauth2/code/facebook"
    ```
+
 3. Use a tool like [ngrok](https://ngrok.com/) for local testing of OAuth callbacks:
    ```bash
    ngrok http 8080
    ```
 
----
+Then update your OAuth2 providers' callback URLs to use the ngrok domain.
+
+
+
 
 #### **SSO OIDC with Keycloak**
 To enable SSO:
@@ -184,15 +259,30 @@ To enable SSO:
 
 ---
 
-### Docker Support
 
-#### Running Locally with Docker Compose
-This repository includes a `docker-compose.yml` file to simplify local setup. The stack includes:
-- Spring Boot Application
-- MariaDB Database
-- Postfix Mail Server (for testing email functionality)
+## Running the Application
 
-To launch the stack:
+### Running Locally
+
+#### Using Gradle
+```bash
+./gradlew bootRun
+```
+
+#### Using Maven
+```bash
+mvn spring-boot:run
+```
+
+#### With specific profile
+```bash
+./gradlew bootRun --args='--spring.profiles.active=dev'
+```
+
+### Running with Docker
+
+The project includes a complete Docker setup with the application, MariaDB database, and a mail server.
+
 ```bash
 docker-compose up --build
 ```
@@ -214,10 +304,12 @@ This project supports **Spring Boot DevTools** for live reload and auto-restart.
    ```yaml
    spring.devtools.livereload.https=true
    ```
-   Or when using Keycloak stack set the following property in `application-docker-keycloak.yml`:
+
+      Or when using Keycloak stack set the following property in `application-docker-keycloak.yml`:
    ```yaml
    spring.devtools.livereload.https=true
    ```
+
 2. Use a reverse proxy like mitmproxy for HTTPS traffic interception:
    ```bash
    mitmproxy --mode reverse:http://localhost:35729 -p 35739

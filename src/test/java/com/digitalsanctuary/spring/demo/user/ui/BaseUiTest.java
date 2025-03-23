@@ -1,4 +1,4 @@
-package com.digitalsanctuary.spring.user.ui;
+package com.digitalsanctuary.spring.demo.user.ui;
 
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
@@ -10,10 +10,7 @@ public abstract class BaseUiTest {
     private Driver driver;
 
     public enum Driver {
-        CHROME("chrome"),
-        OPERA("opera"),
-        FIREFOX("firefox"),
-        EDGE("edge");
+        CHROME("chrome"), OPERA("opera"), FIREFOX("firefox"), EDGE("edge");
 
         private final String browser;
 

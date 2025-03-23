@@ -18,7 +18,7 @@
 				<!-- Update User Form -->
 				<div class="card shadow-sm">
 					<div class="card-body">
-						<form th:action="@{/user/updateUser}" method="POST">
+						<form id="updateUserForm" th:action="@{/user/updateUser}" method="POST">
 							<!-- First Name -->
 							<div class="row mb-3 align-items-center">
 								<label for="firstName" class="col-sm-3 col-form-label" th:utext="#{label.user.first-name}">First Name</label>
@@ -53,7 +53,7 @@
 			</div>
 		</section>
 
-		<th:script type="module" th:src="@{/js/user/update-user.js}"></th:script>
+		<script type="module" th:src="@{/js/user/update-user.js}"></script>
 	</div>
 </body>
 
