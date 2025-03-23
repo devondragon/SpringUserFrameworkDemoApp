@@ -9,28 +9,15 @@ A comprehensive demonstration application for the [Spring User Framework](https:
 ![Spring User Framework Demo Screenshot](/docs/images/Register.jpeg)
 
 ## Table of Contents
-- [Spring User Framework Demo Application](#spring-user-framework-demo-application)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Features Demonstrated](#features-demonstrated)
-  - [Quick Start](#quick-start)
-    - [Prerequisites](#prerequisites)
-    - [Steps](#steps)
-  - [Project Structure](#project-structure)
-    - [Configuration Guide](#configuration-guide)
-      - [**Database**](#database)
-      - [**Mail Sending (SMTP)**](#mail-sending-smtp)
-      - [**SSO OIDC with Keycloak**](#sso-oidc-with-keycloak)
-  - [Running the Application](#running-the-application)
-    - [Running Locally](#running-locally)
-      - [Using Gradle](#using-gradle)
-      - [Using Maven](#using-maven)
-      - [With specific profile](#with-specific-profile)
-    - [Running with Docker](#running-with-docker)
-    - [Development Tools](#development-tools)
-      - [Spring Boot DevTools](#spring-boot-devtools)
-      - [Resources for Live Reload:](#resources-for-live-reload)
-    - [Notes](#notes)
+- [Overview](#overview)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [Running the Application](#running-the-application)
+- [Development Tools](#development-tools)
+- [Notes](#notes)
+
 
 ## Overview
 
@@ -49,7 +36,7 @@ The application implements an event management system where users can browse, re
 
 - **Authentication & Security**
   - Username/password authentication
-  - OAuth2 login with Google and Facebook
+  - OAuth2 login with Google, Facebook, and Keycloak
   - Role-based access control
   - CSRF protection
   - Security audit logging
@@ -82,9 +69,7 @@ The application implements an event management system where users can browse, re
    cd SpringUserFrameworkDemoApp
    ```
 
-2. **Set up the database**
-
-   Using Docker:
+2. **Set up the database** (using Docker)
    ```bash
    docker run -d --name springuser-db \
      -e MYSQL_ROOT_PASSWORD=root \
@@ -95,39 +80,38 @@ The application implements an event management system where users can browse, re
      mariadb:latest
    ```
 
-3. **Configure application**
-
+3. **Configure the application**
    Copy the example configuration:
    ```bash
    cp src/main/resources/application-local.yml-example src/main/resources/application-local.yml
    ```
 
-   Edit the file to update database credentials and other settings as needed.
-
-4. **Run the application**
-
-   - For using Keycloak copy the provided example configuration:
-     ```bash
+      (Optional for Keycloak) Copy the Keycloak configuration:
+    ```bash
      cp src/main/resources/application-docker-keycloak.yml-example src/main/resources/application-docker-keycloak.yml
      ```
+   Then edit the copied file as needed.
 
-   Using Gradle:
-   ```bash
-   ./gradlew bootRun
-   ```
+1. **Run the application**
 
-   Using Maven:
-   ```bash
-   mvn spring-boot:run
-   ```
 
-   - Using Docker Compose with Keycloak stack:
-     ```bash
-     docker-compose up -f docker-compose-keycloak.yml --build
-     ```
+   - Then choose one of the following:
+     - Using Gradle:
+       ```bash
+       ./gradlew bootRun
+       ```
+     - Using Maven:
+       ```bash
+       mvn spring-boot:run
+       ```
+     - Using Docker Compose with Keycloak stack:
+       ```bash
+       docker-compose -f docker-compose-keycloak.yml up --build
+       ```
 
-4. **Access the Application**:
-   - Navigate to `http://localhost:8080` in your browser.
+5. **Access the Application**
+   Open your browser and navigate to:
+   `http://localhost:8080`
 
 ---
 
@@ -188,10 +172,8 @@ user:
   mail:
     fromAddress: noreply@yourdomain.com
 ```
-```
 
 For local testing, the Docker Compose configuration includes a mail server that captures all outgoing emails.
-
 
 ---
 
@@ -305,7 +287,7 @@ This project supports **Spring Boot DevTools** for live reload and auto-restart.
    spring.devtools.livereload.https=true
    ```
 
-      Or when using Keycloak stack set the following property in `application-docker-keycloak.yml`:
+   Or when using Keycloak stack set the following property in `application-docker-keycloak.yml`:
    ```yaml
    spring.devtools.livereload.https=true
    ```
@@ -325,5 +307,5 @@ This project supports **Spring Boot DevTools** for live reload and auto-restart.
 
 - This demo is based on the principles outlined in the [Baeldung Spring Security Course](https://www.baeldung.com/learn-spring-security-course).
 - Feel free to customize and extend the provided functionality to suit your needs.
-- **Disclaimer**: No warranty or guarantee of functionality, performance, or security is provided. Use at your own risk.
+**Disclaimer:** This is a demo project provided as-is with no guarantees of performance, security, or production readiness.
 
