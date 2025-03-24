@@ -68,7 +68,7 @@ spring:
         period: 0
 
 server:
-  port: 8081
+  port: 8082
   servlet:
     session:
       cookie:

@@ -29,7 +29,7 @@ import com.digitalsanctuary.spring.user.jdbc.Jdbc;
 @ActiveProfiles("test")
 public class SpringUserFrameworkUiTest extends BaseUiTest {
 
-    private static final String URI = "http://localhost:8080/";
+    private static final String URI = "http://localhost:8082/";
 
     private static final UserDto testUser = UiTestData.getUserDto();
 

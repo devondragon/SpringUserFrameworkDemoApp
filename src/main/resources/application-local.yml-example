@@ -106,7 +106,7 @@ spring:
         period: 0
 
 server:
-  #port: 8081 #change your server port here if 8080 can't be assigned for whatsoever reason
+  #port: 8082 #change your server port here if 8080 can't be assigned for whatsoever reason
   servlet:
     session:
       cookie:
