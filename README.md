@@ -111,7 +111,7 @@ The application implements an event management system where users can browse, re
 
 5. **Access the Application**
    Open your browser and navigate to:
-   `http://localhost:8082`
+   `http://localhost:8080`
 
 6**Access Keycloak if enabled in Docker compose stack**
    Open your browser and navigate to:
@@ -203,7 +203,7 @@ To enable SSO:
 
 3. Use a tool like [ngrok](https://ngrok.com/) for local testing of OAuth callbacks:
    ```bash
-   ngrok http 8082
+   ngrok http 8080
    ```
 
 Then update your OAuth2 providers' callback URLs to use the ngrok domain.

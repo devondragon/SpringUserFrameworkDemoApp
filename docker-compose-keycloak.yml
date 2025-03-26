@@ -68,7 +68,7 @@ services:
       mailserver:
         condition: service_healthy
     ports:
-      - "8082:8082"
+      - "8080:8080"
     env_file: keycloak.env
     environment:
       SPRING_DATASOURCE_URL: jdbc:mariadb://myapp-db:3307/springuser?createDatabaseIfNotExist=true
@@ -94,8 +94,8 @@ services:
       - --verbose
       - --import-realm
     ports:
-      - "8080:8080"
-      - "8443:8443"
+      - "8180:8080"
+      - "8143:8443"
       - "9001:9000"
     volumes:
       - ./keycloak/ssl:/opt/keycloak/ssl/
