@@ -113,6 +113,10 @@ The application implements an event management system where users can browse, re
    Open your browser and navigate to:
    `http://localhost:8080`
 
+6**Access Keycloak if enabled in Docker compose stack**
+   Open your browser and navigate to:
+   `https://localhost:8443`
+
 ---
 
 ## Project Structure
