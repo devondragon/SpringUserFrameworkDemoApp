@@ -45,6 +45,9 @@
 						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
 							<li><a class="dropdown-item" th:href="${@environment.getProperty('user.security.updateUserURI')}">Update Account</a></li>
 							<li><a class="dropdown-item" th:href="@{/user/update-password.html}">Change Password</a></li>
+							<li sec:authorize="hasAuthority('ADMIN_PRIVILEGE')">
+								<a class="dropdown-item" th:href="@{/admin/actions.html}">Admin Actions</a>
+							</li>
 							<li>
 								<form th:action="@{/user/logout}" method="POST" class="d-inline">
 									<button class="dropdown-item" type="submit">Logout</button>
