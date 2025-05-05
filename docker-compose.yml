@@ -69,10 +69,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mariadb://myapp-db:3307/springuser?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_URL: jdbc:mariadb://myapp-db:3306/springuser?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: springuser
       SPRING_DATASOURCE_PASSWORD: springuser
-      SPRING_PROFILES_ACTIVE: docker-keycloak
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_MAIL_HOST: mailserver
       SPRING_MAIL_PORT: 25
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
