@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '3.4.4'
+  id 'org.springframework.boot' version '3.4.5'
   id 'io.spring.dependency-management' version '1.1.7'
   id "com.github.ben-manes.versions" version "0.52.0"
 
@@ -37,7 +37,7 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.2.1'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.2.2'
 
     // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -54,16 +54,16 @@ dependencies {
     implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0'
 
     // OpenAPI (Swagger)
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
 
     // Runtime dependencies
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.2'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.3'
     runtimeOnly 'org.postgresql:postgresql'
 
     // Utility libraries
     implementation 'org.passay:passay:1.6.6'
-    implementation 'com.google.guava:guava:33.4.5-jre'
+    implementation 'com.google.guava:guava:33.4.8-jre'
     implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
     implementation 'org.hibernate.validator:hibernate-validator:8.0.2.Final'
 
@@ -78,8 +78,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation group: 'com.codeborne', name: 'selenide', version: '7.7.3'
-    testImplementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '5.9.3'
+    testImplementation group: 'com.codeborne', name: 'selenide', version: '7.9.1'
+    testImplementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '6.1.0'
 }
 
 test {
