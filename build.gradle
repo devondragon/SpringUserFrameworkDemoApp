@@ -58,7 +58,7 @@ dependencies {
 
     // Runtime dependencies
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.3'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.4'
     runtimeOnly 'org.postgresql:postgresql'
 
     // Utility libraries
@@ -78,8 +78,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation group: 'com.codeborne', name: 'selenide', version: '7.9.3'
-    testImplementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '6.1.0'
+    testImplementation group: 'com.codeborne', name: 'selenide', version: '7.9.4'
+    testImplementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '6.1.1'
 }
 
 test {
