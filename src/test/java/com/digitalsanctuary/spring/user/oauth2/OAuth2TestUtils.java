@@ -1,7 +1,6 @@
 package com.digitalsanctuary.spring.user.oauth2;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -27,7 +26,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
  */
 public class OAuth2TestUtils {
     
-    private static final SecretKey JWT_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final SecretKey JWT_KEY = Keys.hmacShaKeyFor("test-secret-key-for-jwt-signing-minimum-256-bits".getBytes());
     
     /**
      * Creates a mock OAuth2 authentication token for Google
@@ -162,9 +161,9 @@ public class OAuth2TestUtils {
      */
     public static String generateJwtToken(Map<String, Object> claims) {
         return Jwts.builder()
-            .setClaims(claims)
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + 300000)) // 5 minutes
+            .claims(claims)
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + 300000)) // 5 minutes
             .signWith(JWT_KEY)
             .compact();
     }

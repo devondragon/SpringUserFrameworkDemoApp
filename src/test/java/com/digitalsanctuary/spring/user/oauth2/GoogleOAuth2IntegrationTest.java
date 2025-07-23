@@ -16,7 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -81,13 +81,13 @@ class GoogleOAuth2IntegrationTest {
     @Autowired
     private OAuth2MockConfiguration.OAuth2MockHelper oauth2MockHelper;
     
-    @MockBean
+    @MockitoBean
     private MailService mailService;
     
-    @MockBean
+    @MockitoBean
     private LoginAttemptService loginAttemptService;
     
-    @MockBean
+    @MockitoBean
     private AuthorityService authorityService;
     
     @BeforeEach

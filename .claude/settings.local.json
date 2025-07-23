@@ -13,7 +13,9 @@
       "Bash(./gradlew:*)",
       "Bash(curl:*)",
       "mcp__zen__planner",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(chmod:*)",
+      "Bash(./fix-mockbean-deprecation.sh:*)"
     ],
     "deny": []
   }
