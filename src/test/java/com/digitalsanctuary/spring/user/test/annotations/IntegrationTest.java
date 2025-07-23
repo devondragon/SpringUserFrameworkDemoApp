@@ -29,7 +29,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-@SpringBootTest
+@SpringBootTest(classes = com.digitalsanctuary.spring.demo.UserDemoApplication.class)
 @AutoConfigureMockMvc
 @AutoConfigureDataJpa
 @ActiveProfiles("test")

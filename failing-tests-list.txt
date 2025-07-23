@@ -1,0 +1,7 @@
+deleteAccount(ApiTestArgumentsHolder) > [1] argumentsHolder=com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder@7184dfbe FAILED
+deleteAccount(ApiTestArgumentsHolder) > [2] argumentsHolder=com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder@e8c8077 FAILED
+registerUserAccount(ApiTestArgumentsHolder) > [3] argumentsHolder=com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder@1a3803eb FAILED
+updatePassword(ApiTestArgumentsHolder) > [1] argumentsHolder=com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder@4f19f08e FAILED
+updatePassword(ApiTestArgumentsHolder) > [2] argumentsHolder=com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder@28c8c41a FAILED
+updateUser(ApiTestArgumentsHolder) > [1] argumentsHolder=com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder@37559a0b FAILED
+updateUser(ApiTestArgumentsHolder) > [2] argumentsHolder=com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder@590fb210 FAILED

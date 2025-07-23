@@ -7,7 +7,7 @@ import static org.mockito.Mockito.*;
 import com.digitalsanctuary.spring.user.audit.AuditEvent;
 import com.digitalsanctuary.spring.user.event.OnRegistrationCompleteEvent;
 import com.digitalsanctuary.spring.user.event.UserPreDeleteEvent;
-import com.digitalsanctuary.spring.user.listener.AuthenticationEventLIstener;
+import com.digitalsanctuary.spring.user.listener.AuthenticationEventListener;
 import com.digitalsanctuary.spring.user.listener.RegistrationListener;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.service.LoginAttemptService;
