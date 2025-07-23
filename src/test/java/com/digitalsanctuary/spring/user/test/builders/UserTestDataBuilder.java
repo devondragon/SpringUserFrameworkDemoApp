@@ -26,6 +26,7 @@ public class UserTestDataBuilder {
     
     private static final PasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder(4);
     private static long idCounter = 1L;
+    private static long roleIdCounter = 1000L;
     
     private Long id;
     private String firstName = "Test";
@@ -204,7 +205,7 @@ public class UserTestDataBuilder {
 
     public UserTestDataBuilder withRole(String roleName) {
         Role role = new Role();
-        role.setId((long) roleName.hashCode());
+        role.setId(roleIdCounter++);
         role.setName(roleName);
         this.roles.add(role);
         return this;

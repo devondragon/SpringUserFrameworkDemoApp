@@ -24,6 +24,7 @@ import java.util.Set;
 public class RoleTestDataBuilder {
     
     private static long idCounter = 1L;
+    private static long privilegeIdCounter = 2000L;
     
     private Long id;
     private String name;
@@ -116,7 +117,7 @@ public class RoleTestDataBuilder {
 
     public RoleTestDataBuilder withPrivilege(String privilegeName) {
         Privilege privilege = new Privilege();
-        privilege.setId((long) privilegeName.hashCode());
+        privilege.setId(privilegeIdCounter++);
         privilege.setName(privilegeName);
         this.privileges.add(privilege);
         return this;
