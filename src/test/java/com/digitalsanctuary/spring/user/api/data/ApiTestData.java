@@ -56,7 +56,7 @@ public class ApiTestData {
         );
     }
     public static Response resetPassword() {
-        return new Response(true, null, "/user/forgot-password-pending-verification.html",
+        return new Response(true, 0, "/user/forgot-password-pending-verification.html",
                 new String[]{"If account exists, password reset email has been sent!"}, null
         );
     }
