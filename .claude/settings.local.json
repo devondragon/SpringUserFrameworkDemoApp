@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__zen__analyze",
+      "Bash(find:*)",
+      "mcp__zen__testgen",
+      "Bash(./gradlew test:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(touch:*)",
+      "mcp__zen__tracer",
+      "Bash(./gradlew:*)",
+      "Bash(curl:*)",
+      "mcp__zen__planner",
+      "Bash(git add:*)",
+      "Bash(chmod:*)",
+      "Bash(./fix-mockbean-deprecation.sh:*)"
+    ],
+    "deny": []
+  }
+}

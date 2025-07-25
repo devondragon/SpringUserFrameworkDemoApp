@@ -2,13 +2,16 @@ package com.digitalsanctuary.spring.user.api.data;
 
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Response {
     private boolean success;
     private String redirectUrl;
     private Integer code;
-    private String[] messages;
+    @JsonProperty("messages")
+    private List<String> messages;
     private Object data;
 
     public Response() {}
@@ -17,7 +20,7 @@ public class Response {
         this.success = success;
         this.code = code;
         this.redirectUrl = redirectUrl;
-        this.messages = messages;
+        this.messages = messages != null ? Arrays.asList(messages) : null;
         this.data = data;
     }
 
@@ -45,11 +48,11 @@ public class Response {
         this.code = code;
     }
 
-    public String[] getMessages() {
+    public List<String> getMessages() {
         return messages;
     }
 
-    public void setMessages(String[] messages) {
+    public void setMessages(List<String> messages) {
         this.messages = messages;
     }
 
@@ -67,8 +70,8 @@ public class Response {
         if (!(obj instanceof Response response)) return false;
         return response.success == this.success &&
                 Objects.equals(response.redirectUrl, this.redirectUrl) &&
-                response.code == this.code &&
-                Arrays.equals(response.messages, this.messages) &&
+                Objects.equals(response.code, this.code) &&
+                Objects.equals(response.messages, this.messages) &&
                 Objects.equals(response.data, this.data);
     }
 
@@ -78,7 +81,7 @@ public class Response {
                 "success=" + success +
                 ", redirectUrl='" + redirectUrl + '\'' +
                 ", code=" + code +
-                ", messages=" + Arrays.toString(messages) +
+                ", messages=" + messages +
                 ", data=" + data +
                 '}';
     }

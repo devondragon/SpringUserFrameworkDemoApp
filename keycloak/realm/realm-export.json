@@ -717,7 +717,7 @@
         "*"
       ],
       "webOrigins": [
-        "http://0.0.0.0:8081"
+        "http://0.0.0.0:8080"
       ],
       "notBefore": 0,
       "bearerOnly": false,
@@ -734,7 +734,7 @@
         "client.secret.creation.time": "1738208958",
         "client.introspection.response.allow.jwt.claim.enabled": "false",
         "token.endpoint.auth.signing.alg": "RS512",
-        "post.logout.redirect.uris": "http://0.0.0.0:8081",
+        "post.logout.redirect.uris": "http://0.0.0.0:8080",
         "oauth2.device.authorization.grant.enabled": "false",
         "use.jwks.url": "false",
         "backchannel.logout.revoke.offline.tokens": "false",
@@ -742,7 +742,7 @@
         "oidc.ciba.grant.enabled": "false",
         "client.use.lightweight.access.token.enabled": "false",
         "backchannel.logout.session.required": "true",
-        "backchannel.logout.url": "http://localhost:8081/logout/connect/back-channel/keycloak",
+        "backchannel.logout.url": "http://localhost:8080/logout/connect/back-channel/keycloak",
         "client_credentials.use_refresh_token": "false",
         "acr.loa.map": "{}",
         "require.pushed.authorization.requests": "false",

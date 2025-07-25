@@ -1,5 +1,17 @@
 package com.digitalsanctuary.spring.user.service;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import java.util.Collections;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.exceptions.UserAlreadyExistException;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
@@ -8,19 +20,6 @@ import com.digitalsanctuary.spring.user.persistence.repository.PasswordResetToke
 import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.VerificationTokenRepository;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Collections;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
@@ -42,8 +41,17 @@ public class UserServiceTest {
     public UserEmailService userEmailService;
     @Mock
     public UserVerificationService userVerificationService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    public AuthorityService authorityService;
+
     @Mock
     private DSUserDetailsService dsUserDetailsService;
+
+
     private UserService userService;
     private User testUser;
     private UserDto testUserDto;
@@ -65,11 +73,8 @@ public class UserServiceTest {
         testUserDto.setPassword("testPassword");
         testUserDto.setRole(1);
 
-        userService = new UserService(
-                userRepository, tokenRepository, passwordTokenRepository,
-                passwordEncoder, roleRepository, sessionRegistry,
-                userEmailService, userVerificationService, dsUserDetailsService
-        );
+        userService = new UserService(userRepository, tokenRepository, passwordTokenRepository, passwordEncoder, roleRepository, sessionRegistry,
+                userEmailService, userVerificationService, authorityService, dsUserDetailsService, eventPublisher);
     }
 
     @Test

@@ -1,0 +1,311 @@
+package com.digitalsanctuary.spring.user.oauth2;
+
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.test.context.TestPropertySource;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
+/**
+ * OAuth2 Test Configuration for mocking OAuth2 providers using WireMock.
+ * 
+ * This configuration sets up mock OAuth2/OIDC endpoints for testing:
+ * - Google OAuth2
+ * - Facebook OAuth2
+ * - Keycloak OIDC
+ * 
+ * Each provider runs on a separate port to avoid conflicts.
+ */
+@TestConfiguration
+@TestPropertySource(properties = {
+    // Disable OAuth2 client registration auto-configuration during test startup
+    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration",
+    
+    // Google OAuth2 mock configuration
+    "spring.security.oauth2.client.registration.google.client-id=test-google-client-id",
+    "spring.security.oauth2.client.registration.google.client-secret=test-google-client-secret",
+    "spring.security.oauth2.client.registration.google.scope=email,profile",
+    "spring.security.oauth2.client.provider.google.authorization-uri=http://localhost:9001/o/oauth2/v2/auth",
+    "spring.security.oauth2.client.provider.google.token-uri=http://localhost:9001/oauth2/v4/token",
+    "spring.security.oauth2.client.provider.google.user-info-uri=http://localhost:9001/oauth2/v3/userinfo",
+    "spring.security.oauth2.client.provider.google.user-name-attribute=sub",
+    
+    // Facebook OAuth2 mock configuration
+    "spring.security.oauth2.client.registration.facebook.client-id=test-facebook-client-id",
+    "spring.security.oauth2.client.registration.facebook.client-secret=test-facebook-client-secret",
+    "spring.security.oauth2.client.registration.facebook.scope=email,public_profile",
+    "spring.security.oauth2.client.provider.facebook.authorization-uri=http://localhost:9002/dialog/oauth",
+    "spring.security.oauth2.client.provider.facebook.token-uri=http://localhost:9002/oauth/access_token",
+    "spring.security.oauth2.client.provider.facebook.user-info-uri=http://localhost:9002/me",
+    "spring.security.oauth2.client.provider.facebook.user-name-attribute=id",
+    
+    // Keycloak OIDC mock configuration
+    "spring.security.oauth2.client.registration.keycloak.client-id=test-keycloak-client-id",
+    "spring.security.oauth2.client.registration.keycloak.client-secret=test-keycloak-client-secret",
+    "spring.security.oauth2.client.registration.keycloak.scope=openid,email,profile",
+    "spring.security.oauth2.client.registration.keycloak.authorization-grant-type=authorization_code",
+    "spring.security.oauth2.client.provider.keycloak.issuer-uri=http://localhost:9003/realms/test",
+    "spring.security.oauth2.client.provider.keycloak.authorization-uri=http://localhost:9003/realms/test/protocol/openid-connect/auth",
+    "spring.security.oauth2.client.provider.keycloak.token-uri=http://localhost:9003/realms/test/protocol/openid-connect/token",
+    "spring.security.oauth2.client.provider.keycloak.user-info-uri=http://localhost:9003/realms/test/protocol/openid-connect/userinfo",
+    "spring.security.oauth2.client.provider.keycloak.jwk-set-uri=http://localhost:9003/realms/test/protocol/openid-connect/certs",
+    "spring.security.oauth2.client.provider.keycloak.user-name-attribute=preferred_username",
+    
+    // Enable OAuth2
+    "spring.security.oauth2.enabled=true",
+    "user.registration.googleEnabled=true",
+    "user.registration.facebookEnabled=true",
+    "user.registration.keycloakEnabled=true"
+})
+public class OAuth2TestConfiguration {
+    
+    @Bean
+    public WireMockServer googleOAuth2MockServer() {
+        WireMockServer server = new WireMockServer(
+            WireMockConfiguration.options()
+                .port(9001)
+                .usingFilesUnderClasspath("wiremock/google")
+        );
+        return server;
+    }
+    
+    @Bean
+    public WireMockServer facebookOAuth2MockServer() {
+        WireMockServer server = new WireMockServer(
+            WireMockConfiguration.options()
+                .port(9002)
+                .usingFilesUnderClasspath("wiremock/facebook")
+        );
+        return server;
+    }
+    
+    @Bean
+    @Primary
+    public WireMockServer keycloakOAuth2MockServer() {
+        WireMockServer server = new WireMockServer(
+            WireMockConfiguration.options()
+                .port(9003)
+                .usingFilesUnderClasspath("wiremock/keycloak")
+        );
+        return server;
+    }
+    
+    @Bean
+    public OAuth2MockServerManager oauth2MockServerManager(
+            WireMockServer googleOAuth2MockServer,
+            WireMockServer facebookOAuth2MockServer,
+            WireMockServer keycloakOAuth2MockServer) {
+        return new OAuth2MockServerManager(
+            googleOAuth2MockServer, 
+            facebookOAuth2MockServer, 
+            keycloakOAuth2MockServer
+        );
+    }
+    
+    /**
+     * Manages lifecycle of OAuth2 mock servers
+     */
+    public static class OAuth2MockServerManager {
+        private final WireMockServer googleServer;
+        private final WireMockServer facebookServer;
+        private final WireMockServer keycloakServer;
+        
+        public OAuth2MockServerManager(
+                WireMockServer googleServer, 
+                WireMockServer facebookServer,
+                WireMockServer keycloakServer) {
+            this.googleServer = googleServer;
+            this.facebookServer = facebookServer;
+            this.keycloakServer = keycloakServer;
+        }
+        
+        @PostConstruct
+        public void startServers() {
+            // Start all mock servers
+            googleServer.start();
+            facebookServer.start();
+            keycloakServer.start();
+            
+            // Configure Google OAuth2 endpoints
+            WireMock.configureFor("localhost", 9001);
+            setupGoogleOAuth2Endpoints();
+            
+            // Configure Facebook OAuth2 endpoints
+            WireMock.configureFor("localhost", 9002);
+            setupFacebookOAuth2Endpoints();
+            
+            // Configure Keycloak OIDC endpoints
+            WireMock.configureFor("localhost", 9003);
+            setupKeycloakOidcEndpoints();
+        }
+        
+        @PreDestroy
+        public void stopServers() {
+            googleServer.stop();
+            facebookServer.stop();
+            keycloakServer.stop();
+        }
+        
+        private void setupGoogleOAuth2Endpoints() {
+            // Authorization endpoint
+            stubFor(get(urlPathMatching("/o/oauth2/v2/auth.*"))
+                .willReturn(aResponse()
+                    .withStatus(302)
+                    .withHeader("Location", "http://localhost:8080/login/oauth2/code/google?code=test-google-auth-code&state={{request.query.state}}")));
+            
+            // Token endpoint
+            stubFor(post(urlEqualTo("/oauth2/v4/token"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{" +
+                        "\"access_token\": \"test-google-access-token\"," +
+                        "\"token_type\": \"Bearer\"," +
+                        "\"expires_in\": 3600," +
+                        "\"scope\": \"email profile\"," +
+                        "\"id_token\": \"test-google-id-token\"" +
+                        "}")));
+            
+            // UserInfo endpoint
+            stubFor(get(urlEqualTo("/oauth2/v3/userinfo"))
+                .withHeader("Authorization", equalTo("Bearer test-google-access-token"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{" +
+                        "\"sub\": \"google-user-123\"," +
+                        "\"name\": \"Test Google User\"," +
+                        "\"given_name\": \"Test\"," +
+                        "\"family_name\": \"Google User\"," +
+                        "\"email\": \"testuser@gmail.com\"," +
+                        "\"email_verified\": true," +
+                        "\"picture\": \"https://example.com/photo.jpg\"" +
+                        "}")));
+        }
+        
+        private void setupFacebookOAuth2Endpoints() {
+            // Authorization endpoint
+            stubFor(get(urlPathMatching("/dialog/oauth.*"))
+                .willReturn(aResponse()
+                    .withStatus(302)
+                    .withHeader("Location", "http://localhost:8080/login/oauth2/code/facebook?code=test-facebook-auth-code&state={{request.query.state}}")));
+            
+            // Token endpoint
+            stubFor(post(urlEqualTo("/oauth/access_token"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{" +
+                        "\"access_token\": \"test-facebook-access-token\"," +
+                        "\"token_type\": \"bearer\"," +
+                        "\"expires_in\": 5183944" +
+                        "}")));
+            
+            // UserInfo endpoint
+            stubFor(get(urlPathMatching("/me.*"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{" +
+                        "\"id\": \"facebook-user-456\"," +
+                        "\"name\": \"Test Facebook User\"," +
+                        "\"first_name\": \"Test\"," +
+                        "\"last_name\": \"Facebook User\"," +
+                        "\"email\": \"testuser@facebook.com\"" +
+                        "}")));
+        }
+        
+        private void setupKeycloakOidcEndpoints() {
+            // OIDC Discovery endpoint
+            stubFor(get(urlEqualTo("/realms/test/.well-known/openid-configuration"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{" +
+                        "\"issuer\": \"http://localhost:9003/realms/test\"," +
+                        "\"authorization_endpoint\": \"http://localhost:9003/realms/test/protocol/openid-connect/auth\"," +
+                        "\"token_endpoint\": \"http://localhost:9003/realms/test/protocol/openid-connect/token\"," +
+                        "\"userinfo_endpoint\": \"http://localhost:9003/realms/test/protocol/openid-connect/userinfo\"," +
+                        "\"jwks_uri\": \"http://localhost:9003/realms/test/protocol/openid-connect/certs\"" +
+                        "}")));
+            
+            // Authorization endpoint
+            stubFor(get(urlPathMatching("/realms/test/protocol/openid-connect/auth.*"))
+                .willReturn(aResponse()
+                    .withStatus(302)
+                    .withHeader("Location", "http://localhost:8080/login/oauth2/code/keycloak?code=test-keycloak-auth-code&state={{request.query.state}}")));
+            
+            // Token endpoint
+            stubFor(post(urlEqualTo("/realms/test/protocol/openid-connect/token"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{" +
+                        "\"access_token\": \"test-keycloak-access-token\"," +
+                        "\"token_type\": \"Bearer\"," +
+                        "\"expires_in\": 300," +
+                        "\"refresh_token\": \"test-keycloak-refresh-token\"," +
+                        "\"id_token\": \"test-keycloak-id-token\"," +
+                        "\"scope\": \"openid email profile\"" +
+                        "}")));
+            
+            // UserInfo endpoint
+            stubFor(get(urlEqualTo("/realms/test/protocol/openid-connect/userinfo"))
+                .withHeader("Authorization", equalTo("Bearer test-keycloak-access-token"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{" +
+                        "\"sub\": \"keycloak-user-789\"," +
+                        "\"name\": \"Test Keycloak User\"," +
+                        "\"preferred_username\": \"testkeycloakuser\"," +
+                        "\"given_name\": \"Test\"," +
+                        "\"family_name\": \"Keycloak User\"," +
+                        "\"email\": \"testuser@keycloak.com\"," +
+                        "\"email_verified\": true" +
+                        "}")));
+            
+            // JWK Set endpoint (simplified)
+            stubFor(get(urlEqualTo("/realms/test/protocol/openid-connect/certs"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"keys\": []}"))); // Simplified for testing
+        }
+        
+        public WireMockServer getGoogleServer() {
+            return googleServer;
+        }
+        
+        public WireMockServer getFacebookServer() {
+            return facebookServer;
+        }
+        
+        public WireMockServer getKeycloakServer() {
+            return keycloakServer;
+        }
+        
+        public void resetAll() {
+            googleServer.resetAll();
+            facebookServer.resetAll();
+            keycloakServer.resetAll();
+            
+            // Re-setup endpoints after reset
+            WireMock.configureFor("localhost", 9001);
+            setupGoogleOAuth2Endpoints();
+            
+            WireMock.configureFor("localhost", 9002);
+            setupFacebookOAuth2Endpoints();
+            
+            WireMock.configureFor("localhost", 9003);
+            setupKeycloakOidcEndpoints();
+        }
+    }
+}
