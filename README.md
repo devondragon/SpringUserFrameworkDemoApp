@@ -3,6 +3,10 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Java Version](https://img.shields.io/badge/Java-17%2B-brightgreen)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.4-green)](https://spring.io/projects/spring-boot)
+[![Gradle](https://img.shields.io/badge/Gradle-8.0%2B-blue)](https://gradle.org/)
+[![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://www.docker.com/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](contributing)
+[![Documentation](https://img.shields.io/badge/docs-comprehensive-green)](README.md)
 
 A comprehensive demonstration application for the [Spring User Framework](https://github.com/devondragon/SpringUserFramework), showcasing how to implement user management features in a Spring Boot web application.
 
@@ -11,11 +15,17 @@ A comprehensive demonstration application for the [Spring User Framework](https:
 ## Table of Contents
 - [Overview](#overview)
 - [Features](#features)
+- [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
+- [Testing](#testing)
 - [Configuration](#configuration)
 - [Project Structure](#project-structure)
 - [Running the Application](#running-the-application)
 - [Development Tools](#development-tools)
+- [API Documentation](#api-documentation)
+- [Architecture](#architecture)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
 - [Notes](#notes)
 
 
@@ -25,7 +35,7 @@ This demo application serves as a reference implementation of the [Spring User F
 
 The application implements an event management system where users can browse, register for, and manage events. This demonstrates how to build application-specific functionality on top of the user management framework.
 
-## Features Demonstrated
+## Features
 
 - **User Management**
   - Registration with email verification
@@ -54,14 +64,37 @@ The application implements an event management system where users can browse, re
   - Responsive Bootstrap UI
   - Docker integration
 
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Java**: JDK 17 or higher ([Download](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html))
+- **Database**: MariaDB, MySQL, or Docker for containerized database
+- **Build Tool**: Gradle (included via wrapper) or Maven
+- **Optional**: Docker and Docker Compose for containerized setup
+- **Git**: For cloning the repository
+
+### System Requirements
+- **Memory**: Minimum 2GB RAM (4GB recommended)
+- **Disk Space**: At least 1GB free space
+- **Network**: Internet connection for downloading dependencies
+
 ## Quick Start
 
-### Prerequisites
-- JDK 17 or higher
-- Maven or Gradle
-- MariaDB or MySQL (or Docker for containerized database)
+### 🚀 Zero to Running in 5 Minutes (Docker)
 
-### Steps
+The fastest way to get started is using Docker Compose:
+
+```bash
+# Clone and start everything
+git clone https://github.com/devondragon/SpringUserFrameworkDemoApp.git
+cd SpringUserFrameworkDemoApp
+docker-compose up --build
+```
+
+**Access the Application**: `http://localhost:8080`
+
+### Manual Setup
 
 1. **Clone the repository**
    ```bash
@@ -92,10 +125,9 @@ The application implements an event management system where users can browse, re
      ```
    Then edit the copied file as needed.
 
-1. **Run the application**
-
-
-   - Then choose one of the following:
+4. **Run the application**
+   
+   Choose one of the following:
      - Using Gradle:
        ```bash
        ./gradlew bootRun
@@ -113,9 +145,96 @@ The application implements an event management system where users can browse, re
    Open your browser and navigate to:
    `http://localhost:8080`
 
-6**Access Keycloak if enabled in Docker compose stack**
+6. **Access Keycloak if enabled in Docker compose stack**
    Open your browser and navigate to:
    `https://localhost:8443`
+
+### First Time Setup
+
+After starting the application, you can:
+- Register a new account at `http://localhost:8080/user/register`
+- Use the demo data that may be pre-loaded
+- Check logs for any setup issues in the console output
+
+---
+
+## Testing
+
+This project includes comprehensive testing with multiple approaches:
+
+### Running Tests
+
+```bash
+# Run all tests except UI tests
+./gradlew test
+
+# Run UI tests only (requires running application)
+./gradlew uiTest
+
+# Run specific test class
+./gradlew test --tests UserApiTest
+
+# Run specific test method
+./gradlew test --tests UserApiTest.testUserRegistration
+```
+
+### Test Categories
+
+- **Unit Tests**: Fast tests for individual components
+- **Integration Tests**: Tests using `@IntegrationTest` with Spring context
+- **API Tests**: REST endpoint testing with MockMvc
+- **UI Tests**: End-to-end testing with Selenide
+- **Security Tests**: Authentication and authorization testing
+
+### Test Data
+
+Test data builders are available in `src/test/java/com/digitalsanctuary/spring/demo/test/data/` for consistent test data creation.
+
+### Test Profiles
+
+Tests run with the `test` profile using H2 in-memory database for isolation.
+
+---
+
+## API Documentation
+
+The application provides REST API endpoints for user management and event operations:
+
+### User Management API
+
+| Endpoint | Method | Description | Authentication |
+|----------|--------|-------------|---------------|
+| `/api/users` | GET | List all users | Admin |
+| `/api/users/{id}` | GET | Get user by ID | User/Admin |
+| `/api/users` | POST | Create new user | Public |
+| `/api/users/{id}` | PUT | Update user | User/Admin |
+| `/api/users/{id}` | DELETE | Delete user | User/Admin |
+| `/api/auth/login` | POST | User login | Public |
+| `/api/auth/logout` | POST | User logout | Authenticated |
+
+### Event Management API
+
+| Endpoint | Method | Description | Authentication |
+|----------|--------|-------------|---------------|
+| `/api/events` | GET | List events | Public |
+| `/api/events/{id}` | GET | Get event details | Public |
+| `/api/events` | POST | Create event | Admin |
+| `/api/events/{id}/register` | POST | Register for event | User |
+
+### Response Format
+
+All API endpoints return JSON responses:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operation successful",
+  "errors": []
+}
+```
+
+For detailed API documentation, start the application and visit `/swagger-ui.html` (if Swagger is enabled).
 
 ---
 
@@ -142,9 +261,33 @@ The application implements an event management system where users can browse, re
 ```
 
 
-### Configuration Guide
+## Configuration
 
-#### **Database**
+### Configuration Profiles
+
+The application supports multiple configuration profiles:
+
+| Profile | Purpose | Database | Use Case |
+|---------|---------|----------|----------|
+| `local` | Local development | MariaDB/MySQL | Development with persistent database |
+| `test` | Testing | H2 (in-memory) | Automated testing |
+| `dev` | Development server | MariaDB/MySQL | Shared development environment |
+| `docker-keycloak` | Docker with Keycloak | MariaDB + Keycloak | OIDC authentication testing |
+
+### Quick Configuration Setup
+
+1. **Copy example configurations:**
+   ```bash
+   cp src/main/resources/application-local.yml-example src/main/resources/application-local.yml
+   cp src/main/resources/application-docker-keycloak.yml-example src/main/resources/application-docker-keycloak.yml
+   ```
+
+2. **Edit configuration files** to match your environment
+3. **Set active profile:** `--spring.profiles.active=local`
+
+### Essential Configuration Settings
+
+#### **Database Configuration**
 The demo uses MariaDB as the default database. You can quickly spin up a MariaDB instance using Docker:
 ```bash
 docker run -p 127.0.0.1:3306:3306 --name springuserframework \
@@ -207,6 +350,43 @@ To enable SSO:
    ```
 
 Then update your OAuth2 providers' callback URLs to use the ngrok domain.
+
+### Environment Variables
+
+For production deployments, use environment variables instead of hardcoding values:
+
+```bash
+# Database
+export SPRING_DATASOURCE_URL=jdbc:mariadb://localhost:3306/springuser
+export SPRING_DATASOURCE_USERNAME=springuser
+export SPRING_DATASOURCE_PASSWORD=springuser
+
+# Mail
+export SPRING_MAIL_HOST=smtp.gmail.com
+export SPRING_MAIL_USERNAME=your-email@gmail.com
+export SPRING_MAIL_PASSWORD=your-app-password
+
+# OAuth2
+export GOOGLE_CLIENT_ID=your-google-client-id
+export GOOGLE_CLIENT_SECRET=your-google-client-secret
+export FACEBOOK_CLIENT_ID=your-facebook-client-id
+export FACEBOOK_CLIENT_SECRET=your-facebook-client-secret
+
+# Security
+export SPRING_SECURITY_BCRYPT_STRENGTH=12
+export SPRING_SECURITY_FAILED_LOGIN_ATTEMPTS=5
+```
+
+### Important Security Settings
+
+- **BCrypt Strength**: Set to `12` or higher for production
+- **Session Timeout**: Default `30m`, adjust based on security requirements  
+- **Account Lockout**: Configure failed login attempts and lockout duration
+- **CSRF Protection**: Enabled by default, ensure proper configuration for APIs
+
+### Framework-Specific Configuration
+
+See [CONFIG.md](CONFIG.md) for detailed framework configuration options or refer to the [Spring User Framework documentation](https://github.com/devondragon/SpringUserFramework) for complete configuration reference.
 
 
 
@@ -282,9 +462,62 @@ docker-compose -f docker-compose-keycloak.yml up --build
 
 ---
 
-### Development Tools
+## Development Tools
 
-#### Spring Boot DevTools
+### IDE Setup
+
+**IntelliJ IDEA (Recommended):**
+```bash
+# Import as Gradle project
+# Enable annotation processing: Settings > Build > Compiler > Annotation Processors
+# Install Lombok plugin if needed
+```
+
+**VS Code:**
+```bash
+# Install extensions:
+# - Extension Pack for Java
+# - Spring Boot Extension Pack
+# - Gradle for Java
+```
+
+### Common Development Tasks
+
+```bash
+# Quick development startup
+./gradlew bootRun --args='--spring.profiles.active=local'
+
+# Debug mode (port 5005)
+./gradlew bootRun --debug-jvm
+
+# Build and run with custom script
+./run.sh
+
+# Hot reload with DevTools (automatic)
+# Just save files and changes will be picked up
+
+# Check for security vulnerabilities
+./gradlew dependencyCheckAnalyze
+
+# Generate test reports
+./gradlew test jacocoTestReport
+```
+
+### Performance and Monitoring
+
+- **Application Metrics**: `/actuator/metrics`
+- **Health Check**: `/actuator/health` 
+- **Database Console**: `/h2-console` (when using H2)
+- **Log Levels**: Configure in `application.yml` or via `/actuator/loggers`
+
+### Debugging Tips
+
+1. **Database Issues**: Enable SQL logging with `spring.jpa.show-sql=true`
+2. **Authentication Problems**: Enable security debug logging
+3. **Email Issues**: Check `logs/audit.log` for user events
+4. **Performance**: Use `/actuator/httptrace` to monitor requests
+
+### Spring Boot DevTools
 This project supports **Spring Boot DevTools** for live reload and auto-restart. If you are working with HTTPS locally, follow these steps to enable live reload:
 1. Set the following property in `application.yml`:
    ```yaml
@@ -307,7 +540,153 @@ This project supports **Spring Boot DevTools** for live reload and auto-restart.
 
 ---
 
-### Notes
+## Architecture
+
+### System Overview
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Web Browser   │    │   Load Balancer  │    │   Application   │
+│                 │◄──►│    (Optional)    │◄──►│   Spring Boot   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                                          │
+                                                          ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  OAuth2 Providers│    │  Email Service   │    │    Database     │
+│ Google/Facebook │◄──►│     SMTP        │◄──►│  MariaDB/MySQL  │
+│   /Keycloak     │    │                 │    │                │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+### Key Architectural Patterns
+
+1. **MVC Pattern**: Controllers handle HTTP requests, delegate to services
+2. **Service Layer**: Business logic separation with framework extension
+3. **Repository Pattern**: Data access abstraction through Spring Data JPA
+4. **Event-Driven**: Application events for user lifecycle management
+5. **Security Layered**: Spring Security with multiple authentication methods
+
+### Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Frontend** | Thymeleaf + Bootstrap | Server-side rendering with responsive UI |
+| **Backend** | Spring Boot 3.4+ | Application framework and dependency injection |
+| **Security** | Spring Security | Authentication, authorization, CSRF protection |
+| **Data** | Spring Data JPA + Hibernate | Object-relational mapping and data access |
+| **Database** | MariaDB/MySQL | Primary data persistence |
+| **Testing** | JUnit 5 + Selenide | Unit, integration, and UI testing |
+| **Build** | Gradle | Dependency management and build automation |
+| **Containers** | Docker + Docker Compose | Development and deployment |
+
+---
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+#### Database Connection Issues
+**Problem**: `Connection refused` or `Access denied`
+```
+Solution:
+1. Verify database is running: docker ps
+2. Check credentials in application-local.yml
+3. Ensure database exists: SHOW DATABASES;
+4. Check firewall/network connectivity
+```
+
+#### Build Failures
+**Problem**: `Could not resolve dependencies`
+```
+Solution:
+1. ./gradlew clean build --refresh-dependencies
+2. Check internet connection
+3. Verify Java version: java -version (requires JDK 17+)
+4. Clear Gradle cache: rm -rf ~/.gradle/caches
+```
+
+#### OAuth2/OIDC Issues
+**Problem**: OAuth2 login fails or redirects incorrectly
+```
+Solution:
+1. Verify OAuth2 client credentials in application.yml
+2. Check redirect URI configuration in OAuth provider
+3. Use ngrok for local HTTPS testing
+4. Verify Keycloak realm and client settings
+```
+
+#### Email Not Sending
+**Problem**: Registration emails not received
+```
+Solution:
+1. Check SMTP configuration in application.yml
+2. Verify mail server credentials
+3. Check spam/junk folders
+4. Use Docker mail server for testing: docker-compose logs mailserver
+```
+
+#### Application Won't Start
+**Problem**: Port conflicts or configuration errors
+```
+Solution:
+1. Check if port 8080 is in use: lsof -i :8080
+2. Change server.port in application.yml
+3. Review application logs for configuration errors
+4. Verify all required environment variables are set
+```
+
+### Getting Help
+
+- **Logs**: Check console output and log files in `logs/` directory
+- **Health Check**: Visit `/actuator/health` when application is running
+- **Documentation**: Review [Spring User Framework docs](https://github.com/devondragon/SpringUserFramework)
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/devondragon/SpringUserFrameworkDemoApp/issues)
+
+---
+
+## Contributing
+
+We welcome contributions! Here's how to get started:
+
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Set up development environment following the Quick Start guide
+4. Make your changes following the existing code patterns
+
+### Code Standards
+
+- Follow existing code formatting and conventions
+- Write tests for new functionality
+- Update documentation as needed
+- Ensure all tests pass: `./gradlew test`
+
+### Submitting Changes
+
+1. Commit your changes: `git commit -m "Add amazing feature"`
+2. Push to your fork: `git push origin feature/amazing-feature`
+3. Create a Pull Request with description of changes
+
+### Development Commands
+
+```bash
+# Run with auto-restart
+./gradlew bootRun
+
+# Run specific test profile
+./gradlew bootRun --args='--spring.profiles.active=test'
+
+# Check for dependency updates
+./gradlew dependencyUpdates
+
+# Build without tests (faster)
+./gradlew build -x test
+```
+
+---
+
+## Notes
 
 - This demo is based on the principles outlined in the [Baeldung Spring Security Course](https://www.baeldung.com/learn-spring-security-course).
 - Feel free to customize and extend the provided functionality to suit your needs.
