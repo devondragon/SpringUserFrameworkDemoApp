@@ -2,27 +2,21 @@ package com.digitalsanctuary.spring.user.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-import com.digitalsanctuary.spring.user.audit.AuditEvent;
-import com.digitalsanctuary.spring.user.event.OnRegistrationCompleteEvent;
-import com.digitalsanctuary.spring.user.event.UserPreDeleteEvent;
-import com.digitalsanctuary.spring.user.listener.AuthenticationEventListener;
-import com.digitalsanctuary.spring.user.listener.RegistrationListener;
-import com.digitalsanctuary.spring.user.persistence.model.User;
-import com.digitalsanctuary.spring.user.service.LoginAttemptService;
-import com.digitalsanctuary.spring.user.service.UserEmailService;
-import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
-import com.digitalsanctuary.spring.user.test.builders.UserTestDataBuilder;
-
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -33,19 +27,18 @@ import org.springframework.security.authentication.event.AuthenticationFailureBa
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.TestPropertySource;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.digitalsanctuary.spring.user.audit.AuditEvent;
+import com.digitalsanctuary.spring.user.event.OnRegistrationCompleteEvent;
+import com.digitalsanctuary.spring.user.event.UserPreDeleteEvent;
+import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.service.LoginAttemptService;
+import com.digitalsanctuary.spring.user.service.UserEmailService;
+import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
+import com.digitalsanctuary.spring.user.test.builders.UserTestDataBuilder;
 
 @IntegrationTest
-@TestPropertySource(properties = {
-    "user.registration.sendVerificationEmail=true",
-    "spring.main.allow-bean-definition-overriding=true"
-})
+@TestPropertySource(properties = {"user.registration.sendVerificationEmail=true", "spring.main.allow-bean-definition-overriding=true"})
 @Import(EventSystemIntegrationTest.TestEventConfiguration.class)
 @DisplayName("Event System Integration Tests")
 class EventSystemIntegrationTest {
@@ -74,13 +67,7 @@ class EventSystemIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        testUser = UserTestDataBuilder.aUser()
-                .withId(1L)
-                .withEmail("test@example.com")
-                .withFirstName("Test")
-                .withLastName("User")
-                .enabled()
-                .build();
+        testUser = UserTestDataBuilder.aUser().withId(1L).withEmail("test@example.com").withFirstName("Test").withLastName("User").enabled().build();
         eventCapture.clear();
     }
 
@@ -101,31 +88,21 @@ class EventSystemIntegrationTest {
             }).when(userEmailService).sendRegistrationVerificationEmail(any(), any());
 
             // When
-            OnRegistrationCompleteEvent event = OnRegistrationCompleteEvent.builder()
-                    .user(testUser)
-                    .locale(locale)
-                    .appUrl(appUrl)
-                    .build();
+            OnRegistrationCompleteEvent event = OnRegistrationCompleteEvent.builder().user(testUser).locale(locale).appUrl(appUrl).build();
             eventPublisher.publishEvent(event);
 
             // Then
             assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
             verify(userEmailService).sendRegistrationVerificationEmail(testUser, appUrl);
-            assertThat(eventCapture.getCapturedEvents())
-                    .filteredOn(e -> e instanceof OnRegistrationCompleteEvent)
-                    .hasSize(1);
+            assertThat(eventCapture.getCapturedEvents()).filteredOn(e -> e instanceof OnRegistrationCompleteEvent).hasSize(1);
         }
 
         @Test
         @DisplayName("Multiple registration events are handled independently")
         void multipleRegistrationEvents_handledIndependently() throws Exception {
             // Given
-            User user1 = UserTestDataBuilder.aUser()
-                    .withEmail("user1@example.com")
-                    .build();
-            User user2 = UserTestDataBuilder.aUser()
-                    .withEmail("user2@example.com")
-                    .build();
+            User user1 = UserTestDataBuilder.aUser().withEmail("user1@example.com").build();
+            User user2 = UserTestDataBuilder.aUser().withEmail("user2@example.com").build();
             CountDownLatch latch = new CountDownLatch(2);
             doAnswer(invocation -> {
                 latch.countDown();
@@ -159,9 +136,7 @@ class EventSystemIntegrationTest {
 
             // Then
             verify(loginAttemptService, timeout(1000)).loginSucceeded(username);
-            assertThat(eventCapture.getCapturedEvents())
-                    .filteredOn(e -> e instanceof AuthenticationSuccessEvent)
-                    .hasSize(1);
+            assertThat(eventCapture.getCapturedEvents()).filteredOn(e -> e instanceof AuthenticationSuccessEvent).hasSize(1);
         }
 
         @Test
@@ -177,9 +152,7 @@ class EventSystemIntegrationTest {
 
             // Then
             verify(loginAttemptService, timeout(1000)).loginFailed(username);
-            assertThat(eventCapture.getCapturedEvents())
-                    .filteredOn(e -> e instanceof AuthenticationFailureBadCredentialsEvent)
-                    .hasSize(1);
+            assertThat(eventCapture.getCapturedEvents()).filteredOn(e -> e instanceof AuthenticationFailureBadCredentialsEvent).hasSize(1);
         }
     }
 
@@ -195,15 +168,11 @@ class EventSystemIntegrationTest {
             eventPublisher.publishEvent(event);
 
             // Then
-            assertThat(eventCapture.getCapturedEvents())
-                    .filteredOn(e -> e instanceof UserPreDeleteEvent)
-                    .hasSize(1)
-                    .first()
-                    .satisfies(e -> {
-                        UserPreDeleteEvent deleteEvent = (UserPreDeleteEvent) e;
-                        assertThat(deleteEvent.getUser()).isEqualTo(testUser);
-                        assertThat(deleteEvent.getUserId()).isEqualTo(1L);
-                    });
+            assertThat(eventCapture.getCapturedEvents()).filteredOn(e -> e instanceof UserPreDeleteEvent).hasSize(1).first().satisfies(e -> {
+                UserPreDeleteEvent deleteEvent = (UserPreDeleteEvent) e;
+                assertThat(deleteEvent.getUser()).isEqualTo(testUser);
+                assertThat(deleteEvent.getUserId()).isEqualTo(1L);
+            });
         }
     }
 
@@ -215,27 +184,18 @@ class EventSystemIntegrationTest {
         @DisplayName("Audit events are captured")
         void auditEvents_areCaptured() {
             // Given
-            AuditEvent auditEvent = AuditEvent.builder()
-                    .source(this)
-                    .user(testUser)
-                    .action("Test Action")
-                    .actionStatus("Success")
-                    .message("Test audit event")
-                    .build();
+            AuditEvent auditEvent = AuditEvent.builder().source(this).user(testUser).action("Test Action").actionStatus("Success")
+                    .message("Test audit event").build();
 
             // When
             eventPublisher.publishEvent(auditEvent);
 
             // Then
-            assertThat(eventCapture.getCapturedEvents())
-                    .filteredOn(e -> e instanceof AuditEvent)
-                    .hasSize(1)
-                    .first()
-                    .satisfies(e -> {
-                        AuditEvent captured = (AuditEvent) e;
-                        assertThat(captured.getAction()).isEqualTo("Test Action");
-                        assertThat(captured.getUser()).isEqualTo(testUser);
-                    });
+            assertThat(eventCapture.getCapturedEvents()).filteredOn(e -> e instanceof AuditEvent).hasSize(1).first().satisfies(e -> {
+                AuditEvent captured = (AuditEvent) e;
+                assertThat(captured.getAction()).isEqualTo("Test Action");
+                assertThat(captured.getUser()).isEqualTo(testUser);
+            });
         }
     }
 
@@ -249,13 +209,13 @@ class EventSystemIntegrationTest {
             // Given
             CountDownLatch latch = new CountDownLatch(3);
             List<String> processedEvents = Collections.synchronizedList(new ArrayList<>());
-            
+
             doAnswer(invocation -> {
                 processedEvents.add("registration");
                 latch.countDown();
                 return null;
             }).when(userEmailService).sendRegistrationVerificationEmail(any(), any());
-            
+
             doAnswer(invocation -> {
                 processedEvents.add("login-success");
                 latch.countDown();
@@ -264,8 +224,7 @@ class EventSystemIntegrationTest {
 
             // When
             eventPublisher.publishEvent(new OnRegistrationCompleteEvent(testUser, Locale.ENGLISH, "app"));
-            eventPublisher.publishEvent(new AuthenticationSuccessEvent(
-                    new UsernamePasswordAuthenticationToken("user", "pass")));
+            eventPublisher.publishEvent(new AuthenticationSuccessEvent(new UsernamePasswordAuthenticationToken("user", "pass")));
             eventPublisher.publishEvent(new UserPreDeleteEvent(this, testUser));
             processedEvents.add("delete");
             latch.countDown();

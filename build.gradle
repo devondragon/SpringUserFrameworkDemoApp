@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '3.5.3'
+  id 'org.springframework.boot' version '3.5.5'
   id 'io.spring.dependency-management' version '1.1.7'
   id "com.github.ben-manes.versions" version "0.52.0"
 
@@ -37,7 +37,7 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.3.0'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.3.1-SNAPSHOT'
 
     // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -80,7 +80,7 @@ dependencies {
     testImplementation 'com.h2database:h2:2.3.232'
     testImplementation group: 'com.codeborne', name: 'selenide', version: '7.9.4'
     testImplementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '6.1.1'
-    
+
     // OAuth2 Testing dependencies
     testImplementation 'com.github.tomakehurst:wiremock-jre8-standalone:3.0.1'
     testImplementation 'io.jsonwebtoken:jjwt-api:0.12.3'

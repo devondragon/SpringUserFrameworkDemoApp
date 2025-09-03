@@ -1,11 +1,14 @@
 package com.digitalsanctuary.spring.user.concurrent;
 
-import com.digitalsanctuary.spring.demo.UserDemoApplication;
-import com.digitalsanctuary.spring.user.persistence.model.Role;
-import com.digitalsanctuary.spring.user.persistence.model.User;
-import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
-import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
-import org.junit.jupiter.api.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,20 +18,17 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.digitalsanctuary.spring.demo.UserDemoApplication;
+import com.digitalsanctuary.spring.user.persistence.model.Role;
+import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
+import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
 
 /**
  * Admin Role Access Control Test - Phase 3 of Task 4.3 (Simplified)
- * 
- * Tests role-based access control and admin privileges:
- * - Admin vs User permission verification
- * - Role hierarchy validation  
- * - Multi-user permission scenarios
- * 
+ *
+ * Tests role-based access control and admin privileges: - Admin vs User permission verification - Role hierarchy validation - Multi-user permission
+ * scenarios
+ *
  * This simplified version focuses on working functionality.
  */
 @SpringBootTest(classes = UserDemoApplication.class)
@@ -41,13 +41,13 @@ class AdminRoleAccessControlTest {
 
     @Autowired
     private MultiUserTestUtilities testUtilities;
-    
+
     @Autowired
     private MockMvc mockMvc;
-    
+
     @Autowired
     private RoleRepository roleRepository;
-    
+
     private TestUserManager userManager;
     private static final String TEST_PREFIX = "role.access";
 
@@ -75,17 +75,10 @@ class AdminRoleAccessControlTest {
         void testAdminRolePrivileges() {
             Role adminRole = roleRepository.findByName("ROLE_ADMIN");
             assertThat(adminRole).isNotNull();
-            
+
             // Verify admin has key privileges
-            assertThat(adminRole.getPrivileges()).extracting("name")
-                .contains(
-                    "ADMIN_PRIVILEGE",
-                    "READ_USER_PRIVILEGE", 
-                    "RESET_ANY_USER_PASSWORD_PRIVILEGE",
-                    "CREATE_EVENT_PRIVILEGE",
-                    "DELETE_EVENT_PRIVILEGE",
-                    "UPDATE_EVENT_PRIVILEGE"
-                );
+            assertThat(adminRole.getPrivileges()).extracting("name").contains("ADMIN_PRIVILEGE", "READ_USER_PRIVILEGE",
+                    "RESET_ANY_USER_PASSWORD_PRIVILEGE", "CREATE_EVENT_PRIVILEGE", "DELETE_EVENT_PRIVILEGE", "UPDATE_EVENT_PRIVILEGE");
         }
 
         @Test
@@ -94,18 +87,13 @@ class AdminRoleAccessControlTest {
         void testManagerRolePrivileges() {
             Role managerRole = roleRepository.findByName("ROLE_MANAGER");
             assertThat(managerRole).isNotNull();
-            
+
             // Manager should have specific privileges
-            assertThat(managerRole.getPrivileges()).extracting("name")
-                .contains(
-                    "ADD_USER_TO_TEAM_PRIVILEGE",
-                    "REMOVE_USER_FROM_TEAM_PRIVILEGE", 
-                    "RESET_TEAM_PASSWORD_PRIVILEGE"
-                );
-                
+            assertThat(managerRole.getPrivileges()).extracting("name").contains("ADD_USER_TO_TEAM_PRIVILEGE", "REMOVE_USER_FROM_TEAM_PRIVILEGE",
+                    "RESET_TEAM_PASSWORD_PRIVILEGE");
+
             // Manager should NOT have admin privileges
-            assertThat(managerRole.getPrivileges()).extracting("name")
-                .doesNotContain("ADMIN_PRIVILEGE", "RESET_ANY_USER_PASSWORD_PRIVILEGE");
+            assertThat(managerRole.getPrivileges()).extracting("name").doesNotContain("ADMIN_PRIVILEGE", "RESET_ANY_USER_PASSWORD_PRIVILEGE");
         }
 
         @Test
@@ -114,23 +102,14 @@ class AdminRoleAccessControlTest {
         void testUserRolePrivileges() {
             Role userRole = roleRepository.findByName("ROLE_USER");
             assertThat(userRole).isNotNull();
-            
+
             // User should have basic privileges
-            assertThat(userRole.getPrivileges()).extracting("name")
-                .contains(
-                    "LOGIN_PRIVILEGE",
-                    "UPDATE_OWN_USER_PRIVILEGE",
-                    "RESET_OWN_PASSWORD_PRIVILEGE",
-                    "REGISTER_FOR_EVENT_PRIVILEGE"
-                );
-                
+            assertThat(userRole.getPrivileges()).extracting("name").contains("LOGIN_PRIVILEGE", "UPDATE_OWN_USER_PRIVILEGE",
+                    "RESET_OWN_PASSWORD_PRIVILEGE", "REGISTER_FOR_EVENT_PRIVILEGE");
+
             // User should NOT have admin or manager privileges
-            assertThat(userRole.getPrivileges()).extracting("name")
-                .doesNotContain(
-                    "ADMIN_PRIVILEGE", 
-                    "READ_USER_PRIVILEGE", 
-                    "ADD_USER_TO_TEAM_PRIVILEGE"
-                );
+            assertThat(userRole.getPrivileges()).extracting("name").doesNotContain("ADMIN_PRIVILEGE", "READ_USER_PRIVILEGE",
+                    "ADD_USER_TO_TEAM_PRIVILEGE");
         }
     }
 
@@ -139,19 +118,12 @@ class AdminRoleAccessControlTest {
     class EventAccessControlTests {
 
         @Test
-        @WithMockUser(authorities = {
-            "CREATE_EVENT_PRIVILEGE", 
-            "UPDATE_EVENT_PRIVILEGE", 
-            "DELETE_EVENT_PRIVILEGE"
-        })
+        @WithMockUser(authorities = {"CREATE_EVENT_PRIVILEGE", "UPDATE_EVENT_PRIVILEGE", "DELETE_EVENT_PRIVILEGE"})
         @DisplayName("Admin can perform all event operations")
         void testAdminEventOperations() throws Exception {
             // Admin can create events
-            mockMvc.perform(post("/api/events")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"name\": \"Admin Event\", \"description\": \"Created by admin\"}")
-                    .with(csrf()))
-                .andExpect(status().isOk());
+            mockMvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\": \"Admin Event\", \"description\": \"Created by admin\"}").with(csrf())).andExpect(status().isOk());
         }
 
         @Test
@@ -159,22 +131,16 @@ class AdminRoleAccessControlTest {
         @DisplayName("Regular user can only register for events")
         void testUserEventLimitations() throws Exception {
             // User CANNOT create events
-            mockMvc.perform(post("/api/events")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"name\": \"User Event\", \"description\": \"Should fail\"}")
-                    .with(csrf()))
-                .andExpect(status().isForbidden());
+            mockMvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\": \"User Event\", \"description\": \"Should fail\"}").with(csrf())).andExpect(status().isForbidden());
         }
 
         @Test
         @WithMockUser(authorities = {})
         @DisplayName("No authorities should deny access")
         void testNoAuthoritiesAccess() throws Exception {
-            mockMvc.perform(post("/api/events")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"name\": \"Unauthorized\", \"description\": \"Should fail\"}")
-                    .with(csrf()))
-                .andExpect(status().isForbidden());
+            mockMvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\": \"Unauthorized\", \"description\": \"Should fail\"}").with(csrf())).andExpect(status().isForbidden());
         }
     }
 
@@ -187,19 +153,19 @@ class AdminRoleAccessControlTest {
         void testMultiplePermissionLevels() {
             // Test that different permission combinations work as expected
             testUtilities.ensureRolesExist();
-            
+
             // Verify roles exist and have correct privileges
             Role adminRole = roleRepository.findByName("ROLE_ADMIN");
             Role managerRole = roleRepository.findByName("ROLE_MANAGER");
             Role userRole = roleRepository.findByName("ROLE_USER");
-            
+
             assertThat(adminRole).isNotNull();
             assertThat(managerRole).isNotNull();
             assertThat(userRole).isNotNull();
-            
+
             // Admin should have more privileges than manager
             assertThat(adminRole.getPrivileges().size()).isGreaterThan(managerRole.getPrivileges().size());
-            
+
             // All roles should have at least one privilege
             assertThat(adminRole.getPrivileges().size()).isGreaterThan(0);
             assertThat(managerRole.getPrivileges().size()).isGreaterThan(0);
@@ -211,11 +177,8 @@ class AdminRoleAccessControlTest {
         @DisplayName("Partial admin permissions should work correctly")
         void testPartialAdminPermissions() throws Exception {
             // User with some admin privileges can create events
-            mockMvc.perform(post("/api/events")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"name\": \"Partial Admin Event\", \"description\": \"Test\"}")
-                    .with(csrf()))
-                .andExpect(status().isOk());
+            mockMvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\": \"Partial Admin Event\", \"description\": \"Test\"}").with(csrf())).andExpect(status().isOk());
         }
 
         @Test
@@ -225,12 +188,11 @@ class AdminRoleAccessControlTest {
             // This would test admin-specific endpoints if they existed
             // For now, verify the privileges are correctly configured
             Role adminRole = roleRepository.findByName("ROLE_ADMIN");
-            assertThat(adminRole.getPrivileges()).extracting("name")
-                .contains("ADMIN_PRIVILEGE", "READ_USER_PRIVILEGE");
+            assertThat(adminRole.getPrivileges()).extracting("name").contains("ADMIN_PRIVILEGE", "READ_USER_PRIVILEGE");
         }
     }
 
-    @Nested  
+    @Nested
     @DisplayName("Concurrent Permission Tests")
     class ConcurrentPermissionTests {
 
@@ -238,28 +200,27 @@ class AdminRoleAccessControlTest {
         @DisplayName("Multiple users with different roles should access appropriately")
         void testConcurrentRoleAccess() {
             final int threadCount = 5;
-            
+
             // Test concurrent role checks
             Runnable roleCheckTask = () -> {
                 try {
                     // Each thread verifies role configuration
                     Role adminRole = roleRepository.findByName("ROLE_ADMIN");
                     Role userRole = roleRepository.findByName("ROLE_USER");
-                    
+
                     assertThat(adminRole).isNotNull();
                     assertThat(userRole).isNotNull();
-                    
+
                     // Admin should have more privileges
                     assertThat(adminRole.getPrivileges().size()).isGreaterThan(userRole.getPrivileges().size());
-                    
+
                 } catch (Exception e) {
                     throw new AssertionError("Concurrent role check failed", e);
                 }
             };
 
             // Execute concurrent role checks
-            MultiUserTestUtilities.ConcurrentExecutionResult result = 
-                testUtilities.executeConcurrently(threadCount, roleCheckTask, 30);
+            MultiUserTestUtilities.ConcurrentExecutionResult result = testUtilities.executeConcurrently(threadCount, roleCheckTask, 30);
 
             // Verify all checks passed
             assertThat(result.completedWithinTimeout()).isTrue();

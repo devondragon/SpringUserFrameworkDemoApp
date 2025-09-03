@@ -1,10 +1,10 @@
 package com.digitalsanctuary.spring.demo.user.ui.page;
 
-import com.codeborne.selenide.Condition;
+import static com.codeborne.selenide.Condition.appear;
+import static com.codeborne.selenide.Condition.cssClass;
+import static com.codeborne.selenide.Condition.visible;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
-
-import static com.codeborne.selenide.Condition.*;
 
 /**
  * Page object for update password page
@@ -34,7 +34,7 @@ public class UpdatePasswordPage {
         NEW_PASSWORD_FIELD.setValue(newPassword);
         CONFIRM_PASSWORD_FIELD.setValue(confirmPassword);
         UPDATE_PASSWORD_BUTTON.click();
-        
+
         // Wait for response message
         GLOBAL_MESSAGE.should(appear);
         return this;

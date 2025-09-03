@@ -1,10 +1,9 @@
 package com.digitalsanctuary.spring.demo.user.ui.page;
 
-import com.codeborne.selenide.Condition;
+import static com.codeborne.selenide.Condition.appear;
+import static com.codeborne.selenide.Condition.visible;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
-
-import static com.codeborne.selenide.Condition.*;
 
 /**
  * Page object for registration pending verification page
@@ -69,8 +68,7 @@ public class VerificationPendingPage {
     }
 
     /**
-     * Simulate email verification by constructing verification URL
-     * This method simulates clicking the verification link from email
+     * Simulate email verification by constructing verification URL This method simulates clicking the verification link from email
      */
     public LoginSuccessPage simulateEmailVerification(String verificationToken) {
         String verificationUrl = "http://localhost:8080/user/registrationConfirm?token=" + verificationToken;

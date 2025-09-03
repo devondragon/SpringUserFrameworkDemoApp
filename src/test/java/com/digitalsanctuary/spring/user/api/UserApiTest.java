@@ -1,54 +1,50 @@
 package com.digitalsanctuary.spring.user.api;
 
-import com.digitalsanctuary.spring.user.api.data.ApiTestData;
-import com.digitalsanctuary.spring.user.api.data.DataStatus;
-import com.digitalsanctuary.spring.user.api.data.Response;
-import com.digitalsanctuary.spring.user.api.helper.AssertionsHelper;
-import com.digitalsanctuary.spring.user.api.provider.ApiTestDeleteAccountArgumentsProvider;
-import com.digitalsanctuary.spring.user.api.provider.ApiTestUpdatePasswordArgumentsProvider;
-import com.digitalsanctuary.spring.user.api.provider.ApiTestUpdateUserArgumentsProvider;
-import com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder;
-import com.digitalsanctuary.spring.user.api.provider.ApiTestRegistrationArgumentsProvider;
-import com.digitalsanctuary.spring.user.dto.UserDto;
-import com.digitalsanctuary.spring.user.persistence.model.User;
-import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
-import com.digitalsanctuary.spring.user.service.UserService;
-import org.junit.jupiter.api.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import com.digitalsanctuary.spring.user.jdbc.Jdbc;
 import com.digitalsanctuary.spring.demo.UserDemoApplication;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.context.annotation.Import;
 import com.digitalsanctuary.spring.user.api.config.ApiTestConfiguration;
-import com.digitalsanctuary.spring.user.service.DSUserDetails;
+import com.digitalsanctuary.spring.user.api.data.ApiTestData;
+import com.digitalsanctuary.spring.user.api.data.DataStatus;
+import com.digitalsanctuary.spring.user.api.data.Response;
+import com.digitalsanctuary.spring.user.api.helper.AssertionsHelper;
+import com.digitalsanctuary.spring.user.api.provider.ApiTestDeleteAccountArgumentsProvider;
+import com.digitalsanctuary.spring.user.api.provider.ApiTestRegistrationArgumentsProvider;
+import com.digitalsanctuary.spring.user.api.provider.ApiTestUpdatePasswordArgumentsProvider;
+import com.digitalsanctuary.spring.user.api.provider.ApiTestUpdateUserArgumentsProvider;
+import com.digitalsanctuary.spring.user.api.provider.holder.ApiTestArgumentsHolder;
+import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import java.util.Collection;
-import java.util.ArrayList;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
+import com.digitalsanctuary.spring.user.service.DSUserDetails;
+import com.digitalsanctuary.spring.user.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest(classes = UserDemoApplication.class)
 @AutoConfigureMockMvc
@@ -60,16 +56,16 @@ public class UserApiTest {
 
     @Autowired
     private MockMvc mockMvc;
-    
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private ObjectMapper objectMapper;
-    
+
     @MockitoBean
     private com.digitalsanctuary.spring.user.mail.MailService mailService;
 
@@ -87,7 +83,7 @@ public class UserApiTest {
     // correctly run separately
     public void registerUserAccount(ApiTestArgumentsHolder argumentsHolder) throws Exception {
         UserDto userDto = argumentsHolder.getUserDto();
-        
+
         // For EXIST test case, ensure user already exists in database
         if (argumentsHolder.getStatus() == DataStatus.EXIST) {
             // Clear any existing user with this email first
@@ -97,14 +93,12 @@ public class UserApiTest {
                 userRepository.flush();
             }
             // Now create the user
-            User created = userService.registerNewUserAccount(userDto);
+            userService.registerNewUserAccount(userDto);
             userRepository.flush(); // Ensure it's saved to DB
         }
-        
-        ResultActions action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/registration")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(userDto))
-                .with(csrf()));
+
+        ResultActions action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/registration").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDto)).with(csrf()));
 
         if (argumentsHolder.getStatus() == DataStatus.NEW) {
             action.andExpect(status().isOk());
@@ -128,17 +122,14 @@ public class UserApiTest {
         if (userService.findUserByEmail(baseTestUser.getEmail()) == null) {
             userService.registerNewUserAccount(baseTestUser);
         }
-        
+
         // Create UserDto with just email for password reset
         UserDto resetDto = new UserDto();
         resetDto.setEmail(baseTestUser.getEmail());
-        
+
         // The resetPassword endpoint expects JSON body with UserDto
-        ResultActions action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/resetPassword")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(resetDto))
-                .with(csrf()))
-                .andExpect(status().isOk());
+        ResultActions action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/resetPassword").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(resetDto)).with(csrf())).andExpect(status().isOk());
 
         MockHttpServletResponse actual = action.andReturn().getResponse();
         Response expected = ApiTestData.resetPassword();
@@ -160,18 +151,14 @@ public class UserApiTest {
         ResultActions action;
         if (argumentsHolder.getStatus() == DataStatus.LOGGED) {
             // Perform request with authentication
-            action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/updateUser")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(argumentsHolder.getUserDto()))
-                    .with(csrf())
-                    .with(withDSUser(argumentsHolder.getUserDto().getEmail())))
-                    .andExpect(status().isOk());
+            action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/updateUser").contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(argumentsHolder.getUserDto())).with(csrf())
+                    .with(withDSUser(argumentsHolder.getUserDto().getEmail()))).andExpect(status().isOk());
         } else {
             // Perform request without authentication - should fail
-            action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/updateUser")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(argumentsHolder.getUserDto()))
-                    .with(csrf()))
+            action = mockMvc
+                    .perform(MockMvcRequestBuilders.post(URL + "/updateUser").contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(argumentsHolder.getUserDto())).with(csrf()))
                     .andExpect(status().isUnauthorized());
         }
 
@@ -192,11 +179,8 @@ public class UserApiTest {
             userRepository.save(user);
         }
         // Always perform with authentication for password update
-        ResultActions action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/updatePassword")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(argumentsHolder.getPasswordDto()))
-                .with(csrf())
-                .with(withDSUser(baseTestUser.getEmail())));
+        ResultActions action = mockMvc.perform(MockMvcRequestBuilders.post(URL + "/updatePassword").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(argumentsHolder.getPasswordDto())).with(csrf()).with(withDSUser(baseTestUser.getEmail())));
         if (argumentsHolder.getStatus() == DataStatus.VALID) {
             action.andExpect(status().isOk());
         } else {
@@ -223,13 +207,10 @@ public class UserApiTest {
         ResultActions action;
         if (argumentsHolder.getStatus() == DataStatus.LOGGED) {
             // Perform request with authentication
-            action = mockMvc.perform(delete(URL + "/deleteAccount")
-                    .with(csrf())
-                    .with(withDSUser(baseTestUser.getEmail())));
+            action = mockMvc.perform(delete(URL + "/deleteAccount").with(csrf()).with(withDSUser(baseTestUser.getEmail())));
         } else {
             // Perform request without authentication
-            action = mockMvc.perform(delete(URL + "/deleteAccount").with(csrf()))
-                    .andExpect(status().isUnauthorized());
+            action = mockMvc.perform(delete(URL + "/deleteAccount").with(csrf())).andExpect(status().isUnauthorized());
         }
 
         MockHttpServletResponse actual = action.andReturn().getResponse();
@@ -244,7 +225,7 @@ public class UserApiTest {
         }
         userService.authWithoutPassword(user);
     }
-    
+
     private org.springframework.test.web.servlet.request.RequestPostProcessor withDSUser(String email) {
         return request -> {
             User user = userRepository.findByEmail(email);
@@ -254,8 +235,7 @@ public class UserApiTest {
                     authorities.add(new SimpleGrantedAuthority(role.getName()));
                 }
                 DSUserDetails userDetails = new DSUserDetails(user, authorities);
-                UsernamePasswordAuthenticationToken authentication = 
-                    new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
                 SecurityContext context = SecurityContextHolder.createEmptyContext();
                 context.setAuthentication(authentication);
                 SecurityContextHolder.setContext(context);
