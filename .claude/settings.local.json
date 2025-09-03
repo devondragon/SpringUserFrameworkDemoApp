@@ -17,7 +17,8 @@
       "Bash(chmod:*)",
       "Bash(./fix-mockbean-deprecation.sh:*)",
       "mcp__zen__debug",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__zen__codereview"
     ],
     "deny": []
   }
