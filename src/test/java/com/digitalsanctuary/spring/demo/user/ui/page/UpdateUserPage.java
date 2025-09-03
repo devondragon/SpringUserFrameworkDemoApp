@@ -1,10 +1,10 @@
 package com.digitalsanctuary.spring.demo.user.ui.page;
 
-import com.codeborne.selenide.Condition;
+import static com.codeborne.selenide.Condition.appear;
+import static com.codeborne.selenide.Condition.cssClass;
+import static com.codeborne.selenide.Condition.visible;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
-
-import static com.codeborne.selenide.Condition.*;
 
 /**
  * Page object for update user profile page
@@ -35,7 +35,7 @@ public class UpdateUserPage {
         LAST_NAME_FIELD.clear();
         LAST_NAME_FIELD.setValue(lastName);
         UPDATE_BUTTON.click();
-        
+
         // Wait for success message to appear
         GLOBAL_MESSAGE.should(appear);
         return this;

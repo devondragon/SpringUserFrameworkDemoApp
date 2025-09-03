@@ -1,1 +1,41 @@
+spring:
+  thymeleaf:
+    cache: true # Enable Thymeleaf cache in production
+  jpa:
+    show-sql: false # Disable SQL logging in production
+    hibernate:
+      ddl-auto: validate # Only validate schema in production, don't auto-update
+  datasource:
+    # Production datasource configuration (should be overridden by environment variables)
+    url: ${DATABASE_URL:jdbc:mariadb://localhost:3306/springuser_prod?createDatabaseIfNotExist=false}
+    username: ${DATABASE_USERNAME:springuser}
+    password: ${DATABASE_PASSWORD:springuser}
 
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true # Force secure cookies in production
+        same-site: strict # Strict SameSite policy for production
+        http-only: true
+
+logging:
+  level:
+    root: WARN # Reduce log level in production
+    com.digitalsanctuary: INFO
+    org.springframework.security: WARN
+  file:
+    name: /opt/app/logs/user-app.log
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics # Limit exposed actuator endpoints in production
+  endpoint:
+    health:
+      show-details: never # Don't expose detailed health info in production
+
+user:
+  security:
+    disableCSRFdURIs: # No CSRF disabled URIs in production for better security

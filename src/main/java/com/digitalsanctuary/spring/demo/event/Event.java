@@ -2,11 +2,15 @@ package com.digitalsanctuary.spring.demo.event;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Objects;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.FutureOrPresent;
 import lombok.Data;
 
 @Data
@@ -17,10 +21,20 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Event name is required")
     private String name;
+    
+    @NotBlank(message = "Event description is required")
     private String description;
+    
+    @NotBlank(message = "Event location is required")
     private String location;
+    
+    @NotNull(message = "Event date is required")
+    @FutureOrPresent(message = "Event date must be today or in the future")
     private LocalDate date;
+    
+    @NotNull(message = "Event time is required")
     private LocalTime time;
 
     /**
@@ -35,7 +49,7 @@ public class Event {
         if (o == null || getClass() != o.getClass())
             return false;
         Event event = (Event) o;
-        return id.equals(event.id);
+        return Objects.equals(id, event.id);
     }
 
     /**
@@ -44,6 +58,6 @@ public class Event {
      * @return the hash code of the id of the Event object
      */
     public int hashCode() {
-        return id.hashCode();
+        return Objects.hashCode(id);
     }
 }
