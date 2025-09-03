@@ -1,7 +1,6 @@
 package com.digitalsanctuary.spring.demo.user.profile;
 
 import com.digitalsanctuary.spring.demo.event.Event;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,9 +19,9 @@ public class EventRegistration {
     private Long id;
 
     @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     private DemoUserProfile userProfile;
 
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne
     private Event event;
 }

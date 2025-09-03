@@ -52,7 +52,7 @@ public class EventControllerTest {
         event.setName("Concert");
         event.setDescription("Music concert");
         event.setLocation("Stadium");
-        event.setDate(LocalDate.parse("2023-12-01"));
+        event.setDate(LocalDate.now().plusDays(30));
         event.setTime(LocalTime.parse("18:00"));
     }
 

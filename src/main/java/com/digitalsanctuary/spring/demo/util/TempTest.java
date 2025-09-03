@@ -1,6 +1,7 @@
 package com.digitalsanctuary.spring.demo.util;
 
 import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import com.digitalsanctuary.spring.demo.user.profile.DemoUserProfileRepository;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Profile({"local", "dev"})
 public class TempTest {
 
     private final DemoUserProfileRepository demoUserProfileRepository;

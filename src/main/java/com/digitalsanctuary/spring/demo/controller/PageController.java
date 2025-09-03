@@ -17,7 +17,7 @@ public class PageController {
      */
     @GetMapping({"/", "/index.html"})
     public String index() {
-        log.info("PageController.index: called.");
+        log.debug("PageController.index: called.");
         return "index";
     }
 

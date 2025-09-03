@@ -1,16 +1,18 @@
 package com.digitalsanctuary.spring.demo.event;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class EventService {
 
-    @Autowired
-    private EventRepository eventRepository;
+    private final EventRepository eventRepository;
 
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
@@ -25,7 +27,7 @@ public class EventService {
     }
 
     public Event updateEvent(Long id, Event eventDetails) {
-        Event event = eventRepository.findById(id).orElseThrow(() -> new RuntimeException("Event not found"));
+        Event event = eventRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         event.setName(eventDetails.getName());
         event.setDescription(eventDetails.getDescription());
         event.setLocation(eventDetails.getLocation());

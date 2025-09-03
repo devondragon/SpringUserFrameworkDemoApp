@@ -15,7 +15,8 @@
       "mcp__zen__planner",
       "Bash(git add:*)",
       "Bash(chmod:*)",
-      "Bash(./fix-mockbean-deprecation.sh:*)"
+      "Bash(./fix-mockbean-deprecation.sh:*)",
+      "mcp__zen__debug"
     ],
     "deny": []
   }

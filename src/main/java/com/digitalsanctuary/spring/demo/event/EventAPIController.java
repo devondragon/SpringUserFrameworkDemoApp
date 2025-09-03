@@ -3,6 +3,7 @@ package com.digitalsanctuary.spring.demo.event;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import jakarta.validation.Valid;
 import com.digitalsanctuary.spring.demo.user.profile.DemoUserProfile;
 import com.digitalsanctuary.spring.demo.user.profile.DemoUserProfileService;
 import com.digitalsanctuary.spring.demo.user.profile.session.DemoSessionProfile;
@@ -38,19 +41,19 @@ public class EventAPIController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Event> getEventById(@PathVariable Long id) {
-        Event event = eventService.getEventById(id).orElseThrow(() -> new RuntimeException("Event not found"));
+        Event event = eventService.getEventById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         return ResponseEntity.ok(event);
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('CREATE_EVENT_PRIVILEGE')")
-    public Event createEvent(@RequestBody Event event) {
+    public Event createEvent(@Valid @RequestBody Event event) {
         return eventService.createEvent(event);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('UPDATE_EVENT_PRIVILEGE')")
-    public ResponseEntity<Event> updateEvent(@PathVariable Long id, @RequestBody Event eventDetails) {
+    public ResponseEntity<Event> updateEvent(@PathVariable Long id, @Valid @RequestBody Event eventDetails) {
         Event updatedEvent = eventService.updateEvent(id, eventDetails);
         return ResponseEntity.ok(updatedEvent);
     }

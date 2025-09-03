@@ -28,7 +28,7 @@ public class EventRepositoryTest {
         event.setName("Concert");
         event.setDescription("Music concert");
         event.setLocation("Stadium");
-        event.setDate(LocalDate.parse("2023-12-01"));
+        event.setDate(LocalDate.now().plusDays(30));
         event.setTime(LocalTime.parse("18:00"));
 
         Event savedEvent = eventRepository.save(event);
@@ -43,7 +43,7 @@ public class EventRepositoryTest {
         event.setName("Concert");
         event.setDescription("Music concert");
         event.setLocation("Stadium");
-        event.setDate(LocalDate.parse("2023-12-01"));
+        event.setDate(LocalDate.now().plusDays(30));
         event.setTime(LocalTime.parse("18:00"));
 
         Event savedEvent = eventRepository.save(event);
@@ -59,14 +59,14 @@ public class EventRepositoryTest {
         event1.setName("Concert");
         event1.setDescription("Music concert");
         event1.setLocation("Stadium");
-        event1.setDate(LocalDate.parse("2023-12-01"));
+        event1.setDate(LocalDate.now().plusDays(30));
         event1.setTime(LocalTime.parse("18:00"));
 
         Event event2 = new Event();
         event2.setName("Meetup");
         event2.setDescription("Tech meetup");
         event2.setLocation("Conference Hall");
-        event2.setDate(LocalDate.parse("2023-12-05"));
+        event2.setDate(LocalDate.now().plusDays(60));
         event2.setTime(LocalTime.parse("10:00"));
 
         eventRepository.save(event1);
