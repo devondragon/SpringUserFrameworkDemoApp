@@ -60,8 +60,12 @@ public class EventPageController {
             // Add registration flag for authenticated users
             DemoUserProfile profile = demoSessionProfile.getUserProfile();
             if (profile != null) {
-                boolean isRegistered = profile.isRegisteredForEvent(event);
-                model.addAttribute("isRegistered", isRegistered);
+                // Refresh profile to get latest registration status
+                profile = demoSessionProfile.refreshProfile();
+                if (profile != null) {
+                    boolean isRegistered = profile.isRegisteredForEvent(event);
+                    model.addAttribute("isRegistered", isRegistered);
+                }
             }
             return "/event/details";
 
@@ -94,7 +98,11 @@ public class EventPageController {
         DemoUserProfile profile = demoSessionProfile.getUserProfile();
         List<Event> myEvents = new ArrayList<>();
         if (profile != null) {
-            myEvents = profile.getEventRegistrations().stream().map(EventRegistration::getEvent).collect(Collectors.toList());
+            // Refresh the profile to ensure we have latest event registrations
+            profile = demoSessionProfile.refreshProfile();
+            if (profile != null) {
+                myEvents = profile.getEventRegistrations().stream().map(EventRegistration::getEvent).collect(Collectors.toList());
+            }
         }
         model.addAttribute("myEvents", myEvents);
         return "/event/my-events";

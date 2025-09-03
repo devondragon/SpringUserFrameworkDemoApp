@@ -74,18 +74,27 @@ public class EventAPIController {
     @PreAuthorize("hasAuthority('REGISTER_FOR_EVENT_PRIVILEGE')")
     @Transactional
     public ResponseEntity<Event> registerForEvent(@PathVariable Long eventId) {
+        // Validate event exists first
         Optional<Event> event = eventService.getEventById(eventId);
         if (event.isEmpty()) {
             log.info("Event not found with id: {}", eventId);
             return ResponseEntity.notFound().build();
         }
+        
+        // Get user profile from session
         DemoUserProfile userProfile = demoSessionProfile.getUserProfile();
-        if (userProfile == null) {
-            log.info("User not found in session");
+        if (userProfile == null || userProfile.getId() == null) {
+            log.info("User profile not found in session");
             return ResponseEntity.badRequest().build();
         }
-        demoUserProfileService.registerForEvent(userProfile, event.get());
-        log.info("User registered for event: {}", eventId);
+        
+        // Register using IDs to ensure managed entities
+        demoUserProfileService.registerForEvent(userProfile.getId(), eventId);
+        log.info("User {} registered for event: {}", userProfile.getId(), eventId);
+        
+        // Refresh the session profile to include the new registration
+        demoSessionProfile.refreshProfile();
+        
         return ResponseEntity.ok(event.get());
     }
 
@@ -98,19 +107,27 @@ public class EventAPIController {
     @PostMapping("/{eventId}/unregister")
     @PreAuthorize("hasAuthority('REGISTER_FOR_EVENT_PRIVILEGE')")
     public ResponseEntity<Event> unregisterFromEvent(@PathVariable Long eventId) {
+        // Validate event exists first
         Optional<Event> event = eventService.getEventById(eventId);
         if (event.isEmpty()) {
             log.info("Event not found with id: {}", eventId);
             return ResponseEntity.notFound().build();
         }
+        
+        // Get user profile from session
         DemoUserProfile userProfile = demoSessionProfile.getUserProfile();
-        if (userProfile == null) {
-            log.info("User not found in session");
+        if (userProfile == null || userProfile.getId() == null) {
+            log.info("User profile not found in session");
             return ResponseEntity.badRequest().build();
         }
 
-        demoUserProfileService.unregisterFromEvent(userProfile, event.get());
-        log.info("User unregistered from event: {}", eventId);
+        // Unregister using IDs to ensure managed entities
+        demoUserProfileService.unregisterFromEvent(userProfile.getId(), eventId);
+        log.info("User {} unregistered from event: {}", userProfile.getId(), eventId);
+        
+        // Refresh the session profile to reflect the unregistration
+        demoSessionProfile.refreshProfile();
+        
         return ResponseEntity.ok(event.get());
     }
 

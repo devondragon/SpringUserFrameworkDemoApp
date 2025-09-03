@@ -3,6 +3,7 @@ package com.digitalsanctuary.spring.demo.user.profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.digitalsanctuary.spring.demo.event.Event;
+import com.digitalsanctuary.spring.demo.event.EventRepository;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.profile.UserProfileService;
@@ -114,6 +115,7 @@ public class DemoUserProfileService implements UserProfileService<DemoUserProfil
 
     private final DemoUserProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final EventRepository eventRepository;
 
     /**
      * Retrieves an existing profile for the given user or creates a new one if none exists.
@@ -160,7 +162,43 @@ public class DemoUserProfileService implements UserProfileService<DemoUserProfil
     }
 
     /**
+     * Registers a user profile for a specific event using IDs to ensure entities are managed.
+     * 
+     * <p>
+     * This method loads the profile and event as managed entities within the transaction,
+     * avoiding issues with detached entities and cascade operations.
+     * 
+     * @param profileId the ID of the profile to register for the event
+     * @param eventId the ID of the event to register for
+     * @return the updated profile with the event registration
+     * @throws IllegalArgumentException if the profile or event is not found
+     */
+    @Transactional
+    public DemoUserProfile registerForEvent(Long profileId, Long eventId) {
+        // Load managed entities within the transaction
+        DemoUserProfile profile = profileRepository.findById(profileId)
+            .orElseThrow(() -> new IllegalArgumentException("Profile not found with id: " + profileId));
+        Event event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new IllegalArgumentException("Event not found with id: " + eventId));
+        
+        // Check if already registered
+        if (profile.isRegisteredForEvent(event)) {
+            log.info("Profile {} is already registered for event {}", profileId, eventId);
+            return profile;
+        }
+        
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(event);
+        profile.addEventRegistration(registration);
+        
+        // No explicit save needed - transaction will persist changes to managed entities
+        return profile;
+    }
+
+    /**
      * Registers the given profile for a specific event.
+     * 
+     * @deprecated Use {@link #registerForEvent(Long, Long)} instead to avoid issues with detached entities.
      *
      * <p>
      * This method demonstrates how to extend profile functionality with application-specific logic.
@@ -170,7 +208,8 @@ public class DemoUserProfileService implements UserProfileService<DemoUserProfil
      * @return the updated profile with the event registration
      * @throws IllegalArgumentException if the profile or event is null
      */
-    @Transactional // added to ensure the session remains active
+    @Deprecated
+    @Transactional
     public DemoUserProfile registerForEvent(DemoUserProfile profile, Event event) {
         if (profile == null) {
             throw new IllegalArgumentException("Profile must not be null");
@@ -178,15 +217,38 @@ public class DemoUserProfileService implements UserProfileService<DemoUserProfil
         if (event == null) {
             throw new IllegalArgumentException("Event must not be null");
         }
+        
+        // Delegate to the ID-based method to ensure we work with managed entities
+        return registerForEvent(profile.getId(), event.getId());
+    }
 
-        EventRegistration registration = new EventRegistration();
-        registration.setEvent(event);
-        profile.addEventRegistration(registration);
-        return profileRepository.save(profile);
+    /**
+     * Unregisters a user profile from a specific event using IDs to ensure entities are managed.
+     * 
+     * @param profileId the ID of the profile to unregister from the event
+     * @param eventId the ID of the event to unregister from
+     * @return the updated profile without the event registration
+     * @throws IllegalArgumentException if the profile or event is not found
+     */
+    @Transactional
+    public DemoUserProfile unregisterFromEvent(Long profileId, Long eventId) {
+        // Load managed entities within the transaction
+        DemoUserProfile profile = profileRepository.findById(profileId)
+            .orElseThrow(() -> new IllegalArgumentException("Profile not found with id: " + profileId));
+        Event event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new IllegalArgumentException("Event not found with id: " + eventId));
+        
+        profile.removeEventRegistration(event);
+        log.info("Unregistered profile {} from event {}", profileId, eventId);
+        
+        // No explicit save needed - transaction will persist changes to managed entities
+        return profile;
     }
 
     /**
      * Unregisters the given profile from a specific event.
+     * 
+     * @deprecated Use {@link #unregisterFromEvent(Long, Long)} instead to avoid issues with detached entities.
      *
      * <p>
      * This method demonstrates how to extend profile functionality with application-specific logic.
@@ -196,6 +258,7 @@ public class DemoUserProfileService implements UserProfileService<DemoUserProfil
      * @return the updated profile without the event registration
      * @throws IllegalArgumentException if the profile or event is null
      */
+    @Deprecated
     public DemoUserProfile unregisterFromEvent(DemoUserProfile profile, Event event) {
         if (profile == null) {
             throw new IllegalArgumentException("Profile must not be null");
@@ -203,8 +266,8 @@ public class DemoUserProfileService implements UserProfileService<DemoUserProfil
         if (event == null) {
             throw new IllegalArgumentException("Event must not be null");
         }
-        profile.removeEventRegistration(event);
-        log.info("Unregistered profile {} from event {}", profile.getId(), event.getId());
-        return profileRepository.save(profile);
+        
+        // Delegate to the ID-based method to ensure we work with managed entities
+        return unregisterFromEvent(profile.getId(), event.getId());
     }
 }
