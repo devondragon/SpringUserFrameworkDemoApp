@@ -35,9 +35,11 @@ repositories {
 	mavenCentral()
 }
 
+
+
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.3.1-SNAPSHOT'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.4.0-SNAPSHOT'
 
     // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -58,7 +60,7 @@ dependencies {
 
     // Runtime dependencies
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.4'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.5'
     runtimeOnly 'org.postgresql:postgresql'
 
     // Utility libraries
@@ -78,14 +80,14 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation group: 'com.codeborne', name: 'selenide', version: '7.9.4'
-    testImplementation group: 'io.github.bonigarcia', name: 'webdrivermanager', version: '6.1.1'
+    testImplementation 'com.codeborne:selenide:7.10.0'
+    testImplementation 'io.github.bonigarcia:webdrivermanager:6.3.1'
 
     // OAuth2 Testing dependencies
     testImplementation 'com.github.tomakehurst:wiremock-jre8-standalone:3.0.1'
-    testImplementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-    testRuntimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
-    testRuntimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+    testImplementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+    testRuntimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    testRuntimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
 }
 
 test {
