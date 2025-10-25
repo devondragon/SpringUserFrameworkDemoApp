@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.digitalsanctuary.spring.demo.UserDemoApplication;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.persistence.model.VerificationToken;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.VerificationTokenRepository;
 import com.digitalsanctuary.spring.user.service.UserService;
@@ -26,7 +27,8 @@ import com.digitalsanctuary.spring.user.service.UserVerificationService;
 /**
  * Simplified Email Verification Edge Cases Test
  *
- * Tests core email verification edge cases from TEST-IMPROVEMENT-PLAN.md: - Token expiry scenarios - Invalid token formats - Token security issues -
+ * Tests core email verification edge cases from TEST-IMPROVEMENT-PLAN.md: -
+ * Token expiry scenarios - Invalid token formats - Token security issues -
  * User-friendly error messages
  */
 @SpringBootTest(classes = UserDemoApplication.class)
@@ -45,6 +47,9 @@ class EmailVerificationEdgeCaseSimpleTest {
     @Autowired
     private UserVerificationService userVerificationService;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     private User testUser;
     private String testEmail;
 
@@ -52,6 +57,7 @@ class EmailVerificationEdgeCaseSimpleTest {
     void setUp() {
         // Clean up any existing data
         verificationTokenRepository.deleteAll();
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
 
         // Create test user using simple constructor approach
@@ -69,6 +75,7 @@ class EmailVerificationEdgeCaseSimpleTest {
     void cleanup() {
         try {
             verificationTokenRepository.deleteAll();
+            passwordHistoryRepository.deleteAll();
             userRepository.deleteAll();
         } catch (Exception e) {
             // Ignore cleanup errors
@@ -86,7 +93,8 @@ class EmailVerificationEdgeCaseSimpleTest {
         verificationTokenRepository.saveAndFlush(expiredToken);
 
         // Test service-level validation
-        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(expiredToken.getToken());
+        UserService.TokenValidationResult result = userVerificationService
+                .validateVerificationToken(expiredToken.getToken());
 
         assertThat(result).isEqualTo(UserService.TokenValidationResult.EXPIRED);
 
@@ -110,7 +118,8 @@ class EmailVerificationEdgeCaseSimpleTest {
         verificationTokenRepository.saveAndFlush(validToken);
 
         // Test service-level validation
-        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(validToken.getToken());
+        UserService.TokenValidationResult result = userVerificationService
+                .validateVerificationToken(validToken.getToken());
 
         assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
 
@@ -121,7 +130,7 @@ class EmailVerificationEdgeCaseSimpleTest {
     @Test
     @DisplayName("Invalid token should be rejected")
     void testInvalidTokenFormats() {
-        String[] invalidTokens = {UUID.randomUUID().toString(), // Valid format but non-existent
+        String[] invalidTokens = { UUID.randomUUID().toString(), // Valid format but non-existent
                 "", // Empty token
                 "invalid-token", // Invalid format
                 "not-a-uuid", // Not a UUID
@@ -131,7 +140,8 @@ class EmailVerificationEdgeCaseSimpleTest {
         for (String invalidToken : invalidTokens) {
             UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(invalidToken);
 
-            assertThat(result).as("Invalid token: " + invalidToken).isEqualTo(UserService.TokenValidationResult.INVALID_TOKEN);
+            assertThat(result).as("Invalid token: " + invalidToken)
+                    .isEqualTo(UserService.TokenValidationResult.INVALID_TOKEN);
         }
     }
 
@@ -145,7 +155,8 @@ class EmailVerificationEdgeCaseSimpleTest {
         nearExpiryToken.setExpiryDate(Date.from(Instant.now().plus(1, ChronoUnit.MINUTES)));
         verificationTokenRepository.saveAndFlush(nearExpiryToken);
 
-        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(nearExpiryToken.getToken());
+        UserService.TokenValidationResult result = userVerificationService
+                .validateVerificationToken(nearExpiryToken.getToken());
 
         assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
     }
@@ -160,7 +171,8 @@ class EmailVerificationEdgeCaseSimpleTest {
         justExpiredToken.setExpiryDate(Date.from(Instant.now().minus(1, ChronoUnit.SECONDS)));
         verificationTokenRepository.saveAndFlush(justExpiredToken);
 
-        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(justExpiredToken.getToken());
+        UserService.TokenValidationResult result = userVerificationService
+                .validateVerificationToken(justExpiredToken.getToken());
 
         assertThat(result).isEqualTo(UserService.TokenValidationResult.EXPIRED);
 
@@ -178,13 +190,15 @@ class EmailVerificationEdgeCaseSimpleTest {
         firstToken.setExpiryDate(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)));
         verificationTokenRepository.saveAndFlush(firstToken);
 
-        // Attempting to create second token for same user should fail due to unique constraint
+        // Attempting to create second token for same user should fail due to unique
+        // constraint
         VerificationToken secondToken = new VerificationToken();
         secondToken.setToken(UUID.randomUUID().toString());
         secondToken.setUser(testUser);
         secondToken.setExpiryDate(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)));
 
-        // This should throw DataIntegrityViolationException due to unique constraint on user_id
+        // This should throw DataIntegrityViolationException due to unique constraint on
+        // user_id
         try {
             verificationTokenRepository.saveAndFlush(secondToken);
             assertThat(false).as("Should have thrown DataIntegrityViolationException").isTrue();
@@ -193,7 +207,8 @@ class EmailVerificationEdgeCaseSimpleTest {
         }
 
         // Original token should still be valid
-        assertThat(userVerificationService.validateVerificationToken(firstToken.getToken())).isEqualTo(UserService.TokenValidationResult.VALID);
+        assertThat(userVerificationService.validateVerificationToken(firstToken.getToken()))
+                .isEqualTo(UserService.TokenValidationResult.VALID);
 
         // This demonstrates the business rule: only one verification token per user
     }
@@ -219,7 +234,8 @@ class EmailVerificationEdgeCaseSimpleTest {
         verificationTokenRepository.saveAndFlush(otherUserToken);
 
         // Token should be valid (it exists and isn't expired)
-        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(otherUserToken.getToken());
+        UserService.TokenValidationResult result = userVerificationService
+                .validateVerificationToken(otherUserToken.getToken());
         assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
 
         // But it should be associated with the correct user
@@ -232,7 +248,7 @@ class EmailVerificationEdgeCaseSimpleTest {
     @Test
     @DisplayName("Service validates error messages appropriately")
     void testServiceValidationErrorHandling() {
-        String[] errorScenarios = {UUID.randomUUID().toString(), // Non-existent token
+        String[] errorScenarios = { UUID.randomUUID().toString(), // Non-existent token
                 "invalid-format", // Invalid format
                 "", // Empty token
                 null // Null token
@@ -242,7 +258,8 @@ class EmailVerificationEdgeCaseSimpleTest {
             UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(token);
 
             // All invalid scenarios should return INVALID_TOKEN
-            assertThat(result).as("Error scenario: " + token).isEqualTo(UserService.TokenValidationResult.INVALID_TOKEN);
+            assertThat(result).as("Error scenario: " + token)
+                    .isEqualTo(UserService.TokenValidationResult.INVALID_TOKEN);
         }
     }
 
@@ -257,7 +274,8 @@ class EmailVerificationEdgeCaseSimpleTest {
         verificationTokenRepository.saveAndFlush(validToken);
 
         // Validate token
-        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(validToken.getToken());
+        UserService.TokenValidationResult result = userVerificationService
+                .validateVerificationToken(validToken.getToken());
         assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
 
         // Get user from token

@@ -4,6 +4,12 @@ export function showError(container, message) {
     container.classList.remove("d-none");
 }
 
+export function showHtmlError(container, htmlMessage) {
+    if (!container) return;
+    container.innerHTML = htmlMessage;
+    container.classList.remove("d-none");
+}
+
 export function hideError(container) {
     if (!container) return;
     container.textContent = "";

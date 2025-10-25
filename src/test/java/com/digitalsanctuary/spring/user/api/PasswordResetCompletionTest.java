@@ -23,6 +23,7 @@ import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.mail.MailService;
 import com.digitalsanctuary.spring.user.persistence.model.PasswordResetToken;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.PasswordResetTokenRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.service.UserService;
@@ -31,7 +32,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 /**
- * Tests for password reset completion flow. This tests the actual password change after user clicks the reset link.
+ * Tests for password reset completion flow. This tests the actual password
+ * change after user clicks the reset link.
  */
 @SpringBootTest(classes = UserDemoApplication.class)
 @AutoConfigureMockMvc
@@ -62,6 +64,9 @@ class PasswordResetCompletionTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     @MockitoBean
     private MailService mailService;
 
@@ -75,6 +80,7 @@ class PasswordResetCompletionTest {
     void setUp() {
         // Clean up
         tokenRepository.deleteAll();
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
 
         // Create test user
@@ -86,7 +92,8 @@ class PasswordResetCompletionTest {
         userDto.setMatchingPassword("OldPassword123!");
         testUser = userService.registerNewUserAccount(userDto);
         // Enable user directly in database to avoid immutable collection issue
-        entityManager.createNativeQuery("UPDATE user_account SET enabled = true WHERE email = :email").setParameter("email", "resetuser@example.com")
+        entityManager.createNativeQuery("UPDATE user_account SET enabled = true WHERE email = :email")
+                .setParameter("email", "resetuser@example.com")
                 .executeUpdate();
         entityManager.flush();
         testUser = userRepository.findByEmail("resetuser@example.com");
@@ -107,9 +114,12 @@ class PasswordResetCompletionTest {
         tokenRepository.save(resetToken);
 
         // When - Submit new password with token
-        // Note: The actual endpoint might be different - checking if it's a form submission
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
-                .param("matchingPassword", "NewPassword123!").with(csrf())).andExpect(status().is3xxRedirection()); // Might redirect after success
+        // Note: The actual endpoint might be different - checking if it's a form
+        // submission
+        mockMvc.perform(
+                post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
+                        .param("matchingPassword", "NewPassword123!").with(csrf()))
+                .andExpect(status().is3xxRedirection()); // Might redirect after success
 
         // Then - Verify password was changed
         User updatedUser = userRepository.findByEmail("resetuser@example.com");
@@ -133,8 +143,10 @@ class PasswordResetCompletionTest {
         tokenRepository.save(expiredToken);
 
         // When - Try to reset with expired token
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", expiredToken.getToken()).param("password", "NewPassword123!")
-                .param("matchingPassword", "NewPassword123!").with(csrf())).andExpect(status().is4xxClientError()); // Should reject
+        mockMvc.perform(
+                post(SAVE_PASSWORD_URL).param("token", expiredToken.getToken()).param("password", "NewPassword123!")
+                        .param("matchingPassword", "NewPassword123!").with(csrf()))
+                .andExpect(status().is4xxClientError()); // Should reject
 
         // Then - Password should not be changed
         User unchangedUser = userRepository.findByEmail("resetuser@example.com");
@@ -145,8 +157,10 @@ class PasswordResetCompletionTest {
     @DisplayName("Should reject password reset with invalid token")
     void shouldRejectPasswordResetWithInvalidToken() throws Exception {
         // When - Try to reset with non-existent token
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", "invalid-token-12345").param("password", "NewPassword123!")
-                .param("matchingPassword", "NewPassword123!").with(csrf())).andExpect(status().is4xxClientError());
+        mockMvc.perform(
+                post(SAVE_PASSWORD_URL).param("token", "invalid-token-12345").param("password", "NewPassword123!")
+                        .param("matchingPassword", "NewPassword123!").with(csrf()))
+                .andExpect(status().is4xxClientError());
 
         // Then - Password should not be changed
         User unchangedUser = userRepository.findByEmail("resetuser@example.com");
@@ -166,8 +180,10 @@ class PasswordResetCompletionTest {
         tokenRepository.save(resetToken);
 
         // When - Submit mismatched passwords
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
-                .param("matchingPassword", "DifferentPassword123!").with(csrf())).andExpect(status().is4xxClientError());
+        mockMvc.perform(
+                post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
+                        .param("matchingPassword", "DifferentPassword123!").with(csrf()))
+                .andExpect(status().is4xxClientError());
 
         // Then - Password should not be changed
         User unchangedUser = userRepository.findByEmail("resetuser@example.com");
@@ -187,7 +203,8 @@ class PasswordResetCompletionTest {
         tokenRepository.save(resetToken);
 
         // When - Submit weak password
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "weak").param("matchingPassword", "weak")
+        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "weak")
+                .param("matchingPassword", "weak")
                 .with(csrf())).andExpect(status().is4xxClientError());
 
         // Then - Password should not be changed
@@ -208,15 +225,19 @@ class PasswordResetCompletionTest {
         tokenRepository.save(resetToken);
 
         // First use - should succeed
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
-                .param("matchingPassword", "NewPassword123!").with(csrf())).andExpect(result -> {
+        mockMvc.perform(
+                post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
+                        .param("matchingPassword", "NewPassword123!").with(csrf()))
+                .andExpect(result -> {
                     int status = result.getResponse().getStatus();
                     assertThat(status == 200 || (status >= 300 && status < 400)).isTrue();
                 });
 
         // Second use - should fail
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "AnotherPassword123!")
-                .param("matchingPassword", "AnotherPassword123!").with(csrf())).andExpect(status().is4xxClientError());
+        mockMvc.perform(
+                post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "AnotherPassword123!")
+                        .param("matchingPassword", "AnotherPassword123!").with(csrf()))
+                .andExpect(status().is4xxClientError());
 
         // Password should remain as first change
         User user = userRepository.findByEmail("resetuser@example.com");
@@ -237,8 +258,9 @@ class PasswordResetCompletionTest {
         tokenRepository.save(resetToken);
 
         // When - Reset password
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
-                .param("matchingPassword", "NewPassword123!").with(csrf()));
+        mockMvc.perform(
+                post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
+                        .param("matchingPassword", "NewPassword123!").with(csrf()));
 
         // Then - Verify old password doesn't work
         User updatedUser = userRepository.findByEmail("resetuser@example.com");
@@ -250,7 +272,8 @@ class PasswordResetCompletionTest {
     @DisplayName("Should handle password reset for disabled account")
     void shouldHandlePasswordResetForDisabledAccount() throws Exception {
         // Given - Disable the account directly in database
-        entityManager.createNativeQuery("UPDATE user_account SET enabled = false WHERE email = :email").setParameter("email", "resetuser@example.com")
+        entityManager.createNativeQuery("UPDATE user_account SET enabled = false WHERE email = :email")
+                .setParameter("email", "resetuser@example.com")
                 .executeUpdate();
         entityManager.flush();
 
@@ -264,8 +287,9 @@ class PasswordResetCompletionTest {
         tokenRepository.save(resetToken);
 
         // When - Try to reset password
-        mockMvc.perform(post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
-                .param("matchingPassword", "NewPassword123!").with(csrf()));
+        mockMvc.perform(
+                post(SAVE_PASSWORD_URL).param("token", resetToken.getToken()).param("password", "NewPassword123!")
+                        .param("matchingPassword", "NewPassword123!").with(csrf()));
 
         // Then - This might succeed (allowing disabled users to reset) or fail
         // The behavior depends on the library implementation

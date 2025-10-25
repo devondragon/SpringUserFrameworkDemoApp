@@ -39,7 +39,9 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.4.1'
+    // implementation 'com.digitalsanctuary:ds-spring-user-framework:3.4.1' // new
+    // implementation 'com.digitalsanctuary:ds-spring-user-framework:3.2.2' // old
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.2.3-SNAPSHOT'
 
     // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

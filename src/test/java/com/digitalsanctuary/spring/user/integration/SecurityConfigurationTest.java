@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
@@ -29,7 +30,8 @@ import com.digitalsanctuary.spring.user.test.builders.UserTestDataBuilder;
 /**
  * Security configuration tests.
  *
- * This test class verifies the Spring Security configuration including: - Authentication mechanisms - Authorization rules - Protected/unprotected
+ * This test class verifies the Spring Security configuration including: -
+ * Authentication mechanisms - Authorization rules - Protected/unprotected
  * URIs - Login/logout behavior
  */
 @IntegrationTest
@@ -46,6 +48,9 @@ class SecurityConfigurationTest {
         @Autowired
         private RoleRepository roleRepository;
 
+        @Autowired
+        private PasswordHistoryRepository passwordHistoryRepository;
+
         @Value("${user.security.loginActionURI}")
         private String loginActionURI;
 
@@ -60,6 +65,7 @@ class SecurityConfigurationTest {
         @Transactional
         void setUp() {
                 // Clean up
+                passwordHistoryRepository.deleteAll();
                 userRepository.deleteAll();
                 roleRepository.deleteAll();
 
@@ -68,7 +74,8 @@ class SecurityConfigurationTest {
                 userRole = roleRepository.save(userRole);
 
                 // Create verified user
-                testUser = UserTestDataBuilder.aVerifiedUser().withEmail(TEST_EMAIL).withPassword(TEST_PASSWORD).withId(null).build();
+                testUser = UserTestDataBuilder.aVerifiedUser().withEmail(TEST_EMAIL).withPassword(TEST_PASSWORD)
+                                .withId(null).build();
                 testUser.setRoles(new ArrayList<>(Arrays.asList(userRole)));
                 testUser = userRepository.save(testUser);
         }
@@ -83,13 +90,15 @@ class SecurityConfigurationTest {
         @Test
         @DisplayName("Should reject authentication with invalid credentials")
         void formLogin_invalidCredentials_rejectsAuthentication() throws Exception {
-                mockMvc.perform(formLogin(loginActionURI).user("username", TEST_EMAIL).password("wrongpassword")).andExpect(unauthenticated());
+                mockMvc.perform(formLogin(loginActionURI).user("username", TEST_EMAIL).password("wrongpassword"))
+                                .andExpect(unauthenticated());
         }
 
         @Test
         @DisplayName("Should reject authentication for non-existent user")
         void formLogin_nonExistentUser_rejectsAuthentication() throws Exception {
-                mockMvc.perform(formLogin(loginActionURI).user("username", "nonexistent@test.com").password("anypassword"))
+                mockMvc.perform(formLogin(loginActionURI).user("username", "nonexistent@test.com")
+                                .password("anypassword"))
                                 .andExpect(unauthenticated());
         }
 
@@ -97,13 +106,15 @@ class SecurityConfigurationTest {
         @DisplayName("Should reject authentication for unverified user")
         void formLogin_unverifiedUser_rejectsAuthentication() throws Exception {
                 // Create unverified user
-                User unverifiedUser = UserTestDataBuilder.anUnverifiedUser().withEmail("unverified@test.com").withPassword(TEST_PASSWORD).withId(null)
+                User unverifiedUser = UserTestDataBuilder.anUnverifiedUser().withEmail("unverified@test.com")
+                                .withPassword(TEST_PASSWORD).withId(null)
                                 .build();
                 Role role = roleRepository.findAll().get(0);
                 unverifiedUser.setRoles(new ArrayList<>(Arrays.asList(role)));
                 userRepository.save(unverifiedUser);
 
-                mockMvc.perform(formLogin(loginActionURI).user("username", "unverified@test.com").password(TEST_PASSWORD))
+                mockMvc.perform(formLogin(loginActionURI).user("username", "unverified@test.com")
+                                .password(TEST_PASSWORD))
                                 .andExpect(unauthenticated());
         }
 
@@ -111,13 +122,15 @@ class SecurityConfigurationTest {
         @DisplayName("Should reject authentication for locked user")
         void formLogin_lockedUser_rejectsAuthentication() throws Exception {
                 // Create locked user
-                User lockedUser = UserTestDataBuilder.aLockedUser().withEmail("locked@test.com").withPassword(TEST_PASSWORD).verified().withId(null)
+                User lockedUser = UserTestDataBuilder.aLockedUser().withEmail("locked@test.com")
+                                .withPassword(TEST_PASSWORD).verified().withId(null)
                                 .build();
                 Role role = roleRepository.findAll().get(0);
                 lockedUser.setRoles(new ArrayList<>(Arrays.asList(role)));
                 userRepository.save(lockedUser);
 
-                mockMvc.perform(formLogin(loginActionURI).user("username", "locked@test.com").password(TEST_PASSWORD)).andExpect(unauthenticated());
+                mockMvc.perform(formLogin(loginActionURI).user("username", "locked@test.com").password(TEST_PASSWORD))
+                                .andExpect(unauthenticated());
         }
 
         @Test
@@ -130,11 +143,12 @@ class SecurityConfigurationTest {
         @Test
         @DisplayName("Should protect user update endpoints")
         void accessProtectedEndpoint_unauthenticated_redirectsToLogin() throws Exception {
-                mockMvc.perform(get("/user/update-user.html")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/login**"));
+                mockMvc.perform(get("/user/update-user.html")).andExpect(status().is3xxRedirection())
+                                .andExpect(redirectedUrlPattern("**/login**"));
         }
 
         @Test
-        @WithMockUser(username = "security@test.com", roles = {"USER"})
+        @WithMockUser(username = "security@test.com", roles = { "USER" })
         @DisplayName("Should allow authenticated user to access protected endpoints")
         @Disabled("Protected endpoint /protected.html returns 404 - endpoint may not exist. See TEST-ANALYSIS.md")
         void accessProtectedEndpoint_authenticated_allowsAccess() throws Exception {
@@ -152,19 +166,22 @@ class SecurityConfigurationTest {
         @DisplayName("Should handle case-sensitive email login")
         void formLogin_differentCaseEmail_failsAuthentication() throws Exception {
                 // The implementation is case-sensitive, so uppercase email should fail
-                mockMvc.perform(formLogin(loginActionURI).user("username", TEST_EMAIL.toUpperCase()).password(TEST_PASSWORD))
+                mockMvc.perform(formLogin(loginActionURI).user("username", TEST_EMAIL.toUpperCase())
+                                .password(TEST_PASSWORD))
                                 .andExpect(unauthenticated());
         }
 
         @Test
         @DisplayName("Should reject empty credentials")
         void formLogin_emptyCredentials_rejectsAuthentication() throws Exception {
-                mockMvc.perform(formLogin(loginActionURI).user("username", "").password("")).andExpect(unauthenticated());
+                mockMvc.perform(formLogin(loginActionURI).user("username", "").password(""))
+                                .andExpect(unauthenticated());
         }
 
         @Test
         @DisplayName("Should reject null password")
         void formLogin_nullPassword_rejectsAuthentication() throws Exception {
-                mockMvc.perform(formLogin(loginActionURI).user("username", TEST_EMAIL).password(null)).andExpect(unauthenticated());
+                mockMvc.perform(formLogin(loginActionURI).user("username", TEST_EMAIL).password(null))
+                                .andExpect(unauthenticated());
         }
 }

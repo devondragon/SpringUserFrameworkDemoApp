@@ -38,6 +38,7 @@ import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.mail.MailService;
 import com.digitalsanctuary.spring.user.persistence.model.PasswordResetToken;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.PasswordResetTokenRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.service.UserEmailService;
@@ -49,7 +50,8 @@ import jakarta.persistence.PersistenceContext;
 /**
  * Comprehensive test suite for password reset API endpoints.
  *
- * Tests cover: 1. Password reset initiation 2. Token validation and expiry 3. Password reset completion 4. Security considerations
+ * Tests cover: 1. Password reset initiation 2. Token validation and expiry 3.
+ * Password reset completion 4. Security considerations
  */
 @SpringBootTest(classes = UserDemoApplication.class)
 @AutoConfigureMockMvc
@@ -77,6 +79,9 @@ class PasswordResetApiTest {
     @Autowired
     private PasswordResetTokenRepository tokenRepository;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     @MockitoBean
     private MailService mailService;
 
@@ -92,6 +97,7 @@ class PasswordResetApiTest {
     void setUp() {
         // Clean up
         tokenRepository.deleteAll();
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
 
         // Create test user
@@ -103,7 +109,8 @@ class PasswordResetApiTest {
         userDto.setMatchingPassword("OldPassword123!");
         testUser = userService.registerNewUserAccount(userDto);
         // Enable user directly in database to avoid immutable collection issue
-        entityManager.createNativeQuery("UPDATE user_account SET enabled = true WHERE email = :email").setParameter("email", "test@example.com")
+        entityManager.createNativeQuery("UPDATE user_account SET enabled = true WHERE email = :email")
+                .setParameter("email", "test@example.com")
                 .executeUpdate();
         entityManager.flush();
         testUser = userRepository.findByEmail("test@example.com");
@@ -120,7 +127,8 @@ class PasswordResetApiTest {
 
         // When
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.messages[0]").value("If account exists, password reset email has been sent!"))
                 .andExpect(jsonPath("$.redirectUrl").value("/user/forgot-password-pending-verification.html"));
@@ -144,10 +152,12 @@ class PasswordResetApiTest {
 
         // When
         MvcResult result = mockMvc
-                .perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest))
+                .perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest))
                         .with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.messages[0]").value("If account exists, password reset email has been sent!")).andReturn();
+                .andExpect(jsonPath("$.messages[0]").value("If account exists, password reset email has been sent!"))
+                .andReturn();
 
         // Then - Verify email service was NOT called
         verify(userEmailService, never()).sendForgotPasswordVerificationEmail(any(User.class), anyString());
@@ -165,12 +175,14 @@ class PasswordResetApiTest {
 
         // First request
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().isOk());
 
         // Second request
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().isOk());
 
         // Verify email service was called twice
@@ -298,7 +310,8 @@ class PasswordResetApiTest {
         resetRequest.setEmail("test@example.com");
 
         // Without CSRF token
-        mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)))
+        mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(resetRequest)))
                 .andExpect(status().isForbidden());
     }
 
@@ -313,18 +326,21 @@ class PasswordResetApiTest {
 
         // Measure time for valid email
         long startValid = System.currentTimeMillis();
-        mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(validEmailRequest))
+        mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validEmailRequest))
                 .with(csrf())).andExpect(status().isOk());
         long timeValid = System.currentTimeMillis() - startValid;
 
         // Measure time for invalid email
         long startInvalid = System.currentTimeMillis();
-        mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(invalidEmailRequest))
+        mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidEmailRequest))
                 .with(csrf())).andExpect(status().isOk());
         long timeInvalid = System.currentTimeMillis() - startInvalid;
 
         // Times should be reasonably similar (within 100ms)
-        // This is a basic check - in production you'd want more sophisticated timing attack prevention
+        // This is a basic check - in production you'd want more sophisticated timing
+        // attack prevention
         assertThat(Math.abs(timeValid - timeInvalid)).isLessThan(100);
     }
 
@@ -335,7 +351,8 @@ class PasswordResetApiTest {
         // email is null
 
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().is4xxClientError());
     }
 
@@ -346,7 +363,8 @@ class PasswordResetApiTest {
         resetRequest.setEmail("not-an-email");
 
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().is4xxClientError());
     }
 
@@ -372,7 +390,8 @@ class PasswordResetApiTest {
         resetRequest.setEmail("test@example.com");
 
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().isOk());
 
         // Then - Old tokens might be cleaned up (implementation dependent)

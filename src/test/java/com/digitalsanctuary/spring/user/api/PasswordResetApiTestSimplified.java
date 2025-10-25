@@ -27,13 +27,15 @@ import com.digitalsanctuary.spring.demo.UserDemoApplication;
 import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.mail.MailService;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.service.UserEmailService;
 import com.digitalsanctuary.spring.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Simplified password reset API tests focusing on API behavior rather than internal implementation details.
+ * Simplified password reset API tests focusing on API behavior rather than
+ * internal implementation details.
  */
 @SpringBootTest(classes = UserDemoApplication.class)
 @AutoConfigureMockMvc
@@ -57,6 +59,9 @@ class PasswordResetApiTestSimplified {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     @MockitoBean
     private MailService mailService;
 
@@ -66,6 +71,7 @@ class PasswordResetApiTestSimplified {
     @BeforeEach
     void setUp() {
         // Clean up
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
 
         // Create test user
@@ -87,7 +93,8 @@ class PasswordResetApiTestSimplified {
 
         // When
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.messages[0]").value("If account exists, password reset email has been sent!"))
                 .andExpect(jsonPath("$.redirectUrl").value("/user/forgot-password-pending-verification.html"));
@@ -105,7 +112,8 @@ class PasswordResetApiTestSimplified {
 
         // When
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.messages[0]").value("If account exists, password reset email has been sent!"));
 
@@ -120,7 +128,8 @@ class PasswordResetApiTestSimplified {
         resetRequest.setEmail("test@example.com");
 
         // Without CSRF token
-        mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)))
+        mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(resetRequest)))
                 .andExpect(status().isForbidden());
     }
 
@@ -132,12 +141,14 @@ class PasswordResetApiTestSimplified {
 
         // First request
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().isOk());
 
         // Second request
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().isOk());
 
         // Verify email service was called twice
@@ -152,14 +163,16 @@ class PasswordResetApiTestSimplified {
         validEmailRequest.setEmail("test@example.com");
 
         MvcResult validResult = mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(validEmailRequest)).with(csrf())).andExpect(status().isOk()).andReturn();
+                .content(objectMapper.writeValueAsString(validEmailRequest)).with(csrf())).andExpect(status().isOk())
+                .andReturn();
 
         // Response for invalid email
         UserDto invalidEmailRequest = new UserDto();
         invalidEmailRequest.setEmail("doesnotexist@example.com");
 
         MvcResult invalidResult = mockMvc.perform(post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidEmailRequest)).with(csrf())).andExpect(status().isOk()).andReturn();
+                .content(objectMapper.writeValueAsString(invalidEmailRequest)).with(csrf())).andExpect(status().isOk())
+                .andReturn();
 
         // Compare responses - they should be identical
         String validResponse = validResult.getResponse().getContentAsString();
@@ -174,7 +187,8 @@ class PasswordResetApiTestSimplified {
         resetRequest.setEmail("not-an-email");
 
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().is4xxClientError());
     }
 
@@ -185,7 +199,8 @@ class PasswordResetApiTestSimplified {
         // email is null
 
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().is4xxClientError());
     }
 
@@ -196,7 +211,8 @@ class PasswordResetApiTestSimplified {
         resetRequest.setEmail("");
 
         mockMvc.perform(
-                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
+                post(RESET_PASSWORD_URL).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetRequest)).with(csrf()))
                 .andExpect(status().is4xxClientError());
     }
 }

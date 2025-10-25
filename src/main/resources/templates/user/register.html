@@ -21,17 +21,20 @@
 							<div class="card-body">
 								<!-- Social Registration Buttons -->
 								<div th:if="${facebookEnabled}" class="mb-3">
-									<a class="btn btn-outline-primary w-100 mb-2" th:href="@{/oauth2/authorization/facebook}">
+									<a class="btn btn-outline-primary w-100 mb-2"
+										th:href="@{/oauth2/authorization/facebook}">
 										<i class="bi bi-facebook me-2"></i> Register with Facebook
 									</a>
 								</div>
 								<div th:if="${googleEnabled}" class="mb-3">
-									<a class="btn btn-outline-danger w-100 mb-2" th:href="@{/oauth2/authorization/google}">
+									<a class="btn btn-outline-danger w-100 mb-2"
+										th:href="@{/oauth2/authorization/google}">
 										<i class="bi bi-google me-2"></i> Register with Google
 									</a>
 								</div>
 								<div th:if="${keycloakEnabled}" class="mb-3">
-									<a class="btn btn-outline-danger w-100 mb-2" th:href="@{/oauth2/authorization/keycloak}">
+									<a class="btn btn-outline-danger w-100 mb-2"
+										th:href="@{/oauth2/authorization/keycloak}">
 										<i class="bi bi-code-square me-2"></i> Register with Keycloak
 									</a>
 								</div>
@@ -39,7 +42,8 @@
 
 								<!-- Error Message -->
 								<div id="globalError" class="alert alert-danger d-none text-center" role="alert"></div>
-								<div id="existingAccountError" th:if="${param.error}" class="alert alert-danger text-center" role="alert">
+								<div id="existingAccountError" th:if="${param.error}"
+									class="alert alert-danger text-center" role="alert">
 									<p><strong th:utext="#{registration.error.already-exists}"></strong></p>
 									<p
 										th:utext="#{registration.error.already-exists-options(${@environment.getProperty('user.security.loginPageURI')}, ${@environment.getProperty('user.security.forgotPasswordURI')})}">
@@ -50,26 +54,29 @@
 								<form th:action="@{/user/registration}" id="registerForm" method="POST">
 									<!-- First Name -->
 									<div class="row mb-3 align-items-center">
-										<label for="firstName" class="col-sm-4 col-form-label" th:utext="#{label.user.first-name}">First Name</label>
+										<label for="firstName" class="col-sm-4 col-form-label"
+											th:utext="#{label.user.first-name}">First Name</label>
 										<div class="col-sm-8">
-											<input type="text" id="firstName" name="firstName" class="form-control" required
-												th:placeholder="#{label.user.first-name}">
+											<input type="text" id="firstName" name="firstName" class="form-control"
+												required th:placeholder="#{label.user.first-name}">
 											<span id="firstNameError" class="form-text text-danger d-none"></span>
 										</div>
 									</div>
 
 									<!-- Last Name -->
 									<div class="row mb-3 align-items-center">
-										<label for="lastName" class="col-sm-4 col-form-label" th:utext="#{label.user.last-name}">Last Name</label>
+										<label for="lastName" class="col-sm-4 col-form-label"
+											th:utext="#{label.user.last-name}">Last Name</label>
 										<div class="col-sm-8">
-											<input type="text" id="lastName" name="lastName" class="form-control" required
-												th:placeholder="#{label.user.last-name}">
+											<input type="text" id="lastName" name="lastName" class="form-control"
+												required th:placeholder="#{label.user.last-name}">
 										</div>
 									</div>
 
 									<!-- Email -->
 									<div class="row mb-3 align-items-center">
-										<label for="email" class="col-sm-4 col-form-label" th:utext="#{label.user.email}">Email</label>
+										<label for="email" class="col-sm-4 col-form-label"
+											th:utext="#{label.user.email}">Email</label>
 										<div class="col-sm-8">
 											<input type="email" id="email" name="email" class="form-control" required
 												th:placeholder="#{label.user.email}">
@@ -78,19 +85,47 @@
 
 									<!-- Password -->
 									<div class="row mb-3 align-items-center">
-										<label for="password" class="col-sm-4 col-form-label" th:utext="#{label.user.password}">Password</label>
+										<label for="password" class="col-sm-4 col-form-label"
+											th:utext="#{label.user.password}">Password</label>
 										<div class="col-sm-8">
-											<input type="password" id="password" name="password" class="form-control" required
-												th:placeholder="#{label.user.password}">
+											<input type="password" id="password" name="password" class="form-control"
+												required th:placeholder="#{label.user.password}">
+											<!-- Password Strength display -->
+											<div id="password-strength" class="mt-1 d-none">
+												<div id="strengthBar" class="progress">
+													<div id="strengthLevel" class="progress-bar" role="progressbar"
+														style="width: 0%;"></div>
+												</div>
+												<small id="strengthLabel" class="text-muted">Password strength: </small>
+											</div>
+											<!-- Password requirements displayed here -->
+											<div id="password-requirements" class="form-text text-muted mt-1 d-none"
+												style="font-size: 0.875rem;">
+												<strong>Password must:</strong>
+												<ul class="mb-0 ps-3">
+													<li>Be at least <strong>8</strong> characters</li>
+													<li>Include at least <strong>1 uppercase</strong> letter (A–Z)</li>
+													<li>Include at least <strong>1 lowercase</strong> letter (a–z)</li>
+													<li>Include at least <strong>1 digit</strong> (0–9)</li>
+													<li>Include at least <strong>1 special character</strong>:
+														<!-- <code>~`!@#$%^&*()_-+={}[]|\:;"&lt;&gt;,.?/</code></li> -->
+													<li>Not be a <strong>common</strong> or easily guessed password</li>
+													<!-- <li>Be different from your last <strong>3</strong> passwords</li> -->
+													<li>Not be too similar to email</li>
+												</ul>
+											</div>
+											<span id="passwordError" class="form-text text-danger d-none"></span>
 										</div>
 									</div>
 
 									<!-- Confirm Password -->
 									<div class="row mb-3 align-items-center">
-										<label for="matchPassword" class="col-sm-4 col-form-label" th:utext="#{label.user.confirm-pass}">Confirm
+										<label for="matchPassword" class="col-sm-4 col-form-label"
+											th:utext="#{label.user.confirm-pass}">Confirm
 											Password</label>
 										<div class="col-sm-8">
-											<input type="password" id="matchPassword" name="matchingPassword" class="form-control" required
+											<input type="password" id="matchPassword" name="matchingPassword"
+												class="form-control" required
 												th:placeholder="#{label.user.confirm-pass}">
 										</div>
 									</div>
@@ -99,13 +134,15 @@
 									<div class="form-check mb-4 text-center">
 										<input class="form-check-input" type="checkbox" id="terms" unchecked>
 										<label class="form-check-label" for="terms">
-											I agree to the <a href="/terms" class="text-decoration-none">Terms and Conditions</a>
+											I agree to the <a href="/terms" class="text-decoration-none">Terms and
+												Conditions</a>
 										</label>
 									</div>
 
 									<!-- Submit Button -->
 									<div class="d-grid">
-										<button type="submit" id="signUpButton" th:utext="#{label.form.login-signup}" class="btn btn-primary">
+										<button type="submit" id="signUpButton" th:utext="#{label.form.login-signup}"
+											class="btn btn-primary">
 											Sign Up
 										</button>
 									</div>
@@ -114,7 +151,8 @@
 								<!-- Links -->
 								<p class="mt-3 mb-0 text-center">
 									Already have an account?
-									<a th:href="${@environment.getProperty('user.security.loginPageURI')}" class="text-decoration-none">
+									<a th:href="${@environment.getProperty('user.security.loginPageURI')}"
+										class="text-decoration-none">
 										Login
 									</a>
 								</p>
