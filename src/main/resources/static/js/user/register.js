@@ -111,8 +111,15 @@ async function handleRegistration(event) {
 
         if (response.ok && data.success) {
             window.location.href = data.redirectUrl;
+        } else if (data.errors && data.errors.password) {
+            // Show password-specific errors from validation
+            const passwordError = document.querySelector("#passwordError");
+            console.log("Password validation error: ", data.errors.password);
+
+            const errorMessage = data.errors.password;
+            showHtmlError(passwordError, `<div>• ${errorMessage}</div>`);
         } else if (data.code === 1 && containsPasswordError(data)) {
-            // Show password-specific errors
+            // Show password-specific errors from business logic (old format)
             const passwordError = document.querySelector("#passwordError");
             console.log("Password Error are: ", data.messages);
 
@@ -125,10 +132,17 @@ async function handleRegistration(event) {
                 .join("");
 
             showHtmlError(passwordError, formattedErrorMessages);
+        } else if (data.errors) {
+            // Show field-specific errors in global error area
+            console.log("Validation errors: ", data.errors);
+            const errorMessages = Object.entries(data.errors)
+                .map(([field, message]) => `${field}: ${message}`)
+                .join("<br>");
+            showMessage(globalError, errorMessages, "alert-danger");
         } else {
-            console.log("Password Error are: ", data.messages);
+            console.log("General error: ", data.messages || data.message);
             const errorMessage =
-                data.messages?.join(" ") || "Registration failed. Please try again.";
+                data.messages?.join(" ") || data.message || "Registration failed. Please try again.";
             showMessage(globalError, errorMessage, "alert-danger");
         }
     } catch (error) {
