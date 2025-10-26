@@ -1,5 +1,9 @@
 // File: /js/user/reset-password.js
 import { showMessage, showError, clearErrors } from "/js/shared.js";
+import {
+    initPasswordStrengthMeter,
+    initPasswordRequirements,
+} from "/js/utils/password-validation.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("#resetPasswordForm");
@@ -8,6 +12,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const passwordField = document.querySelector("#password");
     const matchPasswordField = document.querySelector("#matchPassword");
     const matchPasswordError = document.querySelector("#matchPasswordError");
+
+    // Initialize password strength meter
+    const passwordStrength = document.getElementById("password-strength");
+    const strengthLevel = document.getElementById("strengthLevel");
+    const strengthLabel = document.getElementById("strengthLabel");
+    initPasswordStrengthMeter(passwordField, passwordStrength, strengthLevel, strengthLabel);
+
+    // Initialize password requirements visibility toggle
+    const passwordRules = document.getElementById("password-requirements");
+    const passwordError = document.querySelector("#passwordError");
+    initPasswordRequirements(passwordField, passwordRules, passwordError);
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();

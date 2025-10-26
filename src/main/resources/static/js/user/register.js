@@ -6,6 +6,12 @@ import {
     hideError,
     clearErrors,
 } from "/js/shared.js";
+import {
+    calculateStrength,
+    updateStrengthBar,
+    initPasswordStrengthMeter,
+    initPasswordRequirements,
+} from "/js/utils/password-validation.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("#registerForm");
@@ -31,33 +37,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Toggle password requirements visibility
+    // Initialize password requirements visibility toggle
     const passwordRules = document.getElementById("password-requirements");
     const passwordError = document.querySelector("#passwordError");
-    if (passwordField && passwordRules) {
-        passwordField.addEventListener("focus", () => {
-            passwordRules.classList.remove("d-none");
-            // Hide the error while user is editing
-            passwordError.classList.add("d-none");
-        });
+    initPasswordRequirements(passwordField, passwordRules, passwordError);
 
-        passwordField.addEventListener("blur", () => {
-            passwordRules.classList.add("d-none");
-        });
-    }
-
-    // Password strength UI
-    passwordField.addEventListener("input", () => {
-        const passwordStrength = document.getElementById("password-strength");
-        const password = passwordField.value;
-        if (password) {
-            passwordStrength.classList.remove("d-none");
-            const score = calculateStrength(password);
-            updateStrengthBar(score, strengthLevel, strengthLabel);
-        } else {
-            passwordStrength.classList.add("d-none");
-        }
-    });
+    // Initialize password strength meter
+    const passwordStrength = document.getElementById("password-strength");
+    initPasswordStrengthMeter(passwordField, passwordStrength, strengthLevel, strengthLabel);
 });
 
 async function handleRegistration(event) {
@@ -159,30 +146,4 @@ async function handleRegistration(event) {
         const msg = data?.messages?.[0] ?? "";
         return msg.toLowerCase().includes("password");
     }
-}
-
-function calculateStrength(password) {
-    let score = 0;
-    if (password.length >= 8) score++; // Rule 1: Length
-    if (/[A-Z]/.test(password)) score++; // Rule 2: Uppercase
-    if (/[a-z]/.test(password)) score++; // Rule 3: Lowercase
-    if (/[0-9]/.test(password)) score++; // Rule 4: Number
-    if (/[^A-Za-z0-9]/.test(password)) score++; // Rule 5: Special character
-    return score;
-}
-
-function updateStrengthBar(score, strengthLevel, strengthLabel) {
-    const levels = [
-        { width: "0%", color: "", label: "" },
-        { width: "20%", color: "bg-danger", label: "Very Weak" },
-        { width: "40%", color: "bg-warning", label: "Weak" },
-        { width: "60%", color: "bg-info", label: "Fair" },
-        { width: "80%", color: "bg-primary", label: "Strong" },
-        { width: "100%", color: "bg-success", label: "Very Strong" },
-    ];
-
-    const level = levels[score] || levels[0];
-    strengthLevel.style.width = level.width;
-    strengthLevel.className = `progress-bar ${level.color}`;
-    strengthLabel.textContent = `Password strength: ${level.label}`;
 }

@@ -1,5 +1,9 @@
 // File: /js/user/update-password.js
 import { showMessage, showError, clearErrors } from "/js/shared.js";
+import {
+    initPasswordStrengthMeter,
+    initPasswordRequirements,
+} from "/js/utils/password-validation.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("#updatePasswordForm");
@@ -8,6 +12,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const newPasswordField = document.querySelector("#newPassword");
     const confirmPasswordField = document.querySelector("#confirmPassword");
     const confirmPasswordError = document.querySelector("#confirmPasswordError");
+
+    // Initialize password strength meter for new password field
+    const passwordStrength = document.getElementById("password-strength");
+    const strengthLevel = document.getElementById("strengthLevel");
+    const strengthLabel = document.getElementById("strengthLabel");
+    initPasswordStrengthMeter(newPasswordField, passwordStrength, strengthLevel, strengthLabel);
+
+    // Initialize password requirements visibility toggle
+    const passwordRules = document.getElementById("password-requirements");
+    const newPasswordError = document.querySelector("#newPasswordError");
+    initPasswordRequirements(newPasswordField, passwordRules, newPasswordError);
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -25,9 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Prepare JSON payload
         const requestData = {
-            currentPassword: currentPassword,
+            oldPassword: currentPassword,
             newPassword: newPassword,
-            confirmPassword: confirmPassword,
         };
 
         try {
