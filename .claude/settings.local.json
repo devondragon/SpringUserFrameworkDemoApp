@@ -18,7 +18,12 @@
       "Bash(./fix-mockbean-deprecation.sh:*)",
       "mcp__zen__debug",
       "Bash(git commit:*)",
-      "mcp__zen__codereview"
+      "mcp__zen__codereview",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr checkout:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }
