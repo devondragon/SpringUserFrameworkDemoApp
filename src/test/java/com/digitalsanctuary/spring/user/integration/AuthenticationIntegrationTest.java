@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
@@ -57,6 +58,9 @@ class AuthenticationIntegrationTest {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     @Value("${user.security.loginPageURI}")
     private String loginPageURI;
 
@@ -81,6 +85,7 @@ class AuthenticationIntegrationTest {
     @Transactional
     void setUp() {
         // Clean up
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
         roleRepository.deleteAll();
 

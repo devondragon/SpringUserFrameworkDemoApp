@@ -3,6 +3,7 @@ package com.digitalsanctuary.spring.user.concurrent;
 import com.digitalsanctuary.spring.demo.UserDemoApplication;
 import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.service.UserService;
 import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
@@ -22,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Concurrent User Operations Test - Phase 2 of Task 4.3
  * 
  * Tests concurrent user operations including:
- * - Multiple users registering simultaneously 
+ * - Multiple users registering simultaneously
  * - Same email registration race conditions
  * - Concurrent login attempts
  * - Data consistency under concurrent load
@@ -36,16 +37,19 @@ class ConcurrentUserOperationsTest {
 
     @Autowired
     private MultiUserTestUtilities testUtilities;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private EntityManager entityManager;
-    
+
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     private TestUserManager userManager;
     private static final String TEST_PREFIX = "concurrent";
 
@@ -57,6 +61,7 @@ class ConcurrentUserOperationsTest {
     @AfterEach
     void tearDown() {
         if (userManager != null) {
+            passwordHistoryRepository.deleteAll();
             userManager.cleanup();
         }
     }
@@ -77,7 +82,7 @@ class ConcurrentUserOperationsTest {
                 try {
                     String uniqueId = Thread.currentThread().getName();
                     String email = TEST_PREFIX + ".unique." + uniqueId + "@test.example.com";
-                    
+
                     UserDto userDto = new UserDto();
                     userDto.setEmail(email);
                     userDto.setFirstName("Concurrent");
@@ -86,33 +91,33 @@ class ConcurrentUserOperationsTest {
                     userDto.setMatchingPassword("TestPassword123!");
 
                     User registeredUser = userService.registerNewUserAccount(userDto);
-                    
+
                     if (registeredUser != null && registeredUser.getId() != null) {
                         successCount.incrementAndGet();
                     }
-                    
+
                 } catch (Exception e) {
                     errorCount.incrementAndGet();
                 }
             };
 
             // Execute concurrent registrations
-            MultiUserTestUtilities.ConcurrentExecutionResult result = 
-                testUtilities.executeConcurrently(threadCount, registrationTask, 30);
+            MultiUserTestUtilities.ConcurrentExecutionResult result = testUtilities.executeConcurrently(threadCount,
+                    registrationTask, 30);
 
             // Verify results
             assertThat(result.completedWithinTimeout()).isTrue();
             assertThat(result.errorCount()).isEqualTo(0);
             assertThat(result.successCount()).isEqualTo(threadCount);
-            
+
             // Verify database consistency
             testUtilities.validateDatabaseConsistency();
-            
+
             // Count actual registered users
             long userCount = userRepository.findAll().stream()
-                .filter(user -> user.getEmail().contains(TEST_PREFIX + ".unique."))
-                .count();
-            
+                    .filter(user -> user.getEmail().contains(TEST_PREFIX + ".unique."))
+                    .count();
+
             assertThat(userCount).isEqualTo(threadCount);
         }
 
@@ -121,7 +126,7 @@ class ConcurrentUserOperationsTest {
         void testConcurrentDuplicateEmailRegistration() {
             final int threadCount = 5;
             final String duplicateEmail = userManager.getDuplicateEmailForTesting();
-            
+
             final AtomicInteger successCount = new AtomicInteger(0);
             final AtomicInteger constraintViolationCount = new AtomicInteger(0);
 
@@ -137,40 +142,40 @@ class ConcurrentUserOperationsTest {
 
                     userService.registerNewUserAccount(userDto);
                     successCount.incrementAndGet();
-                    
+
                 } catch (Exception e) {
                     // Expected: constraint violation or user already exists
-                    if (e.getMessage().contains("already exists") || 
-                        e.getMessage().contains("constraint") ||
-                        e.getMessage().contains("duplicate")) {
+                    if (e.getMessage().contains("already exists") ||
+                            e.getMessage().contains("constraint") ||
+                            e.getMessage().contains("duplicate")) {
                         constraintViolationCount.incrementAndGet();
                     }
                 }
             };
 
             // Execute concurrent duplicate registrations
-            MultiUserTestUtilities.ConcurrentExecutionResult result = 
-                testUtilities.executeConcurrently(threadCount, duplicateRegistrationTask, 30);
+            MultiUserTestUtilities.ConcurrentExecutionResult result = testUtilities.executeConcurrently(threadCount,
+                    duplicateRegistrationTask, 30);
 
             // Verify results - only one should succeed
             assertThat(result.completedWithinTimeout()).isTrue();
             assertThat(successCount.get()).isEqualTo(1);
             assertThat(constraintViolationCount.get()).isEqualTo(threadCount - 1);
-            
+
             // Verify only one user exists with that email
             long duplicateUserCount = userRepository.findAll().stream()
-                .filter(user -> duplicateEmail.equals(user.getEmail()))
-                .count();
-                
+                    .filter(user -> duplicateEmail.equals(user.getEmail()))
+                    .count();
+
             assertThat(duplicateUserCount).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("Mixed operations should maintain data consistency")  
+        @DisplayName("Mixed operations should maintain data consistency")
         void testMixedConcurrentOperations() {
             final int registrationThreads = 3;
             final int queryThreads = 2;
-            
+
             final AtomicInteger registrationSuccess = new AtomicInteger(0);
             final AtomicInteger querySuccess = new AtomicInteger(0);
 
@@ -179,7 +184,7 @@ class ConcurrentUserOperationsTest {
                 try {
                     String uniqueId = Thread.currentThread().getName();
                     String email = TEST_PREFIX + ".mixed." + uniqueId + "@test.example.com";
-                    
+
                     UserDto userDto = new UserDto();
                     userDto.setEmail(email);
                     userDto.setFirstName("Mixed");
@@ -188,11 +193,11 @@ class ConcurrentUserOperationsTest {
                     userDto.setMatchingPassword("TestPassword123!");
 
                     User user = userService.registerNewUserAccount(userDto);
-                    
+
                     if (user != null && user.getId() != null) {
                         registrationSuccess.incrementAndGet();
                     }
-                    
+
                 } catch (Exception e) {
                     // Expected in concurrent testing - log but don't fail
                 }
@@ -211,21 +216,21 @@ class ConcurrentUserOperationsTest {
             };
 
             // Execute registrations
-            MultiUserTestUtilities.ConcurrentExecutionResult registrationResult = 
-                testUtilities.executeConcurrently(registrationThreads, registrationTask, 30);
-            
-            // Execute queries  
-            MultiUserTestUtilities.ConcurrentExecutionResult queryResult = 
-                testUtilities.executeConcurrently(queryThreads, queryTask, 30);
+            MultiUserTestUtilities.ConcurrentExecutionResult registrationResult = testUtilities
+                    .executeConcurrently(registrationThreads, registrationTask, 30);
+
+            // Execute queries
+            MultiUserTestUtilities.ConcurrentExecutionResult queryResult = testUtilities
+                    .executeConcurrently(queryThreads, queryTask, 30);
 
             // Verify operations completed successfully
             assertThat(registrationResult.completedWithinTimeout()).isTrue();
             assertThat(queryResult.completedWithinTimeout()).isTrue();
-            
+
             // At least some registrations should succeed
             assertThat(registrationSuccess.get()).isGreaterThan(0);
             assertThat(querySuccess.get()).isEqualTo(queryThreads);
-            
+
             // Verify final database state
             testUtilities.validateDatabaseConsistency();
         }

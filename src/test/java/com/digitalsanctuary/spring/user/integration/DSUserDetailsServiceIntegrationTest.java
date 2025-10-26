@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.digitalsanctuary.spring.user.persistence.model.Privilege;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.service.DSUserDetails;
@@ -51,6 +52,9 @@ class DSUserDetailsServiceIntegrationTest {
     @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     private Role userRole;
     private Role adminRole;
 
@@ -58,13 +62,14 @@ class DSUserDetailsServiceIntegrationTest {
     @Transactional
     void setUp() {
         // Clean up
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
         roleRepository.deleteAll();
 
         // Create privileges
         Privilege userPrivilege = new Privilege();
         userPrivilege.setName("ROLE_USER");
-        
+
         Privilege adminPrivilege = new Privilege();
         adminPrivilege.setName("ROLE_ADMIN");
 
@@ -75,7 +80,7 @@ class DSUserDetailsServiceIntegrationTest {
                 .build();
         userRole.getPrivileges().add(userPrivilege);
         userRole = roleRepository.save(userRole);
-        
+
         adminRole = RoleTestDataBuilder.aRole()
                 .withName("ROLE_ADMIN")
                 .withId(null)
@@ -90,9 +95,8 @@ class DSUserDetailsServiceIntegrationTest {
     void loadUserByUsername_updatesLastActivityDate() {
         // Given
         Date originalDate = Date.from(
-            LocalDateTime.now().minusDays(1).atZone(ZoneId.systemDefault()).toInstant()
-        );
-        
+                LocalDateTime.now().minusDays(1).atZone(ZoneId.systemDefault()).toInstant());
+
         User user = UserTestDataBuilder.aVerifiedUser()
                 .withEmail("activity@test.com")
                 .withLastActivityDate(originalDate)
@@ -100,7 +104,7 @@ class DSUserDetailsServiceIntegrationTest {
                 .build();
         user.setRoles(new ArrayList<>(Arrays.asList(userRole)));
         user = userRepository.save(user);
-        
+
         Date beforeLoad = new Date();
 
         // When
@@ -119,9 +123,8 @@ class DSUserDetailsServiceIntegrationTest {
     void loadUserByUsername_autoUnlocksEligibleUser() {
         // Given - Create a locked user with old lock date (should be unlocked)
         Date oldLockDate = Date.from(
-            LocalDateTime.now().minusHours(2).atZone(ZoneId.systemDefault()).toInstant()
-        );
-        
+                LocalDateTime.now().minusHours(2).atZone(ZoneId.systemDefault()).toInstant());
+
         User lockedUser = UserTestDataBuilder.aLockedUser()
                 .withEmail("autounlock@test.com")
                 .withLockedDate(oldLockDate)
@@ -130,7 +133,7 @@ class DSUserDetailsServiceIntegrationTest {
                 .build();
         lockedUser.setRoles(new ArrayList<>(Arrays.asList(userRole)));
         lockedUser = userRepository.save(lockedUser);
-        
+
         // Verify user is initially locked
         assertThat(lockedUser.isLocked()).isTrue();
 
@@ -192,7 +195,7 @@ class DSUserDetailsServiceIntegrationTest {
             DSUserDetails result = dsUserDetailsService.loadUserByUsername("concurrent@test.com");
             assertThat(result).isNotNull();
         });
-        
+
         Thread thread2 = new Thread(() -> {
             DSUserDetails result = dsUserDetailsService.loadUserByUsername("concurrent@test.com");
             assertThat(result).isNotNull();
@@ -200,7 +203,7 @@ class DSUserDetailsServiceIntegrationTest {
 
         thread1.start();
         thread2.start();
-        
+
         thread1.join();
         thread2.join();
 
@@ -270,7 +273,7 @@ class DSUserDetailsServiceIntegrationTest {
     void loadUserByUsername_currentlyLockedUser_returnsWithLockedStatus() {
         // Given - Create a recently locked user (should remain locked)
         Date recentLockDate = new Date();
-        
+
         User lockedUser = UserTestDataBuilder.aLockedUser()
                 .withEmail("locked@test.com")
                 .withLockedDate(recentLockDate)
@@ -279,7 +282,7 @@ class DSUserDetailsServiceIntegrationTest {
                 .build();
         lockedUser.setRoles(new ArrayList<>(Arrays.asList(userRole)));
         lockedUser = userRepository.save(lockedUser);
-        
+
         // Verify user is initially locked
         assertThat(lockedUser.isLocked()).isTrue();
 
@@ -289,12 +292,12 @@ class DSUserDetailsServiceIntegrationTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.isEnabled()).isTrue(); // Locked users can still be enabled
-        
+
         // Check the actual lock status - it depends on configuration
         // If accountLockoutDuration is 0, the user might be unlocked immediately
         // If it's > 0, the user should remain locked since we just locked them
         User userAfterLoad = userRepository.findByEmail("locked@test.com");
-        
+
         // The test should verify the actual behavior based on configuration
         // If the user is still locked, isAccountNonLocked should be false
         // If the user was unlocked by the service, isAccountNonLocked should be true

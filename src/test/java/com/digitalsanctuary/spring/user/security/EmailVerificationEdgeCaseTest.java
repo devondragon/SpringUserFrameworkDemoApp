@@ -38,6 +38,7 @@ import com.digitalsanctuary.spring.demo.UserDemoApplication;
 import com.digitalsanctuary.spring.demo.user.ui.util.DatabaseStateValidator;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.persistence.model.VerificationToken;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.VerificationTokenRepository;
 import com.digitalsanctuary.spring.user.service.UserService;
@@ -48,13 +49,17 @@ import com.digitalsanctuary.spring.user.test.builders.UserTestDataBuilder;
 import jakarta.persistence.EntityManager;
 
 /**
- * Email Verification Edge Cases as specified in Task 4.2 of TEST-IMPROVEMENT-PLAN.md
+ * Email Verification Edge Cases as specified in Task 4.2 of
+ * TEST-IMPROVEMENT-PLAN.md
  *
- * Tests comprehensive email verification token edge cases including: - Token expiry with time manipulation - Token security scenarios (invalid
- * formats, tampering, cross-user attacks) - Already used tokens (single-use enforcement) - Concurrent token requests and validation - User-friendly
+ * Tests comprehensive email verification token edge cases including: - Token
+ * expiry with time manipulation - Token security scenarios (invalid
+ * formats, tampering, cross-user attacks) - Already used tokens (single-use
+ * enforcement) - Concurrent token requests and validation - User-friendly
  * error messages
  *
- * Acceptance Criteria: - Test token expiry with time manipulation - Verify only latest token is valid - Test concurrent token requests - Ensure
+ * Acceptance Criteria: - Test token expiry with time manipulation - Verify only
+ * latest token is valid - Test concurrent token requests - Ensure
  * tokens are single-use - Verify error messages are user-friendly
  */
 @SpringBootTest(classes = UserDemoApplication.class)
@@ -81,6 +86,9 @@ class EmailVerificationEdgeCaseTest {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     private User testUser;
     private String testEmail;
 
@@ -88,9 +96,10 @@ class EmailVerificationEdgeCaseTest {
     void setUp() {
         // Create test user
         testEmail = "verification.edge.test." + System.currentTimeMillis() + "@example.com";
-        testUser = UserTestDataBuilder.aUser().withEmail(testEmail).withFirstName("Edge").withLastName("TestUser").disabled() // Start with disabled
-                                                                                                                              // user needing
-                                                                                                                              // verification
+        testUser = UserTestDataBuilder.aUser().withEmail(testEmail).withFirstName("Edge").withLastName("TestUser")
+                .disabled() // Start with disabled
+                            // user needing
+                            // verification
                 .build();
         testUser = userRepository.save(testUser);
         entityManager.flush();
@@ -99,6 +108,7 @@ class EmailVerificationEdgeCaseTest {
     @AfterEach
     void cleanup() {
         verificationTokenRepository.deleteAll();
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
         entityManager.flush();
     }
@@ -111,12 +121,15 @@ class EmailVerificationEdgeCaseTest {
         @DisplayName("Expired token should be rejected and cleaned up")
         void testExpiredTokenRejection() throws Exception {
             // Create expired token
-            VerificationToken expiredToken = TokenTestDataBuilder.anExpiredVerificationToken().forUser(testUser).expiredDaysAgo(1).build();
+            VerificationToken expiredToken = TokenTestDataBuilder.anExpiredVerificationToken().forUser(testUser)
+                    .expiredDaysAgo(1).build();
             verificationTokenRepository.save(expiredToken);
             entityManager.flush();
 
             // Attempt verification with expired token
-            MvcResult result = mockMvc.perform(get("/user/registrationConfirm").param("token", expiredToken.getToken()).accept(MediaType.TEXT_HTML))
+            MvcResult result = mockMvc
+                    .perform(get("/user/registrationConfirm").param("token", expiredToken.getToken())
+                            .accept(MediaType.TEXT_HTML))
                     .andExpect(status().isOk()).andReturn();
 
             // Verify user remains disabled
@@ -140,7 +153,8 @@ class EmailVerificationEdgeCaseTest {
             entityManager.flush();
 
             // Attempt verification
-            mockMvc.perform(get("/user/registrationConfirm").param("token", justExpiredToken.getToken()).accept(MediaType.TEXT_HTML))
+            mockMvc.perform(get("/user/registrationConfirm").param("token", justExpiredToken.getToken())
+                    .accept(MediaType.TEXT_HTML))
                     .andExpect(status().isOk());
 
             // Verify user remains disabled
@@ -154,12 +168,14 @@ class EmailVerificationEdgeCaseTest {
         @DisplayName("Valid token near expiry should work")
         void testTokenNearExpiry() throws Exception {
             // Create token expiring in 1 minute
-            VerificationToken nearExpiryToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser).expiringInMinutes(1).build();
+            VerificationToken nearExpiryToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser)
+                    .expiringInMinutes(1).build();
             verificationTokenRepository.save(nearExpiryToken);
             entityManager.flush();
 
             // Should work successfully
-            mockMvc.perform(get("/user/registrationConfirm").param("token", nearExpiryToken.getToken()).accept(MediaType.TEXT_HTML))
+            mockMvc.perform(get("/user/registrationConfirm").param("token", nearExpiryToken.getToken())
+                    .accept(MediaType.TEXT_HTML))
                     .andExpect(status().is3xxRedirection()); // Successful verification redirects
 
             // Verify user is enabled
@@ -173,12 +189,14 @@ class EmailVerificationEdgeCaseTest {
         @DisplayName("Multiple token requests - only latest should be valid")
         void testMultipleTokenRequests() throws Exception {
             // Create first token
-            VerificationToken firstToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser).expiringInHours(24).build();
+            VerificationToken firstToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser)
+                    .expiringInHours(24).build();
             verificationTokenRepository.save(firstToken);
             entityManager.flush();
 
             // Create second token (simulating resend)
-            VerificationToken secondToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser).expiringInHours(24).build();
+            VerificationToken secondToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser)
+                    .expiringInHours(24).build();
             verificationTokenRepository.save(secondToken);
             entityManager.flush();
 
@@ -187,7 +205,8 @@ class EmailVerificationEdgeCaseTest {
             // In most implementations, older tokens are either deleted or marked invalid
 
             // Second token should work
-            mockMvc.perform(get("/user/registrationConfirm").param("token", secondToken.getToken()).accept(MediaType.TEXT_HTML))
+            mockMvc.perform(
+                    get("/user/registrationConfirm").param("token", secondToken.getToken()).accept(MediaType.TEXT_HTML))
                     .andExpect(status().is3xxRedirection());
 
             // Verify user is enabled
@@ -202,7 +221,7 @@ class EmailVerificationEdgeCaseTest {
         @Test
         @DisplayName("Invalid token formats should be rejected gracefully")
         void testInvalidTokenFormats() throws Exception {
-            String[] invalidTokens = {"", // Empty token
+            String[] invalidTokens = { "", // Empty token
                     "invalid-token", // Non-UUID format
                     "12345678-1234-1234-1234", // Malformed UUID
                     "not-a-uuid-at-all", // Random string
@@ -213,7 +232,9 @@ class EmailVerificationEdgeCaseTest {
             };
 
             for (String invalidToken : invalidTokens) {
-                MvcResult result = mockMvc.perform(get("/user/registrationConfirm").param("token", invalidToken).accept(MediaType.TEXT_HTML))
+                MvcResult result = mockMvc
+                        .perform(get("/user/registrationConfirm").param("token", invalidToken)
+                                .accept(MediaType.TEXT_HTML))
                         .andExpect(status().isOk()) // Should not throw error, handle gracefully
                         .andReturn();
 
@@ -222,7 +243,8 @@ class EmailVerificationEdgeCaseTest {
 
                 // Verify error message is user-friendly, not a stack trace
                 String responseBody = result.getResponse().getContentAsString();
-                assertThat(responseBody).as("Invalid token: " + invalidToken).doesNotContain("Exception").doesNotContain("SQLException")
+                assertThat(responseBody).as("Invalid token: " + invalidToken).doesNotContain("Exception")
+                        .doesNotContain("SQLException")
                         .doesNotContain("NullPointerException");
             }
         }
@@ -231,14 +253,16 @@ class EmailVerificationEdgeCaseTest {
         @DisplayName("Tampered tokens should be rejected")
         void testTamperedTokens() throws Exception {
             // Create valid token
-            VerificationToken validToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser).expiringInHours(24).build();
+            VerificationToken validToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser)
+                    .expiringInHours(24).build();
             verificationTokenRepository.save(validToken);
             entityManager.flush();
 
             String originalToken = validToken.getToken();
 
             // Create tampered versions
-            String[] tamperedTokens = {originalToken.substring(0, originalToken.length() - 1) + "x", // Last character changed
+            String[] tamperedTokens = { originalToken.substring(0, originalToken.length() - 1) + "x", // Last character
+                                                                                                      // changed
                     originalToken.substring(1), // First character removed
                     originalToken + "x", // Character appended
                     originalToken.toUpperCase(), // Case changed
@@ -247,7 +271,9 @@ class EmailVerificationEdgeCaseTest {
             };
 
             for (String tamperedToken : tamperedTokens) {
-                MvcResult result = mockMvc.perform(get("/user/registrationConfirm").param("token", tamperedToken).accept(MediaType.TEXT_HTML))
+                MvcResult result = mockMvc
+                        .perform(get("/user/registrationConfirm").param("token", tamperedToken)
+                                .accept(MediaType.TEXT_HTML))
                         .andExpect(status().isOk()).andReturn();
 
                 // Verify user remains disabled
@@ -267,12 +293,14 @@ class EmailVerificationEdgeCaseTest {
             otherUser = userRepository.save(otherUser);
 
             // Create token for other user
-            VerificationToken otherUserToken = TokenTestDataBuilder.aVerificationToken().forUser(otherUser).expiringInHours(24).build();
+            VerificationToken otherUserToken = TokenTestDataBuilder.aVerificationToken().forUser(otherUser)
+                    .expiringInHours(24).build();
             verificationTokenRepository.save(otherUserToken);
             entityManager.flush();
 
             // Try to use other user's token for test user
-            mockMvc.perform(get("/user/registrationConfirm").param("token", otherUserToken.getToken()).accept(MediaType.TEXT_HTML))
+            mockMvc.perform(get("/user/registrationConfirm").param("token", otherUserToken.getToken())
+                    .accept(MediaType.TEXT_HTML))
                     .andExpect(status().isOk());
 
             // Verify our test user remains disabled
@@ -289,7 +317,8 @@ class EmailVerificationEdgeCaseTest {
         @DisplayName("Already used token should not work again")
         void testAlreadyUsedToken() throws Exception {
             // Create valid token
-            VerificationToken validToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser).expiringInHours(24).build();
+            VerificationToken validToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser)
+                    .expiringInHours(24).build();
             verificationTokenRepository.save(validToken);
             entityManager.flush();
 
@@ -306,7 +335,8 @@ class EmailVerificationEdgeCaseTest {
             assertThat(verificationTokenRepository.findByToken(tokenValue)).isNull();
 
             // Second use should fail
-            MvcResult result = mockMvc.perform(get("/user/registrationConfirm").param("token", tokenValue).accept(MediaType.TEXT_HTML))
+            MvcResult result = mockMvc
+                    .perform(get("/user/registrationConfirm").param("token", tokenValue).accept(MediaType.TEXT_HTML))
                     .andExpect(status().isOk()).andReturn();
 
             // Verify user-friendly error message
@@ -323,7 +353,8 @@ class EmailVerificationEdgeCaseTest {
         @DisplayName("Concurrent token validation should be thread-safe")
         void testConcurrentTokenValidation() throws Exception {
             // Create valid token
-            VerificationToken validToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser).expiringInHours(24).build();
+            VerificationToken validToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser)
+                    .expiringInHours(24).build();
             verificationTokenRepository.save(validToken);
             entityManager.flush();
 
@@ -342,7 +373,8 @@ class EmailVerificationEdgeCaseTest {
                     try {
                         startLatch.await(); // Wait for all threads to be ready
 
-                        UserService.TokenValidationResult result = userVerificationService.validateVerificationToken(tokenValue);
+                        UserService.TokenValidationResult result = userVerificationService
+                                .validateVerificationToken(tokenValue);
 
                         if (result == UserService.TokenValidationResult.VALID) {
                             successCount.incrementAndGet();
@@ -394,7 +426,8 @@ class EmailVerificationEdgeCaseTest {
                         startLatch.await();
 
                         // Create verification token for the same user
-                        VerificationToken token = TokenTestDataBuilder.aVerificationToken().forUser(testUser).expiringInHours(24).build();
+                        VerificationToken token = TokenTestDataBuilder.aVerificationToken().forUser(testUser)
+                                .expiringInHours(24).build();
                         verificationTokenRepository.save(token);
 
                     } catch (Exception e) {
@@ -425,23 +458,27 @@ class EmailVerificationEdgeCaseTest {
         @Test
         @DisplayName("Error messages should be user-friendly and consistent")
         void testUserFriendlyErrorMessages() throws Exception {
-            String[] errorScenarios = {UUID.randomUUID().toString(), // Non-existent token
+            String[] errorScenarios = { UUID.randomUUID().toString(), // Non-existent token
                     "invalid-format", // Invalid format
                     "" // Empty token
             };
 
             for (String token : errorScenarios) {
-                MvcResult result = mockMvc.perform(get("/user/registrationConfirm").param("token", token).accept(MediaType.TEXT_HTML))
+                MvcResult result = mockMvc
+                        .perform(get("/user/registrationConfirm").param("token", token).accept(MediaType.TEXT_HTML))
                         .andExpect(status().isOk()).andReturn();
 
                 String responseBody = result.getResponse().getContentAsString();
 
                 // Should not expose technical details
-                assertThat(responseBody).as("Error scenario: " + token).doesNotContain("SQLException").doesNotContain("NullPointerException")
-                        .doesNotContain("ConstraintViolation").doesNotContain("stackTrace").doesNotContain("java.lang.");
+                assertThat(responseBody).as("Error scenario: " + token).doesNotContain("SQLException")
+                        .doesNotContain("NullPointerException")
+                        .doesNotContain("ConstraintViolation").doesNotContain("stackTrace")
+                        .doesNotContain("java.lang.");
 
                 // Should provide helpful user message
-                assertThat(responseBody).as("Error scenario: " + token).containsAnyOf("invalid", "expired", "token", "verification", "link");
+                assertThat(responseBody).as("Error scenario: " + token).containsAnyOf("invalid", "expired", "token",
+                        "verification", "link");
             }
         }
 
@@ -449,18 +486,23 @@ class EmailVerificationEdgeCaseTest {
         @DisplayName("Successful verification should provide confirmation message")
         void testSuccessfulVerificationMessage() throws Exception {
             // Create valid token
-            VerificationToken validToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser).expiringInHours(24).build();
+            VerificationToken validToken = TokenTestDataBuilder.aVerificationToken().forUser(testUser)
+                    .expiringInHours(24).build();
             verificationTokenRepository.save(validToken);
             entityManager.flush();
 
             // Should redirect on success (Spring's typical pattern)
-            MvcResult result = mockMvc.perform(get("/user/registrationConfirm").param("token", validToken.getToken()).accept(MediaType.TEXT_HTML))
+            MvcResult result = mockMvc
+                    .perform(get("/user/registrationConfirm").param("token", validToken.getToken())
+                            .accept(MediaType.TEXT_HTML))
                     .andExpect(status().is3xxRedirection()).andReturn();
 
             // Check redirect location
             String redirectLocation = result.getResponse().getHeader("Location");
-            assertThat(redirectLocation).isNotNull().satisfiesAnyOf(location -> assertThat(location).contains("success"),
-                    location -> assertThat(location).contains("login"), location -> assertThat(location).contains("home"));
+            assertThat(redirectLocation).isNotNull().satisfiesAnyOf(
+                    location -> assertThat(location).contains("success"),
+                    location -> assertThat(location).contains("login"),
+                    location -> assertThat(location).contains("home"));
         }
     }
 

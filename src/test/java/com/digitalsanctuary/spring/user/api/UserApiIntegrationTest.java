@@ -26,6 +26,7 @@ import com.digitalsanctuary.spring.user.persistence.model.PasswordResetToken;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.persistence.model.VerificationToken;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.PasswordResetTokenRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
@@ -37,8 +38,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Integration tests for User REST API endpoints.
  *
- * This test class verifies the complete API behavior including: - User registration with validation - Password reset flow - User profile updates -
- * Password changes - Account deletion - Security (CSRF, authentication) - Error handling
+ * This test class verifies the complete API behavior including: - User
+ * registration with validation - Password reset flow - User profile updates -
+ * Password changes - Account deletion - Security (CSRF, authentication) - Error
+ * handling
  */
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -68,6 +71,9 @@ class UserApiIntegrationTest {
     @Autowired
     private PasswordResetTokenRepository passwordResetTokenRepository;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     @MockitoBean
     private MailService mailService;
 
@@ -78,6 +84,7 @@ class UserApiIntegrationTest {
         // Clean up
         verificationTokenRepository.deleteAll();
         passwordResetTokenRepository.deleteAll();
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
         roleRepository.deleteAll();
 
@@ -105,8 +112,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/registration").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/registration")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
@@ -142,12 +149,13 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/registration").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/registration")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isConflict()).andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.message").value("An account already exists for the email address")).andExpect(jsonPath("$.code").value(2));
+                    .andExpect(jsonPath("$.message").value("An account already exists for the email address"))
+                    .andExpect(jsonPath("$.code").value(2));
         }
 
         @Test
@@ -164,8 +172,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/registration").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/registration")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isBadRequest());
@@ -186,8 +194,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/registration").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/registration")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isBadRequest());
@@ -209,8 +217,8 @@ class UserApiIntegrationTest {
                     """, longString, longString);
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/registration").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/registration")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then - Should either succeed with truncation or fail with validation
             // The actual behavior depends on the validation constraints
@@ -232,8 +240,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/registration").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/registration")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then - Should succeed but safely handle the input
             result.andExpect(status().isOk());
@@ -263,8 +271,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/resetPassword").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/resetPassword")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
@@ -286,8 +294,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/resetPassword").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/resetPassword")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then - Same response as for existing user
             result.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
@@ -318,7 +326,8 @@ class UserApiIntegrationTest {
 
             // When
             ResultActions result = mockMvc.perform(
-                    post(API_BASE_PATH + "/resendRegistrationToken").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+                    post(API_BASE_PATH + "/resendRegistrationToken").contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
@@ -340,7 +349,8 @@ class UserApiIntegrationTest {
 
             // When
             ResultActions result = mockMvc.perform(
-                    post(API_BASE_PATH + "/resendRegistrationToken").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+                    post(API_BASE_PATH + "/resendRegistrationToken").contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isConflict()).andExpect(jsonPath("$.success").value(false))
@@ -356,7 +366,8 @@ class UserApiIntegrationTest {
 
         @BeforeEach
         void setUpUser() {
-            testUser = UserTestDataBuilder.aVerifiedUser().withEmail("auth@example.com").withFirstName("Original").withLastName("Name")
+            testUser = UserTestDataBuilder.aVerifiedUser().withEmail("auth@example.com").withFirstName("Original")
+                    .withLastName("Name")
                     .withPassword("OldPassword123!").build();
             testUser = userRepository.save(testUser);
         }
@@ -375,8 +386,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/updateUser").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/updateUser")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
@@ -400,8 +411,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/updateUser").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/updateUser")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isUnauthorized());
@@ -421,7 +432,8 @@ class UserApiIntegrationTest {
 
             // When
             ResultActions result = mockMvc
-                    .perform(post(API_BASE_PATH + "/updatePassword").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+                    .perform(post(API_BASE_PATH + "/updatePassword").contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
@@ -441,10 +453,12 @@ class UserApiIntegrationTest {
 
             // When
             ResultActions result = mockMvc
-                    .perform(post(API_BASE_PATH + "/updatePassword").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+                    .perform(post(API_BASE_PATH + "/updatePassword").contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody).with(csrf()));
 
             // Then
-            result.andExpect(status().isBadRequest()).andExpect(jsonPath("$.success").value(false)).andExpect(jsonPath("$.code").value(1));
+            result.andExpect(status().isBadRequest()).andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(1));
         }
 
         @Test
@@ -455,7 +469,8 @@ class UserApiIntegrationTest {
             ResultActions result = mockMvc.perform(delete(API_BASE_PATH + "/deleteAccount").with(csrf()));
 
             // Then
-            result.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true)).andExpect(jsonPath("$.message").value("Account Deleted"));
+            result.andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Account Deleted"));
 
             // Verify user disabled (soft delete by default)
             User deleted = userRepository.findById(testUser.getId()).orElseThrow();
@@ -478,8 +493,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When - No CSRF token
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/resetPassword").contentType(MediaType.APPLICATION_JSON).content(requestBody));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/resetPassword")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody));
 
             // Then
             result.andExpect(status().isForbidden());
@@ -507,8 +522,8 @@ class UserApiIntegrationTest {
                     """;
 
             // When - With CSRF token
-            ResultActions result =
-                    mockMvc.perform(post(API_BASE_PATH + "/resetPassword").contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
+            ResultActions result = mockMvc.perform(post(API_BASE_PATH + "/resetPassword")
+                    .contentType(MediaType.APPLICATION_JSON).content(requestBody).with(csrf()));
 
             // Then
             result.andExpect(status().isOk());

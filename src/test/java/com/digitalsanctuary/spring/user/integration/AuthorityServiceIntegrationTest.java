@@ -1,6 +1,7 @@
 package com.digitalsanctuary.spring.user.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,9 +10,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.digitalsanctuary.spring.user.persistence.model.Privilege;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.PrivilegeRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
@@ -22,7 +25,8 @@ import com.digitalsanctuary.spring.user.test.builders.UserTestDataBuilder;
 /**
  * Integration tests for AuthorityService.
  *
- * This test class verifies the full integration behavior including: - Database persistence and lazy loading - Transaction management - Real entity
+ * This test class verifies the full integration behavior including: - Database
+ * persistence and lazy loading - Transaction management - Real entity
  * relationships - Configuration-based role hierarchies
  */
 @IntegrationTest
@@ -41,6 +45,9 @@ class AuthorityServiceIntegrationTest {
         @Autowired
         private PrivilegeRepository privilegeRepository;
 
+        @Autowired
+        private PasswordHistoryRepository passwordHistoryRepository;
+
         private User testUser;
         private Role userRole;
         private Role managerRole;
@@ -50,38 +57,65 @@ class AuthorityServiceIntegrationTest {
         @Transactional
         void setUp() {
                 // Clean up
+                passwordHistoryRepository.deleteAll();
                 userRepository.deleteAll();
                 roleRepository.deleteAll();
                 privilegeRepository.deleteAll();
 
                 // Create privileges as defined in config
                 Privilege loginPrivilege = createAndSavePrivilege("LOGIN_PRIVILEGE", "Allows user login");
-                Privilege updateOwnPrivilege = createAndSavePrivilege("UPDATE_OWN_USER_PRIVILEGE", "Update own user profile");
-                Privilege resetOwnPrivilege = createAndSavePrivilege("RESET_OWN_PASSWORD_PRIVILEGE", "Reset own password");
+                Privilege updateOwnPrivilege = createAndSavePrivilege("UPDATE_OWN_USER_PRIVILEGE",
+                                "Update own user profile");
+                Privilege resetOwnPrivilege = createAndSavePrivilege("RESET_OWN_PASSWORD_PRIVILEGE",
+                                "Reset own password");
 
-                Privilege addToTeamPrivilege = createAndSavePrivilege("ADD_USER_TO_TEAM_PRIVILEGE", "Add users to team");
-                Privilege removeFromTeamPrivilege = createAndSavePrivilege("REMOVE_USER_FROM_TEAM_PRIVILEGE", "Remove users from team");
-                Privilege resetTeamPrivilege = createAndSavePrivilege("RESET_TEAM_PASSWORD_PRIVILEGE", "Reset team passwords");
+                Privilege addToTeamPrivilege = createAndSavePrivilege("ADD_USER_TO_TEAM_PRIVILEGE",
+                                "Add users to team");
+                Privilege removeFromTeamPrivilege = createAndSavePrivilege("REMOVE_USER_FROM_TEAM_PRIVILEGE",
+                                "Remove users from team");
+                Privilege resetTeamPrivilege = createAndSavePrivilege("RESET_TEAM_PASSWORD_PRIVILEGE",
+                                "Reset team passwords");
 
                 Privilege adminPrivilege = createAndSavePrivilege("ADMIN_PRIVILEGE", "Full admin access");
                 Privilege invitePrivilege = createAndSavePrivilege("INVITE_USER_PRIVILEGE", "Invite new users");
                 Privilege readUserPrivilege = createAndSavePrivilege("READ_USER_PRIVILEGE", "Read user data");
-                Privilege assignManagerPrivilege = createAndSavePrivilege("ASSIGN_MANAGER_PRIVILEGE", "Assign managers");
-                Privilege resetAnyPrivilege = createAndSavePrivilege("RESET_ANY_USER_PASSWORD_PRIVILEGE", "Reset any password");
+                Privilege assignManagerPrivilege = createAndSavePrivilege("ASSIGN_MANAGER_PRIVILEGE",
+                                "Assign managers");
+                Privilege resetAnyPrivilege = createAndSavePrivilege("RESET_ANY_USER_PASSWORD_PRIVILEGE",
+                                "Reset any password");
 
                 // Create roles with privileges matching config
-                userRole = createRole("ROLE_USER", "Standard user role", loginPrivilege, updateOwnPrivilege, resetOwnPrivilege);
+                userRole = createRole("ROLE_USER", "Standard user role", loginPrivilege, updateOwnPrivilege,
+                                resetOwnPrivilege);
 
-                managerRole = createRole("ROLE_MANAGER", "Manager role", addToTeamPrivilege, removeFromTeamPrivilege, resetTeamPrivilege);
+                managerRole = createRole("ROLE_MANAGER", "Manager role", addToTeamPrivilege, removeFromTeamPrivilege,
+                                resetTeamPrivilege);
 
-                adminRole = createRole("ROLE_ADMIN", "Administrator role", adminPrivilege, invitePrivilege, readUserPrivilege, assignManagerPrivilege,
+                adminRole = createRole("ROLE_ADMIN", "Administrator role", adminPrivilege, invitePrivilege,
+                                readUserPrivilege, assignManagerPrivilege,
                                 resetAnyPrivilege);
 
                 // Create test user
                 testUser = UserTestDataBuilder.aVerifiedUser().withEmail("test@example.com").withId(null).build();
                 testUser.setRoles(Arrays.asList(userRole));
                 testUser = userRepository.save(testUser);
+                // testUser = createAndSaveUser(testUser);
         }
+
+        // private User createAndSaveUser(User user) {
+        // user = userRepository.save(user);
+
+        // // Create password history entry that UserService would normally create
+        // if (user.getPassword() != null) {
+        // PasswordHistoryEntry entry = new PasswordHistoryEntry(
+        // user,
+        // user.getPassword(),
+        // LocalDateTime.now());
+        // passwordHistoryRepository.save(entry);
+        // }
+
+        // return user;
+        // }
 
         private Privilege createAndSavePrivilege(String name, String description) {
                 Privilege privilege = new Privilege(name, description);
@@ -102,10 +136,12 @@ class AuthorityServiceIntegrationTest {
                 User fetchedUser = userRepository.findByEmail("test@example.com");
 
                 // When
-                Collection<? extends GrantedAuthority> authorities = authorityService.getAuthoritiesFromUser(fetchedUser);
+                Collection<? extends GrantedAuthority> authorities = authorityService
+                                .getAuthoritiesFromUser(fetchedUser);
 
                 // Then
-                assertThat(authorities).hasSize(3).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder("LOGIN_PRIVILEGE",
+                assertThat(authorities).hasSize(3).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
+                                "LOGIN_PRIVILEGE",
                                 "UPDATE_OWN_USER_PRIVILEGE", "RESET_OWN_PASSWORD_PRIVILEGE");
         }
 
@@ -114,17 +150,21 @@ class AuthorityServiceIntegrationTest {
         @DisplayName("Should handle user with multiple roles from database")
         void getAuthoritiesFromUser_multipleRoles_combinesAllPrivileges() {
                 // Given
-                User multiRoleUser = UserTestDataBuilder.aVerifiedUser().withEmail("multirole@example.com").withId(null).build();
+                User multiRoleUser = UserTestDataBuilder.aVerifiedUser().withEmail("multirole@example.com").withId(null)
+                                .build();
                 multiRoleUser.setRoles(Arrays.asList(userRole, managerRole));
                 multiRoleUser = userRepository.save(multiRoleUser);
 
                 // When
-                Collection<? extends GrantedAuthority> authorities = authorityService.getAuthoritiesFromUser(multiRoleUser);
+                Collection<? extends GrantedAuthority> authorities = authorityService
+                                .getAuthoritiesFromUser(multiRoleUser);
 
                 // Then
                 assertThat(authorities).hasSize(6) // 3 from user role + 3 from manager role
-                                .extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder("LOGIN_PRIVILEGE", "UPDATE_OWN_USER_PRIVILEGE",
-                                                "RESET_OWN_PASSWORD_PRIVILEGE", "ADD_USER_TO_TEAM_PRIVILEGE", "REMOVE_USER_FROM_TEAM_PRIVILEGE",
+                                .extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder("LOGIN_PRIVILEGE",
+                                                "UPDATE_OWN_USER_PRIVILEGE",
+                                                "RESET_OWN_PASSWORD_PRIVILEGE", "ADD_USER_TO_TEAM_PRIVILEGE",
+                                                "REMOVE_USER_FROM_TEAM_PRIVILEGE",
                                                 "RESET_TEAM_PASSWORD_PRIVILEGE");
         }
 
@@ -141,8 +181,10 @@ class AuthorityServiceIntegrationTest {
                 Collection<? extends GrantedAuthority> authorities = authorityService.getAuthoritiesFromUser(adminUser);
 
                 // Then
-                assertThat(authorities).hasSize(5).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder("ADMIN_PRIVILEGE",
-                                "INVITE_USER_PRIVILEGE", "READ_USER_PRIVILEGE", "ASSIGN_MANAGER_PRIVILEGE", "RESET_ANY_USER_PASSWORD_PRIVILEGE");
+                assertThat(authorities).hasSize(5).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
+                                "ADMIN_PRIVILEGE",
+                                "INVITE_USER_PRIVILEGE", "READ_USER_PRIVILEGE", "ASSIGN_MANAGER_PRIVILEGE",
+                                "RESET_ANY_USER_PASSWORD_PRIVILEGE");
         }
 
         @Test
@@ -161,10 +203,12 @@ class AuthorityServiceIntegrationTest {
                 role2 = roleRepository.save(role2);
 
                 // When
-                Collection<? extends GrantedAuthority> authorities = authorityService.getAuthoritiesFromRoles(Arrays.asList(role1, role2));
+                Collection<? extends GrantedAuthority> authorities = authorityService
+                                .getAuthoritiesFromRoles(Arrays.asList(role1, role2));
 
                 // Then - Should only have 4 unique privileges (3 from user + 1 shared)
-                assertThat(authorities).hasSize(4).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder("LOGIN_PRIVILEGE",
+                assertThat(authorities).hasSize(4).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
+                                "LOGIN_PRIVILEGE",
                                 "UPDATE_OWN_USER_PRIVILEGE", "RESET_OWN_PASSWORD_PRIVILEGE", "SHARED_PRIVILEGE");
         }
 
@@ -184,7 +228,8 @@ class AuthorityServiceIntegrationTest {
 
                 // When - Fetch user again and get authorities
                 User updatedUser = userRepository.findByEmail("cascade@example.com");
-                Collection<? extends GrantedAuthority> authorities = authorityService.getAuthoritiesFromUser(updatedUser);
+                Collection<? extends GrantedAuthority> authorities = authorityService
+                                .getAuthoritiesFromUser(updatedUser);
 
                 // Then - Should include the new privilege
                 assertThat(authorities).extracting(GrantedAuthority::getAuthority).contains("NEW_PRIVILEGE");
@@ -199,18 +244,21 @@ class AuthorityServiceIntegrationTest {
                 Role loadedAdminRole = roleRepository.findById(adminRole.getId()).orElseThrow();
 
                 // When
-                Collection<? extends GrantedAuthority> authorities =
-                                authorityService.getAuthoritiesFromRoles(Arrays.asList(loadedUserRole, loadedManagerRole, loadedAdminRole));
+                Collection<? extends GrantedAuthority> authorities = authorityService.getAuthoritiesFromRoles(
+                                Arrays.asList(loadedUserRole, loadedManagerRole, loadedAdminRole));
 
                 // Then - Should have all unique privileges from all three roles
                 assertThat(authorities).hasSize(11) // 3 + 3 + 5 unique privileges
                                 .extracting(GrantedAuthority::getAuthority).contains(
                                                 // User privileges
-                                                "LOGIN_PRIVILEGE", "UPDATE_OWN_USER_PRIVILEGE", "RESET_OWN_PASSWORD_PRIVILEGE",
+                                                "LOGIN_PRIVILEGE", "UPDATE_OWN_USER_PRIVILEGE",
+                                                "RESET_OWN_PASSWORD_PRIVILEGE",
                                                 // Manager privileges
-                                                "ADD_USER_TO_TEAM_PRIVILEGE", "REMOVE_USER_FROM_TEAM_PRIVILEGE", "RESET_TEAM_PASSWORD_PRIVILEGE",
+                                                "ADD_USER_TO_TEAM_PRIVILEGE", "REMOVE_USER_FROM_TEAM_PRIVILEGE",
+                                                "RESET_TEAM_PASSWORD_PRIVILEGE",
                                                 // Admin privileges
-                                                "ADMIN_PRIVILEGE", "INVITE_USER_PRIVILEGE", "READ_USER_PRIVILEGE", "ASSIGN_MANAGER_PRIVILEGE",
+                                                "ADMIN_PRIVILEGE", "INVITE_USER_PRIVILEGE", "READ_USER_PRIVILEGE",
+                                                "ASSIGN_MANAGER_PRIVILEGE",
                                                 "RESET_ANY_USER_PASSWORD_PRIVILEGE");
         }
 
@@ -219,12 +267,14 @@ class AuthorityServiceIntegrationTest {
         @DisplayName("Should maintain transactional consistency")
         void getAuthoritiesFromUser_transactionalConsistency_maintainsIntegrity() {
                 // Given - Create a user and verify initial state
-                User user = UserTestDataBuilder.aVerifiedUser().withEmail("transactional@example.com").withId(null).build();
+                User user = UserTestDataBuilder.aVerifiedUser().withEmail("transactional@example.com").withId(null)
+                                .build();
                 user.setRoles(Arrays.asList(userRole));
                 user = userRepository.save(user);
 
                 // Get initial authorities
-                Collection<? extends GrantedAuthority> initialAuthorities = authorityService.getAuthoritiesFromUser(user);
+                Collection<? extends GrantedAuthority> initialAuthorities = authorityService
+                                .getAuthoritiesFromUser(user);
                 int initialSize = initialAuthorities.size();
 
                 // When - Modify role in same transaction
@@ -233,7 +283,8 @@ class AuthorityServiceIntegrationTest {
                 roleRepository.save(userRole);
 
                 // Get authorities again
-                Collection<? extends GrantedAuthority> updatedAuthorities = authorityService.getAuthoritiesFromUser(user);
+                Collection<? extends GrantedAuthority> updatedAuthorities = authorityService
+                                .getAuthoritiesFromUser(user);
 
                 // Then
                 assertThat(updatedAuthorities).hasSize(initialSize + 1);

