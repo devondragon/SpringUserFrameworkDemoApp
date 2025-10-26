@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Java Version](https://img.shields.io/badge/Java-17%2B-brightgreen)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.4-green)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-green)](https://spring.io/projects/spring-boot)
 [![Gradle](https://img.shields.io/badge/Gradle-8.0%2B-blue)](https://gradle.org/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://www.docker.com/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](contributing)
@@ -126,7 +126,7 @@ docker-compose up --build
    Then edit the copied file as needed.
 
 4. **Run the application**
-   
+
    Choose one of the following:
      - Using Gradle:
        ```bash
@@ -202,24 +202,24 @@ The application provides REST API endpoints for user management and event operat
 
 ### User Management API
 
-| Endpoint | Method | Description | Authentication |
-|----------|--------|-------------|---------------|
-| `/api/users` | GET | List all users | Admin |
-| `/api/users/{id}` | GET | Get user by ID | User/Admin |
-| `/api/users` | POST | Create new user | Public |
-| `/api/users/{id}` | PUT | Update user | User/Admin |
-| `/api/users/{id}` | DELETE | Delete user | User/Admin |
-| `/api/auth/login` | POST | User login | Public |
-| `/api/auth/logout` | POST | User logout | Authenticated |
+| Endpoint           | Method | Description     | Authentication |
+| ------------------ | ------ | --------------- | -------------- |
+| `/api/users`       | GET    | List all users  | Admin          |
+| `/api/users/{id}`  | GET    | Get user by ID  | User/Admin     |
+| `/api/users`       | POST   | Create new user | Public         |
+| `/api/users/{id}`  | PUT    | Update user     | User/Admin     |
+| `/api/users/{id}`  | DELETE | Delete user     | User/Admin     |
+| `/api/auth/login`  | POST   | User login      | Public         |
+| `/api/auth/logout` | POST   | User logout     | Authenticated  |
 
 ### Event Management API
 
-| Endpoint | Method | Description | Authentication |
-|----------|--------|-------------|---------------|
-| `/api/events` | GET | List events | Public |
-| `/api/events/{id}` | GET | Get event details | Public |
-| `/api/events` | POST | Create event | Admin |
-| `/api/events/{id}/register` | POST | Register for event | User |
+| Endpoint                    | Method | Description        | Authentication |
+| --------------------------- | ------ | ------------------ | -------------- |
+| `/api/events`               | GET    | List events        | Public         |
+| `/api/events/{id}`          | GET    | Get event details  | Public         |
+| `/api/events`               | POST   | Create event       | Admin          |
+| `/api/events/{id}/register` | POST   | Register for event | User           |
 
 ### Response Format
 
@@ -267,12 +267,12 @@ For detailed API documentation, start the application and visit `/swagger-ui.htm
 
 The application supports multiple configuration profiles:
 
-| Profile | Purpose | Database | Use Case |
-|---------|---------|----------|----------|
-| `local` | Local development | MariaDB/MySQL | Development with persistent database |
-| `test` | Testing | H2 (in-memory) | Automated testing |
-| `dev` | Development server | MariaDB/MySQL | Shared development environment |
-| `docker-keycloak` | Docker with Keycloak | MariaDB + Keycloak | OIDC authentication testing |
+| Profile           | Purpose              | Database           | Use Case                             |
+| ----------------- | -------------------- | ------------------ | ------------------------------------ |
+| `local`           | Local development    | MariaDB/MySQL      | Development with persistent database |
+| `test`            | Testing              | H2 (in-memory)     | Automated testing                    |
+| `dev`             | Development server   | MariaDB/MySQL      | Shared development environment       |
+| `docker-keycloak` | Docker with Keycloak | MariaDB + Keycloak | OIDC authentication testing          |
 
 ### Quick Configuration Setup
 
@@ -380,7 +380,7 @@ export SPRING_SECURITY_FAILED_LOGIN_ATTEMPTS=5
 ### Important Security Settings
 
 - **BCrypt Strength**: Set to `12` or higher for production
-- **Session Timeout**: Default `30m`, adjust based on security requirements  
+- **Session Timeout**: Default `30m`, adjust based on security requirements
 - **Account Lockout**: Configure failed login attempts and lockout duration
 - **CSRF Protection**: Enabled by default, ensure proper configuration for APIs
 
@@ -506,7 +506,7 @@ docker-compose -f docker-compose-keycloak.yml up --build
 ### Performance and Monitoring
 
 - **Application Metrics**: `/actuator/metrics`
-- **Health Check**: `/actuator/health` 
+- **Health Check**: `/actuator/health`
 - **Database Console**: `/h2-console` (when using H2)
 - **Log Levels**: Configure in `application.yml` or via `/actuator/loggers`
 
@@ -568,16 +568,16 @@ This project supports **Spring Boot DevTools** for live reload and auto-restart.
 
 ### Technology Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Frontend** | Thymeleaf + Bootstrap | Server-side rendering with responsive UI |
-| **Backend** | Spring Boot 3.4+ | Application framework and dependency injection |
-| **Security** | Spring Security | Authentication, authorization, CSRF protection |
-| **Data** | Spring Data JPA + Hibernate | Object-relational mapping and data access |
-| **Database** | MariaDB/MySQL | Primary data persistence |
-| **Testing** | JUnit 5 + Selenide | Unit, integration, and UI testing |
-| **Build** | Gradle | Dependency management and build automation |
-| **Containers** | Docker + Docker Compose | Development and deployment |
+| Layer          | Technology                  | Purpose                                        |
+| -------------- | --------------------------- | ---------------------------------------------- |
+| **Frontend**   | Thymeleaf + Bootstrap       | Server-side rendering with responsive UI       |
+| **Backend**    | Spring Boot 3.4+            | Application framework and dependency injection |
+| **Security**   | Spring Security             | Authentication, authorization, CSRF protection |
+| **Data**       | Spring Data JPA + Hibernate | Object-relational mapping and data access      |
+| **Database**   | MariaDB/MySQL               | Primary data persistence                       |
+| **Testing**    | JUnit 5 + Selenide          | Unit, integration, and UI testing              |
+| **Build**      | Gradle                      | Dependency management and build automation     |
+| **Containers** | Docker + Docker Compose     | Development and deployment                     |
 
 ---
 
