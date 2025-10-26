@@ -2,7 +2,6 @@ package com.digitalsanctuary.spring.user.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.jupiter.api.BeforeEach;
