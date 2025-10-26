@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const matchPasswordField = document.querySelector("#matchPassword");
     const signUpButton = document.querySelector("#signUpButton");
     const termsCheckbox = document.querySelector("#terms");
-    // const passwordStrength = document.querySelector("passwordStrength");
     const strengthLevel = document.querySelector("#strengthLevel");
     const strengthLabel = document.querySelector("#strengthLabel");
 
