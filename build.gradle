@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '3.5.6'
+  id 'org.springframework.boot' version '4.0.0'
   id 'io.spring.dependency-management' version '1.1.7'
   id "com.github.ben-manes.versions" version "0.52.0"
 
@@ -11,7 +11,7 @@ version = '1.0.1-SNAPSHOT'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -39,8 +39,8 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:3.5.1'
-l
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.0.0'
+
     // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -51,8 +51,8 @@ l
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
-    // Thymeleaf extras
-    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6:3.1.3.RELEASE'
+    // Thymeleaf extras - Spring Boot 4 manages the version
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
     implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0'
 
     // OpenAPI (Swagger)
@@ -78,6 +78,9 @@ l
 
     // Testing dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2:2.3.232'
     testImplementation 'com.codeborne:selenide:7.10.0'
@@ -112,9 +115,7 @@ tasks.register('uiTest', Test) {
 
 
 bootJar {
-	launchScript {
-		properties 'confFolder': '/opt/app/conf/'
-	}
+	// launchScript removed in Spring Boot 4 - use systemd or other init systems instead
 }
 
 bootRun {
