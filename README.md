@@ -1,8 +1,8 @@
 # Spring User Framework Demo Application
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Java Version](https://img.shields.io/badge/Java-17%2B-brightgreen)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-green)](https://spring.io/projects/spring-boot)
+[![Java Version](https://img.shields.io/badge/Java-21%2B-brightgreen)](https://www.oracle.com/java/technologies/downloads/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-green)](https://spring.io/projects/spring-boot)
 [![Gradle](https://img.shields.io/badge/Gradle-8.0%2B-blue)](https://gradle.org/)
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://www.docker.com/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](contributing)
@@ -14,6 +14,7 @@ A comprehensive demonstration application for the [Spring User Framework](https:
 
 ## Table of Contents
 - [Overview](#overview)
+- [Version Compatibility](#version-compatibility)
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
@@ -34,6 +35,30 @@ A comprehensive demonstration application for the [Spring User Framework](https:
 This demo application serves as a reference implementation of the [Spring User Framework](https://github.com/devondragon/SpringUserFramework), showing how to integrate user management features into a real-world Spring Boot application. It includes a complete user interface built with Bootstrap, Thymeleaf templates, and JavaScript.
 
 The application implements an event management system where users can browse, register for, and manage events. This demonstrates how to build application-specific functionality on top of the user management framework.
+
+## Version Compatibility
+
+This demo application tracks the latest version of the Spring User Framework:
+
+| Demo App Version | Spring Boot | Spring User Framework | Java | Branch/Tag |
+|------------------|-------------|----------------------|------|------------|
+| main (current) | 4.0.x | 4.0.x | 21+ | `main` |
+| 1.0.0-springboot3 | 3.5.x | 3.5.x | 17+ | [`v1.0.0-springboot3`](https://github.com/devondragon/SpringUserFrameworkDemoApp/tree/v1.0.0-springboot3) |
+
+### Using Spring Boot 3.x?
+
+If you need to use Spring Boot 3.5.x with Java 17, use the tagged version:
+
+```bash
+git clone https://github.com/devondragon/SpringUserFrameworkDemoApp.git
+cd SpringUserFrameworkDemoApp
+git checkout v1.0.0-springboot3
+```
+
+This version uses:
+- Spring Boot 3.5.6
+- Spring User Framework 3.5.1
+- Java 17+
 
 ## Features
 
@@ -68,7 +93,7 @@ The application implements an event management system where users can browse, re
 
 Before you begin, ensure you have the following installed:
 
-- **Java**: JDK 17 or higher ([Download](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html))
+- **Java**: JDK 21 or higher ([Download](https://www.oracle.com/java/technologies/downloads/)) - *Note: For Spring Boot 3.x version, Java 17+ is sufficient*
 - **Database**: MariaDB, MySQL, or Docker for containerized database
 - **Build Tool**: Gradle (included via wrapper) or Maven
 - **Optional**: Docker and Docker Compose for containerized setup
@@ -571,8 +596,8 @@ This project supports **Spring Boot DevTools** for live reload and auto-restart.
 | Layer          | Technology                  | Purpose                                        |
 | -------------- | --------------------------- | ---------------------------------------------- |
 | **Frontend**   | Thymeleaf + Bootstrap       | Server-side rendering with responsive UI       |
-| **Backend**    | Spring Boot 3.4+            | Application framework and dependency injection |
-| **Security**   | Spring Security             | Authentication, authorization, CSRF protection |
+| **Backend**    | Spring Boot 4.0+            | Application framework and dependency injection |
+| **Security**   | Spring Security 7           | Authentication, authorization, CSRF protection |
 | **Data**       | Spring Data JPA + Hibernate | Object-relational mapping and data access      |
 | **Database**   | MariaDB/MySQL               | Primary data persistence                       |
 | **Testing**    | JUnit 5 + Selenide          | Unit, integration, and UI testing              |
@@ -601,7 +626,7 @@ Solution:
 Solution:
 1. ./gradlew clean build --refresh-dependencies
 2. Check internet connection
-3. Verify Java version: java -version (requires JDK 17+)
+3. Verify Java version: java -version (requires JDK 21+)
 4. Clear Gradle cache: rm -rf ~/.gradle/caches
 ```
 
