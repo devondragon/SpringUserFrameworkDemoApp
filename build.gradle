@@ -1,8 +1,8 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '4.0.0'
+  id 'org.springframework.boot' version '4.0.1'
   id 'io.spring.dependency-management' version '1.1.7'
-  id "com.github.ben-manes.versions" version "0.52.0"
+  id "com.github.ben-manes.versions" version "0.53.0"
 
 }
 
@@ -39,7 +39,7 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.0.0'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.0.1'
 
     // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -60,12 +60,12 @@ dependencies {
 
     // Runtime dependencies
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.5'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.7'
     runtimeOnly 'org.postgresql:postgresql'
 
     // Utility libraries
     implementation 'org.passay:passay:1.6.6'
-    implementation 'com.google.guava:guava:33.4.8-jre'
+    implementation 'com.google.guava:guava:33.5.0-jre'
     implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
     implementation 'org.hibernate.validator:hibernate-validator:8.0.2.Final'
 
@@ -82,9 +82,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'com.h2database:h2:2.3.232'
-    testImplementation 'com.codeborne:selenide:7.10.0'
-    testImplementation 'io.github.bonigarcia:webdrivermanager:6.3.1'
+    testImplementation 'com.h2database:h2:2.4.240'
+    testImplementation 'com.codeborne:selenide:7.13.0'
+    testImplementation 'io.github.bonigarcia:webdrivermanager:6.3.3'
 
     // OAuth2 Testing dependencies
     testImplementation 'com.github.tomakehurst:wiremock-jre8-standalone:3.0.1'
@@ -111,11 +111,6 @@ tasks.register('uiTest', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     shouldRunAfter test
-}
-
-
-bootJar {
-	// launchScript removed in Spring Boot 4 - use systemd or other init systems instead
 }
 
 bootRun {

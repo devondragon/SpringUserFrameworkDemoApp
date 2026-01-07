@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.digitalsanctuary.spring.demo.UserDemoApplication;
+import java.time.LocalDate;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.repository.RoleRepository;
 import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
@@ -50,6 +51,11 @@ class AdminRoleAccessControlTest {
 
     private TestUserManager userManager;
     private static final String TEST_PREFIX = "role.access";
+
+    /** Returns a date one year in the future to satisfy @FutureOrPresent validation */
+    private static String futureDate() {
+        return LocalDate.now().plusYears(1).toString();
+    }
 
     @BeforeEach
     void setUp() {
@@ -122,7 +128,7 @@ class AdminRoleAccessControlTest {
         @DisplayName("Admin can perform all event operations")
         void testAdminEventOperations() throws Exception {
             // Admin can create events
-            String validEventJson = "{\"name\": \"Admin Event\", \"description\": \"Created by admin\", \"location\": \"Test Location\", \"date\": \"2025-12-31\", \"time\": \"14:30\"}";
+            String validEventJson = "{\"name\": \"Admin Event\", \"description\": \"Created by admin\", \"location\": \"Test Location\", \"date\": \"" + futureDate() + "\", \"time\": \"14:30\"}";
             mockMvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
                     .content(validEventJson).with(csrf())).andExpect(status().isOk());
         }
@@ -132,7 +138,7 @@ class AdminRoleAccessControlTest {
         @DisplayName("Regular user can only register for events")
         void testUserEventLimitations() throws Exception {
             // User CANNOT create events
-            String validEventJson = "{\"name\": \"User Event\", \"description\": \"Should fail\", \"location\": \"Test Location\", \"date\": \"2025-12-31\", \"time\": \"14:30\"}";
+            String validEventJson = "{\"name\": \"User Event\", \"description\": \"Should fail\", \"location\": \"Test Location\", \"date\": \"" + futureDate() + "\", \"time\": \"14:30\"}";
             mockMvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
                     .content(validEventJson).with(csrf())).andExpect(status().isForbidden());
         }
@@ -141,7 +147,7 @@ class AdminRoleAccessControlTest {
         @WithMockUser(authorities = {})
         @DisplayName("No authorities should deny access")
         void testNoAuthoritiesAccess() throws Exception {
-            String validEventJson = "{\"name\": \"Unauthorized\", \"description\": \"Should fail\", \"location\": \"Test Location\", \"date\": \"2025-12-31\", \"time\": \"14:30\"}";
+            String validEventJson = "{\"name\": \"Unauthorized\", \"description\": \"Should fail\", \"location\": \"Test Location\", \"date\": \"" + futureDate() + "\", \"time\": \"14:30\"}";
             mockMvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
                     .content(validEventJson).with(csrf())).andExpect(status().isForbidden());
         }
@@ -180,7 +186,7 @@ class AdminRoleAccessControlTest {
         @DisplayName("Partial admin permissions should work correctly")
         void testPartialAdminPermissions() throws Exception {
             // User with some admin privileges can create events
-            String validEventJson = "{\"name\": \"Partial Admin Event\", \"description\": \"Test\", \"location\": \"Test Location\", \"date\": \"2025-12-31\", \"time\": \"14:30\"}";
+            String validEventJson = "{\"name\": \"Partial Admin Event\", \"description\": \"Test\", \"location\": \"Test Location\", \"date\": \"" + futureDate() + "\", \"time\": \"14:30\"}";
             mockMvc.perform(post("/api/events").contentType(MediaType.APPLICATION_JSON)
                     .content(validEventJson).with(csrf())).andExpect(status().isOk());
         }
