@@ -1,5 +1,6 @@
--- Test data for local development
--- Uses INSERT IGNORE to skip if data already exists
+-- Test data for local development (MariaDB)
+-- Note: Uses INSERT IGNORE syntax specific to MySQL/MariaDB
+-- For PostgreSQL, use INSERT ... ON CONFLICT DO NOTHING instead
 
 INSERT IGNORE INTO events (id, name, description, location, date, time)
 VALUES

@@ -1,3 +1,8 @@
+# Local Development Database Configuration
+# WARNING: These credentials are for LOCAL DEVELOPMENT ONLY.
+# Production deployments MUST use secure credentials managed through
+# environment variables or secrets management systems.
+
 services:
   mariadb:
     image: mariadb:11.6
