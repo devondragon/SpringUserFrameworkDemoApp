@@ -1,0 +1,15 @@
+services:
+  mariadb:
+    image: mariadb:11.6
+    environment:
+      MARIADB_DATABASE: springuser
+      MARIADB_USER: springuser
+      MARIADB_PASSWORD: springuser
+      MARIADB_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+
+volumes:
+  mariadb-data:
