@@ -1,0 +1,20 @@
+# Local Development Database Configuration
+# WARNING: These credentials are for LOCAL DEVELOPMENT ONLY.
+# Production deployments MUST use secure credentials managed through
+# environment variables or secrets management systems.
+
+services:
+  mariadb:
+    image: mariadb:11.6
+    environment:
+      MARIADB_DATABASE: springuser
+      MARIADB_USER: springuser
+      MARIADB_PASSWORD: springuser
+      MARIADB_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+
+volumes:
+  mariadb-data:

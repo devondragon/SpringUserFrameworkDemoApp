@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '4.0.1'
+  id 'org.springframework.boot' version '4.0.2'
   id 'io.spring.dependency-management' version '1.1.7'
   id "com.github.ben-manes.versions" version "0.53.0"
 
@@ -39,7 +39,7 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.0.1'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.0.2'
 
     // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -63,6 +63,9 @@ dependencies {
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.7'
     runtimeOnly 'org.postgresql:postgresql'
 
+    // Docker Compose support for local development
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
     // Utility libraries
     implementation 'org.passay:passay:1.6.6'
     implementation 'com.google.guava:guava:33.5.0-jre'
@@ -83,7 +86,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2:2.4.240'
-    testImplementation 'com.codeborne:selenide:7.13.0'
+    testImplementation 'com.codeborne:selenide:7.14.0'
     testImplementation 'io.github.bonigarcia:webdrivermanager:6.3.3'
 
     // OAuth2 Testing dependencies

@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.FutureOrPresent;
 import lombok.Data;
 
 @Data
@@ -31,7 +30,6 @@ public class Event {
     private String location;
     
     @NotNull(message = "Event date is required")
-    @FutureOrPresent(message = "Event date must be today or in the future")
     private LocalDate date;
     
     @NotNull(message = "Event time is required")
