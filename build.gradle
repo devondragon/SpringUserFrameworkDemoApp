@@ -39,7 +39,7 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.0.2'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.0.3-SNAPSHOT'
 
     // Spring Boot starters
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -126,4 +126,43 @@ bootRun {
 		def profiles = 'local'
 		environment SPRING_PROFILES_ACTIVE: profiles
 	}
+}
+
+// Playwright Test Integration
+tasks.register('playwrightInstall', Exec) {
+    description = 'Install Playwright dependencies'
+    group = 'verification'
+    workingDir 'playwright'
+    commandLine 'npm', 'install'
+}
+
+tasks.register('playwrightBrowsers', Exec) {
+    description = 'Install Playwright browsers'
+    group = 'verification'
+    workingDir 'playwright'
+    commandLine 'npx', 'playwright', 'install'
+    dependsOn 'playwrightInstall'
+}
+
+tasks.register('playwrightTest', Exec) {
+    description = 'Run Playwright E2E tests'
+    group = 'verification'
+    workingDir 'playwright'
+    commandLine 'npx', 'playwright', 'test'
+    dependsOn 'playwrightBrowsers'
+}
+
+tasks.register('playwrightTestChromium', Exec) {
+    description = 'Run Playwright E2E tests on Chromium only'
+    group = 'verification'
+    workingDir 'playwright'
+    commandLine 'npx', 'playwright', 'test', '--project=chromium'
+    dependsOn 'playwrightBrowsers'
+}
+
+tasks.register('playwrightReport', Exec) {
+    description = 'Show Playwright test report'
+    group = 'verification'
+    workingDir 'playwright'
+    commandLine 'npx', 'playwright', 'show-report'
 }
