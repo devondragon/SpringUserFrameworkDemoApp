@@ -12,9 +12,13 @@
 				<div class="row justify-content-center">
 					<div class="col-md-8 col-lg-6">
 						<div class="card shadow-sm">
-							<!-- Error Message -->
+							<!-- Error Message (OAuth2 failure) -->
 							<div th:if="${errormessage != null}" class="alert alert-danger text-center" role="alert">
 								<strong>Holy smokes!</strong> <span th:text="${errormessage}"></span>
+							</div>
+							<!-- Error Message (Form login failure - Spring Security default behavior) -->
+							<div th:if="${param.error != null and errormessage == null}" class="alert alert-danger text-center" role="alert" id="loginError">
+								<span th:text="${session.SPRING_SECURITY_LAST_EXCEPTION?.message} ?: 'Invalid email or password'">Invalid email or password</span>
 							</div>
 
 							<!-- Card Header -->

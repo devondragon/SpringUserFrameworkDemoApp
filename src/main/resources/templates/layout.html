@@ -21,9 +21,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/img/icons/apple-touch-icon-180x180.png" />
 
 
-    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf" th:if="${_csrf}" th:content="${_csrf.token}" />
     <!-- default header name is X-CSRF-TOKEN -->
-    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <meta name="_csrf_header" th:if="${_csrf}" th:content="${_csrf.headerName}" />
 
     <!--/*  Each token will be replaced by their respective titles in the resulting page. */-->
     <title layout:title-pattern="$LAYOUT_TITLE - $CONTENT_TITLE">Events R Us</title>
