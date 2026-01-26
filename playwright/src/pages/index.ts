@@ -1,0 +1,10 @@
+export { BasePage } from './BasePage';
+export { LoginPage } from './LoginPage';
+export { RegisterPage } from './RegisterPage';
+export { UpdateUserPage } from './UpdateUserPage';
+export { UpdatePasswordPage } from './UpdatePasswordPage';
+export { ForgotPasswordPage, ForgotPasswordChangePage } from './ForgotPasswordPage';
+export { DeleteAccountPage } from './DeleteAccountPage';
+export { EventListPage } from './EventListPage';
+export { EventDetailsPage } from './EventDetailsPage';
+export { AdminActionsPage, ProtectedPage } from './AdminActionsPage';
