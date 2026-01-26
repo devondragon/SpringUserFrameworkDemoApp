@@ -1,0 +1,35 @@
+# Playwright Test Profile Configuration
+# This profile enables the Test API controller for Playwright E2E tests
+# IMPORTANT: This profile should NEVER be active in production
+
+# Disable password reset emails - tests use Test API for token retrieval
+app:
+  mail:
+    sendPasswordResetEmail: false
+
+spring:
+  datasource:
+    # Use local development database - same as 'local' profile
+    password: springuser
+    url: jdbc:mariadb://localhost:3306/springuser?createDatabaseIfNotExist=true
+    driverClassName: org.mariadb.jdbc.Driver
+    username: springuser
+
+# Enable test API endpoints by adding them to unprotected URIs
+user:
+  registration:
+    # Disable email sending since tests use Test API for token retrieval
+    sendVerificationEmail: false
+    googleEnabled: false
+    facebookEnabled: false
+  security:
+    # Add test API endpoints to unprotected URIs
+    unprotectedURIs: /,/index.html,/favicon.ico,/apple-touch-icon-precomposed.png,/css/*,/js/*,/js/user/*,/js/event/*,/js/utils/*,/img/**,/user/registration,/user/resendRegistrationToken,/user/resetPassword,/user/registrationConfirm,/user/changePassword,/user/savePassword,/oauth2/authorization/*,/login,/user/login,/user/login.html,/swagger-ui.html,/swagger-ui/**,/v3/api-docs/**,/event/,/event/list.html,/event/**,/about.html,/error,/error.html,/api/test/**
+    # Disable CSRF for test API endpoints
+    disableCSRFdURIs: /api/test/**
+
+logging:
+  level:
+    com.digitalsanctuary.spring.demo.test.api: DEBUG
+    com.digitalsanctuary.spring.demo.service: DEBUG
+    com.digitalsanctuary.spring.user.service.UserEmailService: DEBUG
