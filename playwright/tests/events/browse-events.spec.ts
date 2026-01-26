@@ -14,7 +14,6 @@ test.describe('Browse Events', () => {
       expect(page.url()).toContain('event');
 
       // Events should be visible (if any exist)
-      const eventCount = await eventListPage.getEventCount();
       // At least verify the page loads, event count depends on data
       await expect(eventListPage.eventCards.first()).toBeVisible().catch(() => {
         // No events is also valid

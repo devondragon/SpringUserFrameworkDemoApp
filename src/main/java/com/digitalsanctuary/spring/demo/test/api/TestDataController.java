@@ -197,6 +197,8 @@ public class TestDataController {
         Role userRole = roleRepository.findByName("ROLE_USER");
         if (userRole != null) {
             user.setRoles(Collections.singletonList(userRole));
+        } else {
+            log.warn("Test API: ROLE_USER not found in database - user will be created without roles");
         }
 
         User savedUser = userRepository.save(user);
@@ -226,7 +228,9 @@ public class TestDataController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
 
-        // Delete related tokens first
+        // Delete related tokens first to avoid foreign key constraints
+        // Note: Event registrations and other related entities are not deleted.
+        // If the user has event registrations, this may fail with foreign key constraint violation.
         VerificationToken verificationToken = verificationTokenRepository.findByUser(user);
         if (verificationToken != null) {
             verificationTokenRepository.delete(verificationToken);

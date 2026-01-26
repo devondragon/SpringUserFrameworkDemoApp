@@ -10,7 +10,8 @@ test.describe('Delete Account', () => {
     }) => {
       // Create and login as a verified user
       const user = generateTestUser('delete-account');
-      // Don't add to cleanupEmails since we're deleting it
+      // Add to cleanupEmails in case deletion fails
+      cleanupEmails.push(user.email);
 
       await createAndLoginUser(page, testApiClient, user);
 
@@ -34,9 +35,12 @@ test.describe('Delete Account', () => {
       deleteAccountPage,
       loginPage,
       testApiClient,
+      cleanupEmails,
     }) => {
       // Create and login as a verified user
       const user = generateTestUser('delete-logout');
+      // Add to cleanupEmails in case deletion fails
+      cleanupEmails.push(user.email);
 
       await createAndLoginUser(page, testApiClient, user);
 
@@ -61,9 +65,12 @@ test.describe('Delete Account', () => {
       deleteAccountPage,
       loginPage,
       testApiClient,
+      cleanupEmails,
     }) => {
       // Create and login as a verified user
       const user = generateTestUser('delete-no-login');
+      // Add to cleanupEmails in case deletion fails
+      cleanupEmails.push(user.email);
       const password = user.password;
 
       await createAndLoginUser(page, testApiClient, user);

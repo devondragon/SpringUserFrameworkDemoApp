@@ -1,4 +1,4 @@
-import { test, expect, generateTestUser, generateTestEmail } from '../../src/fixtures';
+import { test, expect, generateTestUser } from '../../src/fixtures';
 
 /**
  * Complete End-to-End User Journey Test

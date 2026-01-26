@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
@@ -81,9 +81,6 @@ export class EventListPage extends BasePage {
 
     const name = await card.locator('.card-title').textContent();
     const description = await card.locator('.card-text.text-muted').textContent();
-
-    // Get date and location from the card text
-    const cardBody = await card.locator('.card-body').textContent();
 
     return {
       name: name?.trim() || '',

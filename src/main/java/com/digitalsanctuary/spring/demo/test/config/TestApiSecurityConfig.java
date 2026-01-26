@@ -18,21 +18,29 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Configuration
-@EnableWebSecurity
 @Profile("playwright-test")
 public class TestApiSecurityConfig {
 
     /**
      * Configure security for test API endpoints. This filter chain has higher priority (lower order number) than the
      * default security configuration, so it will be applied first for /api/test/** paths.
+     * <p>
+     * SECURITY: Restricts test API access to localhost only to prevent accidental exposure.
      */
     @Bean
     @Order(1)
     public SecurityFilterChain testApiSecurityFilterChain(HttpSecurity http) throws Exception {
-        log.info("Configuring Test API security - CSRF disabled for /api/test/**");
+        log.info("Configuring Test API security - CSRF disabled for /api/test/** (localhost only)");
 
         http.securityMatcher("/api/test/**")
-                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(request -> {
+                            String remoteAddr = request.getRemoteAddr();
+                            return "127.0.0.1".equals(remoteAddr) ||
+                                   "0:0:0:0:0:0:0:1".equals(remoteAddr) ||
+                                   "localhost".equals(remoteAddr);
+                        }).permitAll()
+                        .anyRequest().denyAll())
                 .csrf(csrf -> csrf.disable());
 
         return http.build();

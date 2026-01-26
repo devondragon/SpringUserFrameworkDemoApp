@@ -1,4 +1,4 @@
-import { test, expect, generateTestUser, generateTestPassword } from '../../src/fixtures';
+import { test, expect, generateTestUser } from '../../src/fixtures';
 
 test.describe('Password Reset', () => {
   test.describe('Request Reset', () => {

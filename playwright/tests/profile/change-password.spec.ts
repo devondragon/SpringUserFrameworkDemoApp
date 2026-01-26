@@ -98,6 +98,7 @@ test.describe('Change Password', () => {
       // Should show error or stay on page
       const isError = await updatePasswordPage.isErrorMessage() ||
                       await updatePasswordPage.hasCurrentPasswordError();
+      expect(isError).toBe(true);
 
       // Verify original password still works
       const details = await testApiClient.getUserDetails(user.email);

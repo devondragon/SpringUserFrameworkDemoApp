@@ -10,6 +10,8 @@ app:
 spring:
   datasource:
     # Use local development database - same as 'local' profile
+    # Note: Credentials are hardcoded for test profile as this connects to a local development database only.
+    # This profile is protected by @Profile annotation and should never be active in production.
     password: springuser
     url: jdbc:mariadb://localhost:3306/springuser?createDatabaseIfNotExist=true
     driverClassName: org.mariadb.jdbc.Driver
@@ -23,10 +25,8 @@ user:
     googleEnabled: false
     facebookEnabled: false
   security:
-    # Add test API endpoints to unprotected URIs
-    unprotectedURIs: /,/index.html,/favicon.ico,/apple-touch-icon-precomposed.png,/css/*,/js/*,/js/user/*,/js/event/*,/js/utils/*,/img/**,/user/registration,/user/resendRegistrationToken,/user/resetPassword,/user/registrationConfirm,/user/changePassword,/user/savePassword,/oauth2/authorization/*,/login,/user/login,/user/login.html,/swagger-ui.html,/swagger-ui/**,/v3/api-docs/**,/event/,/event/list.html,/event/**,/about.html,/error,/error.html,/api/test/**
-    # Disable CSRF for test API endpoints
-    disableCSRFdURIs: /api/test/**
+    # Test API endpoints are handled by TestApiSecurityConfig with IP whitelist restriction
+    unprotectedURIs: /,/index.html,/favicon.ico,/apple-touch-icon-precomposed.png,/css/*,/js/*,/js/user/*,/js/event/*,/js/utils/*,/img/**,/user/registration,/user/resendRegistrationToken,/user/resetPassword,/user/registrationConfirm,/user/changePassword,/user/savePassword,/oauth2/authorization/*,/login,/user/login,/user/login.html,/swagger-ui.html,/swagger-ui/**,/v3/api-docs/**,/event/,/event/list.html,/event/**,/about.html,/error,/error.html
 
 logging:
   level:

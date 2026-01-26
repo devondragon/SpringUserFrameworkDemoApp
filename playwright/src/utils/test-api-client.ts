@@ -130,6 +130,26 @@ export class TestApiClient {
   }
 
   /**
+   * Check response status and throw if not ok.
+   */
+  private async checkResponse(response: any, endpoint: string): Promise<any> {
+    if (!response.ok()) {
+      const statusText = response.statusText();
+      const status = response.status();
+      let errorBody = '';
+      try {
+        errorBody = JSON.stringify(await response.json());
+      } catch {
+        errorBody = await response.text().catch(() => 'Unable to read response body');
+      }
+      throw new Error(
+        `Test API request failed: ${endpoint} returned ${status} ${statusText}. Body: ${errorBody}`
+      );
+    }
+    return response.json();
+  }
+
+  /**
    * Check if a user exists.
    */
   async userExists(email: string): Promise<UserExistsResponse> {
@@ -137,7 +157,7 @@ export class TestApiClient {
     const response = await context.get(`/api/test/user/exists`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user/exists');
   }
 
   /**
@@ -148,7 +168,7 @@ export class TestApiClient {
     const response = await context.get(`/api/test/user/enabled`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user/enabled');
   }
 
   /**
@@ -159,7 +179,7 @@ export class TestApiClient {
     const response = await context.get(`/api/test/user/details`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user/details');
   }
 
   /**
@@ -170,7 +190,7 @@ export class TestApiClient {
     const response = await context.get(`/api/test/user/verification-token`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user/verification-token');
   }
 
   /**
@@ -181,7 +201,7 @@ export class TestApiClient {
     const response = await context.get(`/api/test/user/password-reset-token`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user/password-reset-token');
   }
 
   /**
@@ -192,7 +212,7 @@ export class TestApiClient {
     const response = await context.post(`/api/test/user`, {
       data: userData,
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user');
   }
 
   /**
@@ -203,7 +223,7 @@ export class TestApiClient {
     const response = await context.delete(`/api/test/user`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user');
   }
 
   /**
@@ -214,7 +234,7 @@ export class TestApiClient {
     const response = await context.post(`/api/test/user/enable`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user/enable');
   }
 
   /**
@@ -225,7 +245,7 @@ export class TestApiClient {
     const response = await context.post(`/api/test/user/unlock`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user/unlock');
   }
 
   /**
@@ -237,7 +257,7 @@ export class TestApiClient {
     const response = await context.post(`/api/test/user/verification-token`, {
       params: { email },
     });
-    return response.json();
+    return this.checkResponse(response, '/api/test/user/verification-token');
   }
 
   /**
@@ -246,7 +266,7 @@ export class TestApiClient {
   async health(): Promise<HealthResponse> {
     const context = this.ensureContext();
     const response = await context.get(`/api/test/health`);
-    return response.json();
+    return this.checkResponse(response, '/api/test/health');
   }
 
   /**

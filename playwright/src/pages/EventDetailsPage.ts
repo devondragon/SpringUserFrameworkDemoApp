@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
@@ -76,11 +76,11 @@ export class EventDetailsPage extends BasePage {
    * Register for the event.
    */
   async register(): Promise<void> {
-    // Set up dialog handler for the alert
-    this.page.once('dialog', async (dialog) => {
-      await dialog.accept();
-    });
+    // Set up dialog handler for the alert and verify it appears
+    const dialogPromise = this.page.waitForEvent('dialog', { timeout: 5000 });
     await this.registerButton.click();
+    const dialog = await dialogPromise;
+    await dialog.accept();
     // Wait for page to reload
     await this.page.waitForLoadState('networkidle');
   }
@@ -89,11 +89,11 @@ export class EventDetailsPage extends BasePage {
    * Unregister from the event.
    */
   async unregister(): Promise<void> {
-    // Set up dialog handler for the alert
-    this.page.once('dialog', async (dialog) => {
-      await dialog.accept();
-    });
+    // Set up dialog handler for the alert and verify it appears
+    const dialogPromise = this.page.waitForEvent('dialog', { timeout: 5000 });
     await this.unregisterButton.click();
+    const dialog = await dialogPromise;
+    await dialog.accept();
     // Wait for page to reload
     await this.page.waitForLoadState('networkidle');
   }

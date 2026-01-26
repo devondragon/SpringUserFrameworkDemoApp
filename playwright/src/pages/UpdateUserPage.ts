@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
@@ -33,8 +33,8 @@ export class UpdateUserPage extends BasePage {
     this.firstNameError = page.locator('#firstNameError');
     this.lastNameError = page.locator('#lastNameError');
     // Use role-based selectors with exact name to get visible buttons/links
-    this.changePasswordLink = page.getByRole('link', { name: 'Change Password' }).locator('visible=true').first();
-    this.deleteAccountLink = page.getByRole('link', { name: 'Delete Account' }).locator('visible=true').first();
+    this.changePasswordLink = page.getByRole('link', { name: 'Change Password' }).first();
+    this.deleteAccountLink = page.getByRole('link', { name: 'Delete Account' }).first();
   }
 
   /**
@@ -55,9 +55,7 @@ export class UpdateUserPage extends BasePage {
    * Fill in profile form.
    */
   async fillForm(firstName: string, lastName: string): Promise<void> {
-    await this.firstNameInput.clear();
     await this.firstNameInput.fill(firstName);
-    await this.lastNameInput.clear();
     await this.lastNameInput.fill(lastName);
   }
 

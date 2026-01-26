@@ -1,4 +1,4 @@
-import { test, expect, generateTestUser, generateTestEmail } from '../../src/fixtures';
+import { test, expect, generateTestUser } from '../../src/fixtures';
 
 test.describe('Registration', () => {
   test.describe('Valid Registration', () => {
@@ -151,8 +151,6 @@ test.describe('Registration', () => {
       page,
       registerPage,
     }) => {
-      const user = generateTestUser('invalid-email');
-
       await registerPage.goto();
 
       // HTML5 email validation should prevent submission
@@ -190,6 +188,7 @@ test.describe('Registration', () => {
 
       // Password strength indicator should become visible
       const strengthVisible = await registerPage.isPasswordStrengthVisible();
+      expect(strengthVisible).toBe(true);
       // Note: This depends on JavaScript being enabled and working
     });
   });
