@@ -102,7 +102,7 @@ springdoc:
 user:
   actuallyDeleteAccount: false # If true, users can delete their own accounts.  If false, accounts are disabled instead of deleted.
   registration:
-    sendVerificationEmail: false # If true, a verification email will be sent to the user after registration.  If false, the user will be automatically verified.
+    sendVerificationEmail: true # If true, a verification email will be sent to the user after registration.  If false, the user will be automatically verified.
     googleEnabled: false # If true, Google OAuth2 will be enabled for registration.
     facebookEnabled: false # If true, Facebook OAuth2 will be enabled for registration.
   webauthn:

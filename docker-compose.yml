@@ -21,14 +21,6 @@ services:
       timeout: 5s
       retries: 3
 
-  myapp-db-adminer:    
-    image: adminer
-    container_name: springuser-db-adminer
-    ports:      
-      - "8081:8080"
-    depends_on:
-      - myapp-db
-
   mailserver:
     image: docker.io/mailserver/docker-mailserver:latest
     container_name: springuser-mail
