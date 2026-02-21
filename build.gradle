@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '4.0.2'
+  id 'org.springframework.boot' version '4.0.3'
   id 'io.spring.dependency-management' version '1.1.7'
   id "com.github.ben-manes.versions" version "0.53.0"
 
@@ -53,10 +53,20 @@ dependencies {
 
     // Thymeleaf extras - Spring Boot 4 manages the version
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-    implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0'
+    // Workaround for GROOVY-11745: Groovy 5.0.4 (shipped with Spring Boot 4.0.3) has a
+    // regression that causes an NPE when Groovy 5 code calls setters on objects from
+    // Groovy 4-compiled libraries. This breaks thymeleaf-layout-dialect 3.4.0 (compiled
+    // with Groovy 4.0.25) in DecorateProcessor.doProcess().
+    // See: https://issues.apache.org/jira/browse/GROOVY-11745
+    // See: https://github.com/ultraq/thymeleaf-layout-dialect/issues/251
+    // TODO: Remove this workaround when Groovy 5.0.5+ is available and adopted by Spring Boot
+    implementation('nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0') {
+        exclude group: 'org.apache.groovy'
+    }
+    implementation 'org.apache.groovy:groovy:5.0.3'
 
     // OpenAPI (Swagger)
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1'
 
     // Runtime dependencies
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
@@ -69,8 +79,7 @@ dependencies {
     // Utility libraries
     implementation 'org.passay:passay:1.6.6'
     implementation 'com.google.guava:guava:33.5.0-jre'
-    implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
-    implementation 'org.hibernate.validator:hibernate-validator:8.0.2.Final'
+    implementation 'org.hibernate.validator:hibernate-validator'
 
     // Compile-only dependencies
     compileOnly 'org.projectlombok:lombok'
@@ -90,7 +99,7 @@ dependencies {
     testImplementation 'io.github.bonigarcia:webdrivermanager:6.3.3'
 
     // OAuth2 Testing dependencies
-    testImplementation 'com.github.tomakehurst:wiremock-jre8-standalone:3.0.1'
+    testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
     testImplementation 'io.jsonwebtoken:jjwt-api:0.13.0'
     testRuntimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
     testRuntimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
