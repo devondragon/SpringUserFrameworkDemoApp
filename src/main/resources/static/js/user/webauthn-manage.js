@@ -47,8 +47,8 @@ function displayCredentials(container, credentials) {
     container.innerHTML = credentials.map(cred => `
         <div class="card mb-2" data-id="${escapeHtml(cred.id)}">
             <div class="card-body d-flex justify-content-between align-items-center py-2">
-                <div>
-                    <strong>${escapeHtml(cred.label || 'Unnamed Passkey')}</strong>
+                <div class="me-3" style="min-width: 0;">
+                    <strong class="d-inline-block text-truncate" style="max-width: 100%;">${escapeHtml(cred.label || 'Unnamed Passkey')}</strong>
                     <br>
                     <small class="text-muted">
                         Created: ${new Date(cred.created).toLocaleDateString()}
@@ -59,7 +59,7 @@ function displayCredentials(container, credentials) {
                         ? '<span class="badge bg-success">Synced</span>'
                         : '<span class="badge bg-warning text-dark">Device-bound</span>'}
                 </div>
-                <div>
+                <div class="flex-shrink-0">
                     <button class="btn btn-sm btn-outline-secondary me-1" onclick="window.renamePasskey('${escapeHtml(cred.id)}')">
                         <i class="bi bi-pencil"></i> Rename
                     </button>
@@ -76,8 +76,16 @@ function displayCredentials(container, credentials) {
  * Rename a passkey.
  */
 async function renamePasskey(credentialId) {
-    const newLabel = prompt('Enter new name for this passkey:');
+    const newLabel = prompt('Enter new name for this passkey (max 64 characters):');
     if (!newLabel) return;
+
+    if (newLabel.length > 64) {
+        const globalMsg = document.getElementById('passkeyMessage');
+        if (globalMsg) {
+            showMessage(globalMsg, 'Passkey name is too long (max 64 characters).', 'alert-danger');
+        }
+        return;
+    }
 
     const globalMessage = document.getElementById('passkeyMessage');
 
