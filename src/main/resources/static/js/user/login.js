@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				window.location.href = redirectUrl;
 			} catch (error) {
 				console.error("Passkey authentication failed:", error);
-				showMessage(null, "Passkey authentication failed: " + error.message, "alert-danger");
+				showMessage(null, "Passkey authentication failed. Please try again.", "alert-danger");
 				passkeyBtn.disabled = false;
 				passkeyBtn.innerHTML = '<i class="bi bi-key me-2"></i> Sign in with Passkey';
 			}

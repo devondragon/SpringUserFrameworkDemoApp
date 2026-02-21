@@ -78,8 +78,15 @@ export async function registerPasskey(labelInput) {
     });
 
     if (!finishResponse.ok) {
-        const error = await finishResponse.text();
-        throw new Error(error || 'Registration failed');
+        let msg = 'Registration failed';
+        try {
+            const data = await finishResponse.json();
+            msg = data.message || msg;
+        } catch {
+            const text = await finishResponse.text();
+            if (text) msg = text;
+        }
+        throw new Error(msg);
     }
 
     return credential;

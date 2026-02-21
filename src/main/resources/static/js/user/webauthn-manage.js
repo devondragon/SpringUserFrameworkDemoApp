@@ -7,6 +7,7 @@ import { showMessage } from '/js/shared.js';
 
 const csrfHeader = getCsrfHeaderName();
 const csrfToken = getCsrfToken();
+let renameModalInstance;
 
 /**
  * Load and display user's passkeys.
@@ -36,6 +37,15 @@ export async function loadPasskeys() {
 }
 
 /**
+ * Format a date string safely, returning 'Unknown' for invalid values.
+ */
+function formatDate(dateStr) {
+    if (!dateStr) return 'Unknown';
+    const date = new Date(dateStr);
+    return isNaN(date) ? 'Unknown' : date.toLocaleDateString();
+}
+
+/**
  * Display credentials in UI.
  */
 function displayCredentials(container, credentials) {
@@ -51,8 +61,8 @@ function displayCredentials(container, credentials) {
                     <strong class="d-inline-block text-truncate" style="max-width: 100%;">${escapeHtml(cred.label || 'Unnamed Passkey')}</strong>
                     <br>
                     <small class="text-muted">
-                        Created: ${new Date(cred.created).toLocaleDateString()}
-                        ${cred.lastUsed ? ' | Last used: ' + new Date(cred.lastUsed).toLocaleDateString() : ' | Never used'}
+                        Created: ${formatDate(cred.created)}
+                        ${cred.lastUsed ? ' | Last used: ' + formatDate(cred.lastUsed) : ' | Never used'}
                     </small>
                     <br>
                     ${cred.backupEligible
@@ -60,10 +70,10 @@ function displayCredentials(container, credentials) {
                         : '<span class="badge bg-warning text-dark">Device-bound</span>'}
                 </div>
                 <div class="flex-shrink-0">
-                    <button class="btn btn-sm btn-outline-secondary me-1" onclick="window.renamePasskey('${escapeHtml(cred.id)}', '${escapeHtml(cred.label || '')}')">
+                    <button class="btn btn-sm btn-outline-secondary me-1" data-action="rename" data-id="${escapeHtml(cred.id)}" data-label="${escapeHtml(cred.label || '')}">
                         <i class="bi bi-pencil"></i> Rename
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="window.deletePasskey('${escapeHtml(cred.id)}')">
+                    <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${escapeHtml(cred.id)}">
                         <i class="bi bi-trash"></i> Delete
                     </button>
                 </div>
@@ -87,9 +97,11 @@ function renamePasskey(credentialId, currentLabel) {
     errorEl.classList.add('d-none');
     input.classList.remove('is-invalid');
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('renamePasskeyModal'));
-    modal.show();
+    // Show modal (reuse cached instance)
+    if (!renameModalInstance) {
+        renameModalInstance = new bootstrap.Modal(document.getElementById('renamePasskeyModal'));
+    }
+    renameModalInstance.show();
 
     // Focus input when modal is shown
     document.getElementById('renamePasskeyModal').addEventListener('shown.bs.modal', () => {
@@ -145,7 +157,7 @@ function renamePasskey(credentialId, currentLabel) {
                 throw new Error(data.message || 'Failed to rename passkey');
             }
 
-            modal.hide();
+            renameModalInstance.hide();
             if (globalMessage) {
                 showMessage(globalMessage, 'Passkey renamed successfully.', 'alert-success');
             }
@@ -198,7 +210,7 @@ async function deletePasskey(credentialId) {
     } catch (error) {
         console.error('Failed to delete passkey:', error);
         if (globalMessage) {
-            showMessage(globalMessage, error.message, 'alert-danger');
+            showMessage(globalMessage, 'Failed to delete passkey. Please try again.', 'alert-danger');
         }
     }
 }
@@ -221,14 +233,10 @@ async function handleRegisterPasskey() {
     } catch (error) {
         console.error('Registration error:', error);
         if (globalMessage) {
-            showMessage(globalMessage, 'Failed to register passkey: ' + error.message, 'alert-danger');
+            showMessage(globalMessage, 'Failed to register passkey. Please try again.', 'alert-danger');
         }
     }
 }
-
-// Expose to global scope for onclick handlers in the credential list
-window.renamePasskey = renamePasskey;
-window.deletePasskey = deletePasskey;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -238,6 +246,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isWebAuthnSupported()) {
         passkeySection.innerHTML = '<div class="alert alert-warning">Your browser does not support passkeys.</div>';
         return;
+    }
+
+    // Event delegation for credential list actions
+    const passkeysList = document.getElementById('passkeys-list');
+    if (passkeysList) {
+        passkeysList.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-action]');
+            if (!button) return;
+
+            const { action, id, label } = button.dataset;
+            if (action === 'rename') {
+                renamePasskey(id, label);
+            } else if (action === 'delete') {
+                deletePasskey(id);
+            }
+        });
     }
 
     // Wire up register button
