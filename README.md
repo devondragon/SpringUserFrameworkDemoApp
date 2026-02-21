@@ -71,6 +71,8 @@ This version uses:
 
 - **Authentication & Security**
   - Username/password authentication
+  - WebAuthn/Passkey passwordless login (biometrics, security keys)
+  - Passkey management (register, rename, delete)
   - OAuth2 login with Google, Facebook, and Keycloak
   - Role-based access control
   - CSRF protection
@@ -376,6 +378,39 @@ To enable SSO:
 
 Then update your OAuth2 providers' callback URLs to use the ngrok domain.
 
+---
+
+#### **WebAuthn / Passkeys**
+
+The demo app includes full WebAuthn/Passkey support for passwordless login. Users can register passkeys (biometrics, security keys) from their profile page and use them to log in without a password.
+
+**Configuration** (in `application.yml`):
+```yaml
+user:
+  webauthn:
+    enabled: true                                    # Enable passkey support
+    rpId: localhost                                  # Must match your domain
+    rpName: Spring User Framework Demo              # Display name shown during registration
+    allowedOrigins: http://localhost:8080            # Must match browser origin exactly
+```
+
+**Important**: You must also add the WebAuthn endpoints to your unprotected URIs:
+```yaml
+user:
+  security:
+    unprotectedURIs: ...,/webauthn/authenticate/**,/login/webauthn
+```
+
+**How it works:**
+- **Register a passkey**: Log in with username/password, go to your profile page, and click "Add Passkey"
+- **Log in with passkey**: On the login page, click the "Sign in with a Passkey" button
+- **Manage passkeys**: From your profile page, rename or delete registered passkeys
+
+**Development notes:**
+- HTTP works on `localhost` without HTTPS
+- For testing on other devices, use ngrok (`ngrok http 8080`) and update `rpId` and `allowedOrigins` to match the ngrok domain
+- The database tables (`user_entities`, `user_credentials`) are created automatically by Hibernate
+
 ### Environment Variables
 
 For production deployments, use environment variables instead of hardcoding values:
@@ -638,6 +673,18 @@ Solution:
 2. Check redirect URI configuration in OAuth provider
 3. Use ngrok for local HTTPS testing
 4. Verify Keycloak realm and client settings
+```
+
+#### WebAuthn/Passkey Issues
+**Problem**: Passkey registration or login fails
+```
+Solution:
+1. Verify user.webauthn.enabled is true in application.yml
+2. Check that rpId matches your domain (localhost for local dev)
+3. Ensure allowedOrigins matches the exact browser URL (including port)
+4. Verify /webauthn/authenticate/** and /login/webauthn are in unprotectedURIs
+5. For non-localhost testing, HTTPS is required - use ngrok
+6. Check browser console for WebAuthn API errors
 ```
 
 #### Email Not Sending
