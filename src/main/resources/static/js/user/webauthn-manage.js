@@ -60,7 +60,7 @@ function displayCredentials(container, credentials) {
                         : '<span class="badge bg-warning text-dark">Device-bound</span>'}
                 </div>
                 <div class="flex-shrink-0">
-                    <button class="btn btn-sm btn-outline-secondary me-1" onclick="window.renamePasskey('${escapeHtml(cred.id)}')">
+                    <button class="btn btn-sm btn-outline-secondary me-1" onclick="window.renamePasskey('${escapeHtml(cred.id)}', '${escapeHtml(cred.label || '')}')">
                         <i class="bi bi-pencil"></i> Rename
                     </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="window.deletePasskey('${escapeHtml(cred.id)}')">
@@ -73,47 +73,101 @@ function displayCredentials(container, credentials) {
 }
 
 /**
- * Rename a passkey.
+ * Show the rename passkey modal.
  */
-async function renamePasskey(credentialId) {
-    const newLabel = prompt('Enter new name for this passkey (max 64 characters):');
-    if (!newLabel) return;
+function renamePasskey(credentialId, currentLabel) {
+    const input = document.getElementById('renamePasskeyInput');
+    const counter = document.getElementById('renamePasskeyCount');
+    const errorEl = document.getElementById('renamePasskeyError');
+    const confirmBtn = document.getElementById('confirmRenameButton');
 
-    if (newLabel.length > 64) {
-        const globalMsg = document.getElementById('passkeyMessage');
-        if (globalMsg) {
-            showMessage(globalMsg, 'Passkey name is too long (max 64 characters).', 'alert-danger');
+    // Pre-fill with current label
+    input.value = currentLabel || '';
+    counter.textContent = `${input.value.length} / 64`;
+    errorEl.classList.add('d-none');
+    input.classList.remove('is-invalid');
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('renamePasskeyModal'));
+    modal.show();
+
+    // Focus input when modal is shown
+    document.getElementById('renamePasskeyModal').addEventListener('shown.bs.modal', () => {
+        input.select();
+    }, { once: true });
+
+    // Character counter
+    const onInput = () => {
+        counter.textContent = `${input.value.length} / 64`;
+        if (input.value.trim()) {
+            errorEl.classList.add('d-none');
+            input.classList.remove('is-invalid');
         }
-        return;
-    }
+    };
+    input.addEventListener('input', onInput);
 
-    const globalMessage = document.getElementById('passkeyMessage');
+    // Submit on Enter key
+    const onKeydown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmBtn.click();
+        }
+    };
+    input.addEventListener('keydown', onKeydown);
 
-    try {
-        const response = await fetch(`/user/webauthn/credentials/${credentialId}/label`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                [csrfHeader]: csrfToken
-            },
-            body: JSON.stringify({ label: newLabel })
-        });
-
-        if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.message || 'Failed to rename passkey');
+    // Handle confirm click
+    const onConfirm = async () => {
+        const newLabel = input.value.trim();
+        if (!newLabel) {
+            errorEl.textContent = 'Please enter a name.';
+            errorEl.classList.remove('d-none');
+            input.classList.add('is-invalid');
+            return;
         }
 
-        if (globalMessage) {
-            showMessage(globalMessage, 'Passkey renamed successfully.', 'alert-success');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Saving...';
+
+        const globalMessage = document.getElementById('passkeyMessage');
+
+        try {
+            const response = await fetch(`/user/webauthn/credentials/${credentialId}/label`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                },
+                body: JSON.stringify({ label: newLabel })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to rename passkey');
+            }
+
+            modal.hide();
+            if (globalMessage) {
+                showMessage(globalMessage, 'Passkey renamed successfully.', 'alert-success');
+            }
+            loadPasskeys();
+        } catch (error) {
+            console.error('Failed to rename passkey:', error);
+            errorEl.textContent = error.message;
+            errorEl.classList.remove('d-none');
+            input.classList.add('is-invalid');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Save';
         }
-        loadPasskeys();
-    } catch (error) {
-        console.error('Failed to rename passkey:', error);
-        if (globalMessage) {
-            showMessage(globalMessage, error.message, 'alert-danger');
-        }
-    }
+    };
+    confirmBtn.addEventListener('click', onConfirm);
+
+    // Clean up listeners when modal is hidden
+    document.getElementById('renamePasskeyModal').addEventListener('hidden.bs.modal', () => {
+        input.removeEventListener('input', onInput);
+        input.removeEventListener('keydown', onKeydown);
+        confirmBtn.removeEventListener('click', onConfirm);
+    }, { once: true });
 }
 
 /**
