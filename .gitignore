@@ -145,3 +145,6 @@ playwright/test-results/
 playwright/playwright-report/
 playwright/reports/
 playwright/.env
+
+# Curl cookie files
+cookies.txt
