@@ -37,5 +37,9 @@ management:
       show-details: never # Don't expose detailed health info in production
 
 user:
+  webauthn:
+    rpId: ${WEBAUTHN_RP_ID:example.com}
+    rpName: ${WEBAUTHN_RP_NAME:Spring User Framework Demo}
+    allowedOrigins: ${WEBAUTHN_ALLOWED_ORIGINS:https://example.com}
   security:
     disableCSRFdURIs: # No CSRF disabled URIs in production for better security

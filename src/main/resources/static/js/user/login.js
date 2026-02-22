@@ -1,4 +1,6 @@
 import { showMessage } from "/js/shared.js";
+import { isWebAuthnSupported } from "/js/user/webauthn-utils.js";
+import { authenticateWithPasskey } from "/js/user/webauthn-authenticate.js";
 
 document.addEventListener("DOMContentLoaded", () => {
 	const form = document.querySelector("form");
@@ -8,6 +10,30 @@ document.addEventListener("DOMContentLoaded", () => {
 			event.preventDefault();
 		}
 	});
+
+	// Show passkey login button if WebAuthn is supported
+	const passkeySection = document.getElementById("passkey-login-section");
+	const passkeyBtn = document.getElementById("passkeyLoginBtn");
+
+	if (passkeySection && passkeyBtn && isWebAuthnSupported()) {
+		passkeySection.style.display = "block";
+		const passkeyError = document.getElementById("passkeyError");
+
+		passkeyBtn.addEventListener("click", async () => {
+			passkeyBtn.disabled = true;
+			passkeyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Authenticating...';
+
+			try {
+				const redirectUrl = await authenticateWithPasskey();
+				window.location.href = redirectUrl;
+			} catch (error) {
+				console.error("Passkey authentication failed:", error);
+				showMessage(passkeyError, "Passkey authentication failed. Please try again.", "alert-danger");
+				passkeyBtn.disabled = false;
+				passkeyBtn.innerHTML = '<i class="bi bi-key me-2"></i> Sign in with Passkey';
+			}
+		});
+	}
 });
 
 function validateForm(form) {
