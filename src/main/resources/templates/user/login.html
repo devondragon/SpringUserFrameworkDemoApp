@@ -20,6 +20,8 @@
 							<div th:if="${param.error != null and errormessage == null}" class="alert alert-danger text-center" role="alert" id="loginError">
 								<span th:text="${session.SPRING_SECURITY_LAST_EXCEPTION?.message} ?: 'Invalid email or password'">Invalid email or password</span>
 							</div>
+							<!-- Passkey error message (shown by JS) -->
+							<div id="passkeyError" class="alert alert-danger text-center d-none" role="alert"></div>
 
 							<!-- Card Header -->
 							<div class="card-header text-center">

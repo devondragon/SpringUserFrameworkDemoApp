@@ -15,8 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	const passkeySection = document.getElementById("passkey-login-section");
 	const passkeyBtn = document.getElementById("passkeyLoginBtn");
 
-	if (passkeySection && isWebAuthnSupported()) {
+	if (passkeySection && passkeyBtn && isWebAuthnSupported()) {
 		passkeySection.style.display = "block";
+		const passkeyError = document.getElementById("passkeyError");
 
 		passkeyBtn.addEventListener("click", async () => {
 			passkeyBtn.disabled = true;
@@ -27,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				window.location.href = redirectUrl;
 			} catch (error) {
 				console.error("Passkey authentication failed:", error);
-				showMessage(null, "Passkey authentication failed. Please try again.", "alert-danger");
+				showMessage(passkeyError, "Passkey authentication failed. Please try again.", "alert-danger");
 				passkeyBtn.disabled = false;
 				passkeyBtn.innerHTML = '<i class="bi bi-key me-2"></i> Sign in with Passkey';
 			}

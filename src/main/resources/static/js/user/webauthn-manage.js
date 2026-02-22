@@ -153,8 +153,15 @@ function renamePasskey(credentialId, currentLabel) {
             });
 
             if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Failed to rename passkey');
+                let msg = 'Failed to rename passkey';
+                try {
+                    const data = await response.json();
+                    msg = data.message || msg;
+                } catch {
+                    const text = await response.text();
+                    if (text) msg = text;
+                }
+                throw new Error(msg);
             }
 
             renameModalInstance.hide();
@@ -199,8 +206,15 @@ async function deletePasskey(credentialId) {
         });
 
         if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.message || 'Failed to delete passkey');
+            let msg = 'Failed to delete passkey';
+            try {
+                const data = await response.json();
+                msg = data.message || msg;
+            } catch {
+                const text = await response.text();
+                if (text) msg = text;
+            }
+            throw new Error(msg);
         }
 
         if (globalMessage) {
