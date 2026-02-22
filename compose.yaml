@@ -5,7 +5,7 @@
 
 services:
   mariadb:
-    image: mariadb:11.6
+    image: mariadb:12.2
     environment:
       MARIADB_DATABASE: springuser
       MARIADB_USER: springuser
