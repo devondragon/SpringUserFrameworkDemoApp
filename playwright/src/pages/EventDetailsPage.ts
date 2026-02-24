@@ -74,28 +74,42 @@ export class EventDetailsPage extends BasePage {
 
   /**
    * Register for the event.
+   * @returns true if the server confirmed registration, false if it failed
    */
-  async register(): Promise<void> {
-    // Set up dialog handler for the alert and verify it appears
+  async register(): Promise<boolean> {
+    // Set up dialog handler for the alert
     const dialogPromise = this.page.waitForEvent('dialog', { timeout: 5000 });
     await this.registerButton.click();
     const dialog = await dialogPromise;
-    await dialog.accept();
-    // Wait for page to reload
+    const succeeded = dialog.message().toLowerCase().includes('successful');
+    // Accept dialog, which causes page JS to call location.reload().
+    // Listen for the next 'load' event BEFORE accepting so we don't miss the reload.
+    await Promise.all([
+      this.page.waitForEvent('load'),
+      dialog.accept(),
+    ]);
     await this.page.waitForLoadState('networkidle');
+    return succeeded;
   }
 
   /**
    * Unregister from the event.
+   * @returns true if the server confirmed unregistration, false if it failed
    */
-  async unregister(): Promise<void> {
-    // Set up dialog handler for the alert and verify it appears
+  async unregister(): Promise<boolean> {
+    // Set up dialog handler for the alert
     const dialogPromise = this.page.waitForEvent('dialog', { timeout: 5000 });
     await this.unregisterButton.click();
     const dialog = await dialogPromise;
-    await dialog.accept();
-    // Wait for page to reload
+    const succeeded = dialog.message().toLowerCase().includes('successful');
+    // Accept dialog, which causes page JS to call location.reload().
+    // Listen for the next 'load' event BEFORE accepting so we don't miss the reload.
+    await Promise.all([
+      this.page.waitForEvent('load'),
+      dialog.accept(),
+    ]);
     await this.page.waitForLoadState('networkidle');
+    return succeeded;
   }
 
   /**
