@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.digitalsanctuary.spring.demo.user.profile.DemoUserProfileRepository;
 import com.digitalsanctuary.spring.user.persistence.model.PasswordResetToken;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.model.User;
@@ -47,6 +48,7 @@ public class TestDataController {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DemoUserProfileRepository demoUserProfileRepository;
 
     /**
      * Check if a user exists by email.
@@ -228,9 +230,9 @@ public class TestDataController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
 
-        // Delete related tokens first to avoid foreign key constraints
-        // Note: Event registrations and other related entities are not deleted.
-        // If the user has event registrations, this may fail with foreign key constraint violation.
+        // Delete related entities first to avoid foreign key constraints
+        demoUserProfileRepository.findById(user.getId()).ifPresent(demoUserProfileRepository::delete);
+
         VerificationToken verificationToken = verificationTokenRepository.findByUser(user);
         if (verificationToken != null) {
             verificationTokenRepository.delete(verificationToken);
