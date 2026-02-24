@@ -12,6 +12,9 @@ import {
     initPasswordStrengthMeter,
     initPasswordRequirements,
 } from "/js/utils/password-validation.js";
+import { isWebAuthnSupported } from "/js/user/webauthn-utils.js";
+
+let isPasswordlessMode = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("#registerForm");
@@ -23,6 +26,42 @@ document.addEventListener("DOMContentLoaded", () => {
     const strengthLabel = document.querySelector("#strengthLabel");
 
     form.addEventListener("submit", (event) => handleRegistration(event));
+
+    // Show registration mode toggle if WebAuthn is supported
+    if (isWebAuthnSupported()) {
+        const toggleContainer = document.querySelector("#registrationModeToggle");
+        if (toggleContainer) {
+            toggleContainer.classList.remove("d-none");
+        }
+    }
+
+    // Registration mode toggle handlers
+    const modePasswordBtn = document.querySelector("#modePassword");
+    const modePasswordlessBtn = document.querySelector("#modePasswordless");
+    const passwordFieldsDiv = document.querySelector("#passwordFields");
+    const passwordlessInfo = document.querySelector("#passwordlessInfo");
+
+    if (modePasswordBtn && modePasswordlessBtn) {
+        modePasswordBtn.addEventListener("click", () => {
+            isPasswordlessMode = false;
+            modePasswordBtn.classList.add("active");
+            modePasswordlessBtn.classList.remove("active");
+            passwordFieldsDiv.classList.remove("d-none");
+            passwordlessInfo.classList.add("d-none");
+            passwordField.setAttribute("required", "");
+            matchPasswordField.setAttribute("required", "");
+        });
+
+        modePasswordlessBtn.addEventListener("click", () => {
+            isPasswordlessMode = true;
+            modePasswordlessBtn.classList.add("active");
+            modePasswordBtn.classList.remove("active");
+            passwordFieldsDiv.classList.add("d-none");
+            passwordlessInfo.classList.remove("d-none");
+            passwordField.removeAttribute("required");
+            matchPasswordField.removeAttribute("required");
+        });
+    }
 
     // Real-time password matching validation
     [passwordField, matchPasswordField].forEach((field) => {
@@ -56,6 +95,61 @@ async function handleRegistration(event) {
     signUpButton.disabled = true;
     clearErrors();
 
+    // Validate terms and conditions
+    const termsCheckbox = document.querySelector("#terms");
+    if (!termsCheckbox.checked) {
+        alert("You must agree to the Terms and Conditions to register.");
+        signUpButton.disabled = false;
+        return;
+    }
+
+    if (isPasswordlessMode) {
+        // Passwordless registration - minimal payload
+        const firstName = document.querySelector("#firstName").value;
+        const lastName = document.querySelector("#lastName").value;
+        const email = document.querySelector("#email").value;
+
+        const payload = { firstName, lastName, email };
+
+        try {
+            const response = await fetch("/user/registration/passwordless", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [document.querySelector("meta[name='_csrf_header']").content]:
+                        document.querySelector("meta[name='_csrf']").content,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                window.location.href = data.redirectUrl;
+            } else if (data.errors) {
+                const errorMessages = Object.entries(data.errors)
+                    .map(([field, message]) => `${field}: ${message}`)
+                    .join("<br>");
+                showMessage(globalError, errorMessages, "alert-danger");
+            } else {
+                const errorMessage =
+                    data.messages?.join(" ") || data.message || "Registration failed. Please try again.";
+                showMessage(globalError, errorMessage, "alert-danger");
+            }
+        } catch (error) {
+            console.error("Request failed:", error);
+            showMessage(
+                globalError,
+                "An unexpected error occurred. Please try again later.",
+                "alert-danger"
+            );
+        } finally {
+            signUpButton.disabled = false;
+        }
+        return;
+    }
+
+    // Standard password registration
     const password = document.querySelector("#password").value;
     const matchPassword = document.querySelector("#matchPassword").value;
 
@@ -65,14 +159,6 @@ async function handleRegistration(event) {
             .querySelector("#matchPassword")
             .parentElement.querySelector(".form-text");
         showError(errorContainer, "Passwords do not match.");
-        signUpButton.disabled = false;
-        return;
-    }
-
-    // Validate terms and conditions
-    const termsCheckbox = document.querySelector("#terms");
-    if (!termsCheckbox.checked) {
-        alert("You must agree to the Terms and Conditions to register.");
         signUpButton.disabled = false;
         return;
     }

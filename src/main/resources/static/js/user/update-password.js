@@ -4,14 +4,42 @@ import {
     initPasswordStrengthMeter,
     initPasswordRequirements,
 } from "/js/utils/password-validation.js";
+import { getAuthMethods } from "/js/user/auth-methods.js";
 
-document.addEventListener("DOMContentLoaded", () => {
+let isSetPasswordMode = false;
+
+document.addEventListener("DOMContentLoaded", async () => {
     const form = document.querySelector("#updatePasswordForm");
     const globalMessage = document.querySelector("#globalMessage");
     const currentPasswordField = document.querySelector("#currentPassword");
     const newPasswordField = document.querySelector("#newPassword");
     const confirmPasswordField = document.querySelector("#confirmPassword");
     const confirmPasswordError = document.querySelector("#confirmPasswordError");
+
+    // Check if user has a password; if not, switch to "set password" mode
+    try {
+        const auth = await getAuthMethods();
+        if (!auth.hasPassword) {
+            const currentPasswordSection = document.querySelector("#currentPasswordSection");
+            if (currentPasswordSection) {
+                currentPasswordSection.classList.add("d-none");
+            }
+            if (currentPasswordField) {
+                currentPasswordField.removeAttribute("required");
+            }
+            const setPasswordInfo = document.querySelector("#setPasswordInfo");
+            if (setPasswordInfo) {
+                setPasswordInfo.classList.remove("d-none");
+            }
+            const pageTitle = document.querySelector("#pageTitle");
+            if (pageTitle) {
+                pageTitle.textContent = "Set a Password";
+            }
+            isSetPasswordMode = true;
+        }
+    } catch (error) {
+        console.error("Failed to check auth methods:", error);
+    }
 
     // Initialize password strength meter for new password field
     const passwordStrength = document.getElementById("password-strength");
@@ -28,7 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
         clearErrors();
 
-        const currentPassword = currentPasswordField.value;
         const newPassword = newPasswordField.value;
         const confirmPassword = confirmPasswordField.value;
 
@@ -37,6 +64,43 @@ document.addEventListener("DOMContentLoaded", () => {
             showError(confirmPasswordError, "Passwords do not match.");
             return;
         }
+
+        if (isSetPasswordMode) {
+            // Set password mode - no old password needed
+            const requestData = {
+                newPassword: newPassword,
+                confirmPassword: confirmPassword,
+            };
+
+            try {
+                const response = await fetch("/user/setPassword", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        [document.querySelector("meta[name='_csrf_header']").content]:
+                            document.querySelector("meta[name='_csrf']").content,
+                    },
+                    body: JSON.stringify(requestData),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showMessage(globalMessage, data.messages.join(" "), "alert-success");
+                    form.reset();
+                } else {
+                    const errorMessage = data.messages?.join(" ") || "Unable to set your password.";
+                    showMessage(globalMessage, errorMessage, "alert-danger");
+                }
+            } catch (error) {
+                console.error("Request failed:", error);
+                showMessage(globalMessage, "An unexpected error occurred. Please try again later.", "alert-danger");
+            }
+            return;
+        }
+
+        // Standard update password mode
+        const currentPassword = currentPasswordField.value;
 
         // Prepare JSON payload
         const requestData = {
