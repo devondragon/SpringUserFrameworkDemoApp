@@ -283,7 +283,7 @@ async function updateAuthMethodsUI() {
             badges += `<span class="badge bg-success me-2"><i class="bi bi-key me-1"></i>Passkeys (${auth.passkeysCount})</span>`;
         }
         if (auth.provider && auth.provider !== 'LOCAL') {
-            badges += `<span class="badge bg-info me-2"><i class="bi bi-cloud me-1"></i>${auth.provider}</span>`;
+            badges += `<span class="badge bg-info me-2"><i class="bi bi-cloud me-1"></i>${escapeHtml(auth.provider)}</span>`;
         }
         badgesContainer.innerHTML = badges;
 
@@ -306,6 +306,10 @@ async function updateAuthMethodsUI() {
         }
     } catch (error) {
         console.error('Failed to update auth methods UI:', error);
+        const section = document.getElementById('auth-methods-section');
+        if (section) {
+            section.innerHTML = '<div class="alert alert-warning">Unable to load authentication methods.</div>';
+        }
     }
 }
 
