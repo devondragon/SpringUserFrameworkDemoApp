@@ -92,10 +92,24 @@ test.describe('Change Password', () => {
       await page.waitForLoadState('networkidle');
 
       // Try to change password with wrong current password
-      await updatePasswordPage.changePassword('wrongCurrentPassword123!', 'NewTest@Pass123!');
-      await page.waitForLoadState('networkidle');
+      // Listen for the server response to verify error handling
+      const responsePromise = page.waitForResponse(
+        response => response.url().includes('/user/updatePassword') && response.request().method() === 'POST'
+      );
 
-      // Should show error or stay on page
+      await updatePasswordPage.changePassword('wrongCurrentPassword123!', 'NewTest@Pass123!');
+
+      // Wait for the server response
+      const response = await responsePromise;
+      const responseBody = await response.json();
+
+      // Server should indicate failure
+      expect(responseBody.success).toBe(false);
+
+      // Wait for the error message to appear in the DOM
+      await updatePasswordPage.waitForMessage(5000);
+
+      // Should show error
       const isError = await updatePasswordPage.isErrorMessage() ||
                       await updatePasswordPage.hasCurrentPasswordError();
       expect(isError).toBe(true);
