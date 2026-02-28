@@ -40,6 +40,20 @@
 								</div>
 								<p class="text-muted mb-4 text-center">or</p>
 
+								<!-- Registration Mode Toggle -->
+								<div id="registrationModeToggle" class="d-none mb-3">
+									<div class="btn-group w-100" role="group" aria-label="Registration mode">
+										<button type="button" class="btn btn-outline-primary active" id="modePassword">With Password</button>
+										<button type="button" class="btn btn-outline-primary" id="modePasswordless"><i class="bi bi-key me-1"></i>Passwordless (Passkey)</button>
+									</div>
+								</div>
+
+								<!-- Passwordless Info Alert -->
+								<div id="passwordlessInfo" class="alert alert-info d-none">
+									<i class="bi bi-info-circle me-1"></i>
+									You'll register with just your name and email, then set up a passkey to sign in securely without a password.
+								</div>
+
 								<!-- Error Message -->
 								<div id="globalError" class="alert alert-danger d-none text-center" role="alert"></div>
 								<div id="existingAccountError" th:if="${param.error}"
@@ -83,6 +97,7 @@
 										</div>
 									</div>
 
+									<div id="passwordFields">
 									<!-- Password -->
 									<div class="row mb-3 align-items-center">
 										<label for="password" class="col-sm-4 col-form-label"
@@ -128,6 +143,7 @@
 												class="form-control" required
 												th:placeholder="#{label.user.confirm-pass}">
 										</div>
+									</div>
 									</div>
 
 									<!-- Terms Checkbox -->

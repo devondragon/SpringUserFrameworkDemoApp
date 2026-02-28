@@ -4,10 +4,12 @@
 import { getCsrfToken, getCsrfHeaderName, isWebAuthnSupported, escapeHtml } from '/js/user/webauthn-utils.js';
 import { registerPasskey } from '/js/user/webauthn-register.js';
 import { showMessage } from '/js/shared.js';
+import { getAuthMethods, invalidateAuthMethodsCache } from '/js/user/auth-methods.js';
 
 const csrfHeader = getCsrfHeaderName();
 const csrfToken = getCsrfToken();
 let renameModalInstance;
+let removePasswordModalInstance;
 
 /**
  * Load and display user's passkeys.
@@ -168,7 +170,9 @@ function renamePasskey(credentialId, currentLabel) {
             if (globalMessage) {
                 showMessage(globalMessage, 'Passkey renamed successfully.', 'alert-success');
             }
+            invalidateAuthMethodsCache();
             loadPasskeys();
+            updateAuthMethodsUI();
         } catch (error) {
             console.error('Failed to rename passkey:', error);
             errorEl.textContent = error.message;
@@ -220,11 +224,13 @@ async function deletePasskey(credentialId) {
         if (globalMessage) {
             showMessage(globalMessage, 'Passkey deleted successfully.', 'alert-success');
         }
+        invalidateAuthMethodsCache();
         loadPasskeys();
+        updateAuthMethodsUI();
     } catch (error) {
         console.error('Failed to delete passkey:', error);
         if (globalMessage) {
-            showMessage(globalMessage, 'Failed to delete passkey. Please try again.', 'alert-danger');
+            showMessage(globalMessage, error.message || 'Failed to delete passkey. Please try again.', 'alert-danger');
         }
     }
 }
@@ -243,13 +249,140 @@ async function handleRegisterPasskey() {
             showMessage(globalMessage, 'Passkey registered successfully!', 'alert-success');
         }
         if (labelInput) labelInput.value = '';
+        invalidateAuthMethodsCache();
         loadPasskeys();
+        updateAuthMethodsUI();
     } catch (error) {
         console.error('Registration error:', error);
         if (globalMessage) {
             showMessage(globalMessage, 'Failed to register passkey. Please try again.', 'alert-danger');
         }
     }
+}
+
+/**
+ * Update the Authentication Methods UI card with current state.
+ */
+async function updateAuthMethodsUI() {
+    const section = document.getElementById('auth-methods-section');
+    if (!section) return;
+
+    try {
+        const auth = await getAuthMethods(true);
+        section.classList.remove('d-none');
+
+        // Build badges
+        const badgesContainer = document.getElementById('auth-method-badges');
+        let badges = '';
+        if (auth.hasPassword) {
+            badges += '<span class="badge bg-primary me-2"><i class="bi bi-lock me-1"></i>Password</span>';
+        } else {
+            badges += '<span class="badge bg-warning text-dark me-2"><i class="bi bi-unlock me-1"></i>No Password</span>';
+        }
+        if (auth.hasPasskeys) {
+            badges += `<span class="badge bg-success me-2"><i class="bi bi-key me-1"></i>Passkeys (${auth.passkeysCount})</span>`;
+        }
+        if (auth.provider && auth.provider !== 'LOCAL') {
+            badges += `<span class="badge bg-info me-2"><i class="bi bi-cloud me-1"></i>${escapeHtml(auth.provider)}</span>`;
+        }
+        badgesContainer.innerHTML = badges;
+
+        // Show/hide Remove Password button (only if has password AND passkeys)
+        const removeContainer = document.getElementById('removePasswordContainer');
+        if (removeContainer) {
+            removeContainer.classList.toggle('d-none', !(auth.hasPassword && auth.hasPasskeys));
+        }
+
+        // Show/hide Set Password link (only if no password)
+        const setContainer = document.getElementById('setPasswordContainer');
+        if (setContainer) {
+            setContainer.classList.toggle('d-none', auth.hasPassword);
+        }
+
+        // Update Change Password link text
+        const changePasswordLink = document.getElementById('changePasswordLink');
+        if (changePasswordLink) {
+            changePasswordLink.textContent = auth.hasPassword ? 'Change Password' : 'Set a Password';
+        }
+    } catch (error) {
+        console.error('Failed to update auth methods UI:', error);
+        const section = document.getElementById('auth-methods-section');
+        if (section) {
+            section.innerHTML = '<div class="alert alert-warning">Unable to load authentication methods.</div>';
+        }
+    }
+}
+
+/**
+ * Wire up the Remove Password button and modal.
+ */
+function initRemovePassword() {
+    const removeBtn = document.getElementById('removePasswordBtn');
+    const confirmInput = document.getElementById('removePasswordConfirmInput');
+    const confirmBtn = document.getElementById('confirmRemovePasswordBtn');
+    const errorEl = document.getElementById('removePasswordError');
+
+    if (!removeBtn) return;
+
+    removeBtn.addEventListener('click', () => {
+        if (!removePasswordModalInstance) {
+            removePasswordModalInstance = new bootstrap.Modal(document.getElementById('removePasswordModal'));
+        }
+        confirmInput.value = '';
+        confirmBtn.disabled = true;
+        errorEl.classList.add('d-none');
+        removePasswordModalInstance.show();
+    });
+
+    // Enable confirm button only when "REMOVE" is typed
+    confirmInput.addEventListener('input', () => {
+        confirmBtn.disabled = confirmInput.value.trim() !== 'REMOVE';
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+        if (confirmInput.value.trim() !== 'REMOVE') return;
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Removing...';
+        errorEl.classList.add('d-none');
+
+        try {
+            const response = await fetch('/user/webauthn/password', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                }
+            });
+
+            if (!response.ok) {
+                let msg = 'Failed to remove password';
+                try {
+                    const data = await response.json();
+                    msg = data.message || msg;
+                } catch {
+                    const text = await response.text();
+                    if (text) msg = text;
+                }
+                throw new Error(msg);
+            }
+
+            removePasswordModalInstance.hide();
+            const globalMessage = document.getElementById('globalMessage');
+            if (globalMessage) {
+                showMessage(globalMessage, 'Password removed successfully. You are now passwordless.', 'alert-success');
+            }
+            invalidateAuthMethodsCache();
+            updateAuthMethodsUI();
+        } catch (error) {
+            console.error('Failed to remove password:', error);
+            errorEl.textContent = error.message;
+            errorEl.classList.remove('d-none');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Remove Password';
+        }
+    });
 }
 
 // Initialize on page load
@@ -284,6 +417,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         registerBtn.addEventListener('click', handleRegisterPasskey);
     }
 
-    // Load existing passkeys
+    // Initialize remove password functionality
+    initRemovePassword();
+
+    // Load existing passkeys and auth methods
     loadPasskeys();
+    updateAuthMethodsUI();
 });
