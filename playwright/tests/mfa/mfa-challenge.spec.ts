@@ -57,15 +57,9 @@ test.describe('MFA', () => {
       // Call the MFA status endpoint
       const response = await page.request.get('/user/mfa/status');
 
-      // With MFA disabled in playwright-test profile, expect 404
-      // With MFA enabled, expect 200 with proper response shape
-      expect([200, 404]).toContain(response.status());
-
-      if (response.status() === 200) {
-        const body = await response.json();
-        expect(typeof body.mfaEnabled).toBe('boolean');
-        expect(typeof body.fullyAuthenticated).toBe('boolean');
-      }
+      // MFA is disabled in playwright-test profile, so endpoint returns 404.
+      // A separate MFA-enabled test profile would be needed to test the 200 case.
+      expect(response.status()).toBe(404);
     });
 
     test('should require authentication for MFA status endpoint', async ({ page }) => {
