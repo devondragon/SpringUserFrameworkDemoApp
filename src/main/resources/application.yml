@@ -111,6 +111,14 @@ user:
     rpName: Spring User Framework Demo
     allowedOrigins: http://localhost:8080
 
+  mfa:
+    enabled: true
+    factors:
+      - PASSWORD
+      - WEBAUTHN
+    passwordEntryPointUri: /user/login.html
+    webauthnEntryPointUri: /user/mfa/webauthn-challenge.html
+
   audit:
     logFilePath: /opt/app/logs/user-audit.log # The path to the audit log file.
     flushOnWrite: false # If true, the audit log will be flushed to disk after every write (less performant).  If false, the audit log will be flushed to disk every 10 seconds (more performant).
