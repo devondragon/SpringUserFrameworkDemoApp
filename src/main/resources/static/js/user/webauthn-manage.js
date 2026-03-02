@@ -262,7 +262,8 @@ async function handleRegisterPasskey() {
 
 /**
  * Update the MFA Status section in the auth-methods card.
- * Silently hides the container if the MFA status endpoint returns 404 (MFA disabled).
+ * Hides the container if the MFA status endpoint returns 404 (MFA disabled).
+ * Logs a warning for other non-OK responses.
  */
 async function updateMfaStatusUI() {
     const container = document.getElementById('mfaStatusContainer');
@@ -274,7 +275,13 @@ async function updateMfaStatusUI() {
             headers: { [csrfHeader]: csrfToken }
         });
 
+        if (response.status === 404) {
+            // MFA feature disabled — silently hide
+            container.classList.add('d-none');
+            return;
+        }
         if (!response.ok) {
+            console.warn('MFA status endpoint returned', response.status);
             container.classList.add('d-none');
             return;
         }
