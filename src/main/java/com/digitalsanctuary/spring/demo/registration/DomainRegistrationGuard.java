@@ -1,5 +1,7 @@
 package com.digitalsanctuary.spring.demo.registration;
 
+import java.util.Locale;
+
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -49,7 +51,7 @@ public class DomainRegistrationGuard implements RegistrationGuard {
         }
 
         // For form/passwordless, restrict to the allowed domain
-        if (context.email() != null && context.email().toLowerCase().endsWith(ALLOWED_DOMAIN)) {
+        if (context.email() != null && context.email().toLowerCase(Locale.ROOT).endsWith(ALLOWED_DOMAIN)) {
             log.debug("Allowing registration for approved domain: {}", context.email());
             return RegistrationDecision.allow();
         }
