@@ -55,6 +55,9 @@ public class UserServiceTest {
     @Mock
     private PasswordHistoryRepository passwordHistoryRepository;
 
+    @Mock
+    private SessionInvalidationService sessionInvalidationService;
+
     private UserService userService;
     private User testUser;
     private UserDto testUserDto;
@@ -78,7 +81,7 @@ public class UserServiceTest {
 
         userService = new UserService(userRepository, tokenRepository, passwordTokenRepository, passwordEncoder,
                 roleRepository, sessionRegistry, userEmailService, userVerificationService, authorityService,
-                dsUserDetailsService, eventPublisher, passwordHistoryRepository);
+                dsUserDetailsService, eventPublisher, passwordHistoryRepository, sessionInvalidationService);
     }
 
     @Test
