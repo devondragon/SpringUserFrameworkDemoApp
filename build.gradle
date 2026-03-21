@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '4.0.3'
+  id 'org.springframework.boot' version '4.0.4'
   id 'io.spring.dependency-management' version '1.1.7'
   id "com.github.ben-manes.versions" version "0.53.0"
 
@@ -98,7 +98,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2:2.4.240'
-    testImplementation 'com.codeborne:selenide:7.14.0'
+    testImplementation 'com.codeborne:selenide:7.15.0'
     testImplementation 'io.github.bonigarcia:webdrivermanager:6.3.3'
 
     // OAuth2 Testing dependencies
