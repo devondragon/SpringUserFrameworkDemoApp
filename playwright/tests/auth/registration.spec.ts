@@ -89,16 +89,11 @@ test.describe('Registration', () => {
       await registerPage.acceptTerms();
       await registerPage.submit();
 
-      // Wait for response
-      await page.waitForLoadState('domcontentloaded');
-
-      // Should show error or redirect with error parameter
-      const url = page.url();
-      const hasError = await registerPage.hasGlobalError() ||
-                       await registerPage.hasExistingAccountError() ||
-                       url.includes('error');
-
-      expect(hasError).toBe(true);
+      // Registration uses async fetch — wait for the error element to appear
+      // rather than waiting for page navigation (which doesn't happen)
+      const globalError = page.locator('#globalError');
+      const existingAccountError = page.locator('#existingAccountError');
+      await expect(globalError.or(existingAccountError)).toBeVisible({ timeout: 10000 });
     });
 
     test('should reject mismatched passwords', async ({
