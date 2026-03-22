@@ -90,7 +90,7 @@ test.describe('Registration', () => {
       await registerPage.submit();
 
       // Wait for response
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error or redirect with error parameter
       const url = page.url();
@@ -140,7 +140,7 @@ test.describe('Registration', () => {
       await registerPage.submit();
 
       // Wait for validation response
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should either show error or stay on registration page
       const url = page.url();

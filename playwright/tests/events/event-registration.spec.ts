@@ -17,18 +17,18 @@ test.describe('Event Registration', () => {
 
       // Navigate to events page
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // If there are events, register for one
       const eventCount = await eventListPage.getEventCount();
       if (eventCount > 0) {
         await eventListPage.clickEventByIndex(0);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         // Check if we can register
         if (await eventDetailsPage.canRegister()) {
           await eventDetailsPage.register();
-          await page.waitForLoadState('networkidle');
+          await page.waitForLoadState('domcontentloaded');
 
           // Wait for page to update and show unregister button
           await page.locator('button:has-text("Unregister")').waitFor({ state: 'visible', timeout: 5000 });
@@ -54,13 +54,13 @@ test.describe('Event Registration', () => {
 
       // Navigate to events page
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // If there are events, check details page
       const eventCount = await eventListPage.getEventCount();
       if (eventCount > 0) {
         await eventListPage.clickEventByIndex(0);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         // Either register or unregister button should be visible
         const canRegister = await eventDetailsPage.canRegister();
@@ -87,24 +87,24 @@ test.describe('Event Registration', () => {
 
       // Navigate to events page
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // If there are events
       const eventCount = await eventListPage.getEventCount();
       if (eventCount > 0) {
         await eventListPage.clickEventByIndex(0);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         // If not registered, register first
         if (await eventDetailsPage.canRegister()) {
           await eventDetailsPage.register();
-          await page.waitForLoadState('networkidle');
+          await page.waitForLoadState('domcontentloaded');
         }
 
         // Now unregister
         if (await eventDetailsPage.canUnregister()) {
           await eventDetailsPage.unregister();
-          await page.waitForLoadState('networkidle');
+          await page.waitForLoadState('domcontentloaded');
 
           // After unregistering, should show register button
           expect(await eventDetailsPage.canRegister()).toBe(true);
@@ -127,7 +127,7 @@ test.describe('Event Registration', () => {
 
       // Navigate to my events page
       await page.goto('/event/my-events.html');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on my events page (not redirected to login)
       expect(page.url()).toContain('my-events');
@@ -138,7 +138,7 @@ test.describe('Event Registration', () => {
     }) => {
       // Access my events page without logging in
       await page.goto('/event/my-events.html');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Page should load (it's public but shows personalized content when logged in)
       expect(page.url()).toContain('my-events');
@@ -156,17 +156,17 @@ test.describe('Event Registration', () => {
     }) => {
       // Navigate to events page
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // If there are events, go to details and back
       const eventCount = await eventListPage.getEventCount();
       if (eventCount > 0) {
         await eventListPage.clickEventByIndex(0);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         // Go back to events list
         await eventDetailsPage.goBackToEvents();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         expect(page.url()).toContain('event');
       }

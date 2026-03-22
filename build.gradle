@@ -98,8 +98,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2:2.4.240'
-    testImplementation 'com.codeborne:selenide:7.15.0'
-    testImplementation 'io.github.bonigarcia:webdrivermanager:6.3.3'
 
     // OAuth2 Testing dependencies
     testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
@@ -110,22 +108,12 @@ dependencies {
 
 test {
 	useJUnitPlatform {
-          excludeTags 'ui'
     }
 	  testLogging {
         events "PASSED", "FAILED", "SKIPPED"
         // showStandardStreams = true         // Display log output
 
     }
-}
-
-tasks.register('uiTest', Test) {
-    useJUnitPlatform {
-        includeTags 'ui'
-    }
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    shouldRunAfter test
 }
 
 bootRun {

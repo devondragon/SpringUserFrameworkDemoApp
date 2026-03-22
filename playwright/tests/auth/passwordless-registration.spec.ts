@@ -6,7 +6,7 @@ test.describe('Passwordless Registration', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await registerPage.page.waitForLoadState('networkidle');
+      await registerPage.page.waitForLoadState('domcontentloaded');
 
       // The toggle should be visible (WebAuthn is supported in Chromium)
       const toggle = registerPage.page.locator('#registrationModeToggle');
@@ -27,7 +27,7 @@ test.describe('Passwordless Registration', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await registerPage.page.waitForLoadState('networkidle');
+      await registerPage.page.waitForLoadState('domcontentloaded');
 
       // Password fields should be visible initially
       const passwordFields = registerPage.page.locator('#passwordFields');
@@ -50,7 +50,7 @@ test.describe('Passwordless Registration', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await registerPage.page.waitForLoadState('networkidle');
+      await registerPage.page.waitForLoadState('domcontentloaded');
 
       // Switch to passwordless
       await registerPage.page.locator('#modePasswordless').click();
@@ -74,7 +74,7 @@ test.describe('Passwordless Registration', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await registerPage.page.waitForLoadState('networkidle');
+      await registerPage.page.waitForLoadState('domcontentloaded');
 
       const passwordBtn = registerPage.page.locator('#modePassword');
       const passwordlessBtn = registerPage.page.locator('#modePasswordless');
@@ -94,7 +94,7 @@ test.describe('Passwordless Registration', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await registerPage.page.waitForLoadState('networkidle');
+      await registerPage.page.waitForLoadState('domcontentloaded');
 
       // Switch to passwordless
       await registerPage.page.locator('#modePasswordless').click();
@@ -112,7 +112,7 @@ test.describe('Passwordless Registration', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await registerPage.page.waitForLoadState('networkidle');
+      await registerPage.page.waitForLoadState('domcontentloaded');
 
       // Password fields should be required initially
       await expect(registerPage.passwordInput).toHaveAttribute('required', '');
@@ -138,7 +138,7 @@ test.describe('Passwordless Registration', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Switch to passwordless mode
       await page.locator('#modePasswordless').click();
@@ -174,7 +174,7 @@ test.describe('Passwordless Registration', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Stay in password mode (default)
       await registerPage.fillForm('Test', 'User', 'test-standard@example.com', 'Test@Pass123!');

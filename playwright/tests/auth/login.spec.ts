@@ -60,7 +60,7 @@ test.describe('Login', () => {
       await loginPage.submit();
 
       // Should be redirected to originally requested page or success page
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
     });
   });
 
@@ -180,7 +180,7 @@ test.describe('Login', () => {
       await loginPage.submit();
 
       // Should show error or redirect to verification page
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       const url = page.url();
       const hasError = await loginPage.hasError();
 

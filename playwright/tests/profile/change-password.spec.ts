@@ -18,7 +18,7 @@ test.describe('Change Password', () => {
 
       // Navigate to change password page
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Change password
       const newPassword = 'NewTest@Pass456!';
@@ -53,7 +53,7 @@ test.describe('Change Password', () => {
 
       // Navigate to change password page
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Change password
       const newPassword = 'NewTest@Pass789!';
@@ -89,7 +89,7 @@ test.describe('Change Password', () => {
 
       // Navigate to change password page
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Try to change password with wrong current password
       // Listen for the server response to verify error handling
@@ -133,11 +133,11 @@ test.describe('Change Password', () => {
 
       // Navigate to change password page
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Try to change to a weak password
       await updatePasswordPage.changePassword(user.password, 'weak');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error or validation message
       const url = page.url();
@@ -158,7 +158,7 @@ test.describe('Change Password', () => {
 
       // Navigate to change password page
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Try to change with mismatched passwords
       await updatePasswordPage.fillForm(
@@ -167,7 +167,7 @@ test.describe('Change Password', () => {
         'DifferentPass@456!'
       );
       await updatePasswordPage.submit();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error or validation message (client-side validation)
     });
@@ -186,11 +186,11 @@ test.describe('Change Password', () => {
 
       // Navigate to change password page
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Try to change to the same password
       await updatePasswordPage.changePassword(user.password, user.password);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // May or may not be rejected depending on policy
     });
@@ -213,7 +213,7 @@ test.describe('Change Password', () => {
 
       // Navigate to change password page
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Change password
       const newPassword = 'NewTest@Pass111!';
@@ -221,10 +221,10 @@ test.describe('Change Password', () => {
 
       // Now try to change back to original password
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       await updatePasswordPage.changePassword(newPassword, originalPassword);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should reject due to password history (if enabled)
       // Behavior depends on configuration
@@ -238,7 +238,7 @@ test.describe('Change Password', () => {
     }) => {
       // Try to access password change page without logging in
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login
       expect(page.url()).toContain('login');

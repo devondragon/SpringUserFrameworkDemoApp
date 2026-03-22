@@ -193,11 +193,8 @@ This project includes comprehensive testing with multiple approaches:
 ### Running Tests
 
 ```bash
-# Run all tests except UI tests
+# Run all tests
 ./gradlew test
-
-# Run UI tests only (requires running application)
-./gradlew uiTest
 
 # Run specific test class
 ./gradlew test --tests UserApiTest
@@ -211,7 +208,7 @@ This project includes comprehensive testing with multiple approaches:
 - **Unit Tests**: Fast tests for individual components
 - **Integration Tests**: Tests using `@IntegrationTest` with Spring context
 - **API Tests**: REST endpoint testing with MockMvc
-- **UI Tests**: End-to-end testing with Selenide
+- **UI Tests**: End-to-end testing with Playwright
 - **Security Tests**: Authentication and authorization testing
 
 ### Test Data
@@ -641,7 +638,7 @@ This project supports **Spring Boot DevTools** for live reload and auto-restart.
 | **Security**   | Spring Security 7           | Authentication, authorization, CSRF protection |
 | **Data**       | Spring Data JPA + Hibernate | Object-relational mapping and data access      |
 | **Database**   | MariaDB/MySQL               | Primary data persistence                       |
-| **Testing**    | JUnit 5 + Selenide          | Unit, integration, and UI testing              |
+| **Testing**    | JUnit 5 + Playwright        | Unit, integration, and UI testing              |
 | **Build**      | Gradle                      | Dependency management and build automation     |
 | **Containers** | Docker + Docker Compose     | Development and deployment                     |
 
