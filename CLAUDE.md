@@ -58,17 +58,19 @@ This is a Spring Boot demo application showcasing the [Spring User Framework](ht
 4. **Testing Strategy**:
    - Unit tests for individual components
    - Integration tests using `@IntegrationTest` annotation (combines Spring Boot test setup)
-   - UI tests with Selenide for end-to-end testing
+   - E2E tests with Playwright (`playwright/tests/`) — primary UI test framework
+   - Legacy UI tests with Selenide (`src/test/java/.../user/ui/`)
    - API tests using MockMvc for REST endpoints
 
 ### Important Conventions
 
 1. **No Custom User Entity**: This demo uses the framework's User entity directly. Custom user data goes in separate entities (like UserProfile).
 
-2. **Configuration Profiles**: 
+2. **Configuration Profiles**:
    - `local`: Development with local database
    - `test`: Integration testing with H2
    - `docker-keycloak`: OIDC integration with Keycloak
+   - `registration-guard`: Enables domain-restricted registration (form/passwordless only)
 
 3. **Template Organization**: All Thymeleaf templates are in `src/main/resources/templates/` with subdirectories for user management (`email/`, `password/`, etc.)
 
