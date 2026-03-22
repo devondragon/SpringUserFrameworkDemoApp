@@ -2,12 +2,10 @@ package com.digitalsanctuary.spring.user.api.data;
 
 import com.digitalsanctuary.spring.user.dto.PasswordDto;
 import com.digitalsanctuary.spring.user.dto.UserDto;
-import com.digitalsanctuary.spring.user.service.DSUserDetails;
 
 public class ApiTestData {
 
     public static final UserDto BASE_TEST_USER = getUserDto();
-    public static final DSUserDetails DEFAULT_DETAILS = new DSUserDetails(null, null);
 
     public static PasswordDto getPasswordDto() {
         PasswordDto dto = new PasswordDto();
