@@ -68,9 +68,8 @@ test.describe('MFA', () => {
         maxRedirects: 0,
       });
 
-      // Should not return 200 for unauthenticated request
-      // Expect redirect to login (302/303) or error (401/403) or 404 (MFA disabled)
-      expect([302, 303, 401, 403, 404]).toContain(response.status());
+      // MFA is disabled in playwright-test profile, so endpoint returns 404
+      expect(response.status()).toBe(404);
     });
   });
 });

@@ -271,9 +271,7 @@ async function updateMfaStatusUI() {
     if (!container || !badgesEl) return;
 
     try {
-        const response = await fetch('/user/mfa/status', {
-            headers: { [csrfHeader]: csrfToken }
-        });
+        const response = await fetch('/user/mfa/status');
 
         if (response.status === 404) {
             // MFA feature disabled — silently hide
