@@ -135,13 +135,12 @@ test.describe('Change Password', () => {
       await updatePasswordPage.goto();
       await page.waitForLoadState('domcontentloaded');
 
-      // Try to change to a weak password
+      // Try to change to a weak password and wait for the server response
       await updatePasswordPage.changePassword(user.password, 'weak');
-      await page.waitForLoadState('domcontentloaded');
+      await updatePasswordPage.waitForMessage(10000);
 
-      // Should show error or validation message
-      const url = page.url();
-      expect(url).toContain('update-password');
+      // Should show an error message (weak password rejected)
+      expect(await updatePasswordPage.isErrorMessage()).toBe(true);
     });
 
     test('should reject mismatched new passwords', async ({
@@ -167,9 +166,9 @@ test.describe('Change Password', () => {
         'DifferentPass@456!'
       );
       await updatePasswordPage.submit();
-      await page.waitForLoadState('domcontentloaded');
 
-      // Should show error or validation message (client-side validation)
+      // Client-side validation catches mismatched passwords — error div should appear
+      await expect(updatePasswordPage.confirmPasswordError).toBeVisible({ timeout: 5000 });
     });
 
     test('should reject password same as current', async ({

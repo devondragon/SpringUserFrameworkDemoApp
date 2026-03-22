@@ -185,10 +185,15 @@ test.describe('Update Profile', () => {
       await updateUserPage.lastNameInput.fill('');
       await updateUserPage.submit();
 
-      // HTML5 required validation should prevent submission
-      // or server should return an error - verify no unhandled crash
-      // The form should still be on the update page
-      expect(page.url()).toContain('update-user');
+      // HTML5 required validation should block submission — inputs should be invalid
+      const firstNameIsValid = await updateUserPage.firstNameInput.evaluate(
+        (el: HTMLInputElement) => el.checkValidity()
+      );
+      const lastNameIsValid = await updateUserPage.lastNameInput.evaluate(
+        (el: HTMLInputElement) => el.checkValidity()
+      );
+      expect(firstNameIsValid).toBe(false);
+      expect(lastNameIsValid).toBe(false);
     });
 
     test('should handle excessively long names gracefully', async ({
@@ -205,15 +210,12 @@ test.describe('Update Profile', () => {
       await updateUserPage.goto();
       await page.waitForLoadState('domcontentloaded');
 
-      // Submit with very long names (300+ chars)
+      // Submit with very long names (300+ chars) and wait for server response
       const longName = 'A'.repeat(300);
-      await updateUserPage.updateProfile(longName, longName);
+      await updateUserPage.updateProfileAndWait(longName, longName);
 
-      // Wait for server response
-      await page.waitForLoadState('domcontentloaded');
-
-      // App should handle gracefully - either succeed or show error, not crash
-      expect(page.url()).toContain('update-user');
+      // App should handle gracefully — success or error message, not crash
+      expect(await updateUserPage.globalMessage.isVisible()).toBe(true);
     });
   });
 
