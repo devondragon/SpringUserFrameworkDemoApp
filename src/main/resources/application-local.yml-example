@@ -7,11 +7,13 @@ logging:
     org:
       springframework:
         web: DEBUG # Set logging level for web
-          filter:
-            CommonsRequestLoggingFilter: DEBUG # Set logging level for CommonsRequestLoggingFilter
+        web.filter.CommonsRequestLoggingFilter: DEBUG # Set logging level for CommonsRequestLoggingFilter
         security: DEBUG # Set logging level for security
 
 spring:
+  docker:
+    compose:
+      file: compose.dev.yaml
   application:
     name: Spring User Framework Demo App # Change this as per your convenience
   datasource:
