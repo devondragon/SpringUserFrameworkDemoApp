@@ -27,6 +27,7 @@ A comprehensive demonstration application for the [Spring User Framework](https:
 - [Architecture](#architecture)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
+- [Changelog](#changelog)
 - [Notes](#notes)
 
 
@@ -755,6 +756,12 @@ We welcome contributions! Here's how to get started:
 # Build without tests (faster)
 ./gradlew build -x test
 ```
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a full history of the project's evolution, including framework version updates, new features, and fixes.
 
 ---
 
