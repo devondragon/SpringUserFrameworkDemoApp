@@ -12,6 +12,9 @@ logging:
         security: DEBUG # Set logging level for security
 
 spring:
+  docker:
+    compose:
+      file: compose.dev.yaml
   application:
     name: Spring User Framework Demo App # Change this as per your convenience
   datasource:

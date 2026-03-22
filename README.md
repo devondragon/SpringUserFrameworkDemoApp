@@ -117,7 +117,7 @@ The fastest way to get started is using Docker Compose:
 # Clone and start everything
 git clone https://github.com/devondragon/SpringUserFrameworkDemoApp.git
 cd SpringUserFrameworkDemoApp
-docker-compose up --build
+docker compose up --build
 ```
 
 **Access the Application**: `http://localhost:8080`
@@ -166,7 +166,7 @@ docker-compose up --build
        ```
      - Using Docker Compose with Keycloak stack:
        ```bash
-       docker-compose -f docker-compose-keycloak.yml up --build
+       docker compose -f docker-compose-keycloak.yml up --build
        ```
 
 5. **Access the Application**
@@ -510,13 +510,18 @@ mvn spring-boot:run
 
 The project includes a complete Docker setup with the application, MariaDB database, and a mail server.
 
+**Docker Compose files:**
+- **`compose.yaml`** — Full deployable stack (app + database + mail server). Use this to run the entire application in Docker.
+- **`compose.dev.yaml`** — Dev dependencies only (database). Used automatically by Spring Boot's Docker Compose integration during `bootRun` for local development.
+- **`docker-compose-keycloak.yml`** — Full stack with Keycloak for OIDC authentication testing.
+
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 To launch the Keycloak stack:
 ```bash
-docker-compose -f docker-compose-keycloak.yml up --build
+docker compose -f docker-compose-keycloak.yml up --build
 ```
 
 **Note**: Test emails sent from the local Postfix server may not be accepted by all email providers. Use a real SMTP server for production use.
@@ -695,7 +700,7 @@ Solution:
 1. Check SMTP configuration in application.yml
 2. Verify mail server credentials
 3. Check spam/junk folders
-4. Use Docker mail server for testing: docker-compose logs mailserver
+4. Use Docker mail server for testing: docker compose logs mailserver
 ```
 
 #### Application Won't Start
