@@ -18,11 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 ```bash
-# Run all tests except UI tests
+# Run all tests
 ./gradlew test
-
-# Run UI tests only
-./gradlew uiTest
 
 # Run a specific test class
 ./gradlew test --tests TestClassName
@@ -58,7 +55,7 @@ This is a Spring Boot demo application showcasing the [Spring User Framework](ht
 4. **Testing Strategy**:
    - Unit tests for individual components
    - Integration tests using `@IntegrationTest` annotation (combines Spring Boot test setup)
-   - UI tests with Selenide for end-to-end testing
+   - E2E tests with Playwright (in `playwright/` directory)
    - API tests using MockMvc for REST endpoints
 
 ### Important Conventions

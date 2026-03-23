@@ -88,7 +88,7 @@ export class EventDetailsPage extends BasePage {
       this.page.waitForEvent('load'),
       dialog.accept(),
     ]);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
     return succeeded;
   }
 
@@ -108,7 +108,7 @@ export class EventDetailsPage extends BasePage {
       this.page.waitForEvent('load'),
       dialog.accept(),
     ]);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
     return succeeded;
   }
 

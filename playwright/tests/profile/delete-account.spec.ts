@@ -17,7 +17,7 @@ test.describe('Delete Account', () => {
 
       // Navigate to delete account page
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Delete account
       await deleteAccountPage.deleteAccountAndWait();
@@ -46,7 +46,7 @@ test.describe('Delete Account', () => {
 
       // Navigate to delete account page
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Delete account and wait for success message
       await deleteAccountPage.deleteAccountAndWait();
@@ -54,7 +54,7 @@ test.describe('Delete Account', () => {
       // The page shows success message but session is invalidated server-side.
       // Navigate to a protected page to verify we're logged out.
       await page.goto('/user/update-user.html');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login (session was invalidated)
       expect(page.url()).toContain('login');
@@ -77,7 +77,7 @@ test.describe('Delete Account', () => {
 
       // Navigate to delete account page
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Delete account
       await deleteAccountPage.deleteAccountAndWait();
@@ -86,7 +86,7 @@ test.describe('Delete Account', () => {
       await loginPage.goto();
       await loginPage.fillCredentials(user.email, password);
       await loginPage.submit();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error
       const hasError = await loginPage.hasError();
@@ -111,7 +111,7 @@ test.describe('Delete Account', () => {
 
       // Navigate to delete account page
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Click delete button
       await deleteAccountPage.clickDelete();
@@ -135,7 +135,7 @@ test.describe('Delete Account', () => {
 
       // Navigate to delete account page
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Open modal and cancel
       await deleteAccountPage.clickDelete();
@@ -165,7 +165,7 @@ test.describe('Delete Account', () => {
 
       // Navigate to delete account page
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Open modal
       await deleteAccountPage.clickDelete();
@@ -190,7 +190,7 @@ test.describe('Delete Account', () => {
     }) => {
       // Try to access delete account page without logging in
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login
       expect(page.url()).toContain('login');

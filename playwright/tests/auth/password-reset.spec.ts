@@ -39,7 +39,7 @@ test.describe('Password Reset', () => {
       await forgotPasswordPage.requestReset('nonexistent-user-12345@example.com');
 
       // Wait for response
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should either show generic message (for security) or redirect to pending page
       // Most secure implementations show success even for non-existent emails
@@ -81,7 +81,7 @@ test.describe('Password Reset', () => {
 
       // Navigate to reset page
       await page.goto(resetUrl!);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Fill in new password
       const newPassword = 'NewTest@Pass456!';
@@ -123,7 +123,7 @@ test.describe('Password Reset', () => {
       await forgotPasswordPage.requestResetAndWait(user.email);
       const resetUrl = await testApiClient.getPasswordResetUrl(user.email);
       await page.goto(resetUrl!);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       const newPassword = 'NewTest@Pass789!';
       await forgotPasswordChangePage.fillForm(newPassword);
@@ -136,7 +136,7 @@ test.describe('Password Reset', () => {
       await loginPage.goto();
       await loginPage.fillCredentials(user.email, originalPassword);
       await loginPage.submit();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should NOT be logged in (old password should fail)
       // The login page redirects back to itself on failure
@@ -150,7 +150,7 @@ test.describe('Password Reset', () => {
     }) => {
       // Navigate to reset page with invalid token
       await page.goto('/user/changePassword?token=invalid-reset-token-12345');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error
       const url = page.url();
@@ -189,7 +189,7 @@ test.describe('Password Reset', () => {
       // Get reset token URL
       const resetUrl = await testApiClient.getPasswordResetUrl(user.email);
       await page.goto(resetUrl!);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Try to set a weak password
       await forgotPasswordChangePage.fillForm('weak');
@@ -229,12 +229,12 @@ test.describe('Password Reset', () => {
       // Get reset token URL
       const resetUrl = await testApiClient.getPasswordResetUrl(user.email);
       await page.goto(resetUrl!);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Try to set mismatched passwords
       await forgotPasswordChangePage.fillForm('NewTest@Pass123!', 'DifferentPass@456!');
       await forgotPasswordChangePage.submit();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error or stay on page (client-side validation)
     });

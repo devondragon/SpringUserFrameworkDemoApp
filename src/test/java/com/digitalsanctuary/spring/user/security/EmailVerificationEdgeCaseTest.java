@@ -35,7 +35,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.digitalsanctuary.spring.demo.UserDemoApplication;
-import com.digitalsanctuary.spring.demo.user.ui.util.DatabaseStateValidator;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.persistence.model.VerificationToken;
 import com.digitalsanctuary.spring.user.persistence.repository.PasswordHistoryRepository;
@@ -133,7 +132,7 @@ class EmailVerificationEdgeCaseTest {
                     .andExpect(status().isOk()).andReturn();
 
             // Verify user remains disabled
-            assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isFalse();
+            assertThat(userRepository.findByEmail(testEmail).isEnabled()).isFalse();
 
             // Verify token was cleaned up
             assertThat(verificationTokenRepository.findByToken(expiredToken.getToken())).isNull();
@@ -158,7 +157,7 @@ class EmailVerificationEdgeCaseTest {
                     .andExpect(status().isOk());
 
             // Verify user remains disabled
-            assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isFalse();
+            assertThat(userRepository.findByEmail(testEmail).isEnabled()).isFalse();
 
             // Verify token was cleaned up
             assertThat(verificationTokenRepository.findByToken(justExpiredToken.getToken())).isNull();
@@ -179,7 +178,7 @@ class EmailVerificationEdgeCaseTest {
                     .andExpect(status().is3xxRedirection()); // Successful verification redirects
 
             // Verify user is enabled
-            assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isTrue();
+            assertThat(userRepository.findByEmail(testEmail).isEnabled()).isTrue();
 
             // Verify token was consumed
             assertThat(verificationTokenRepository.findByToken(nearExpiryToken.getToken())).isNull();
@@ -210,7 +209,7 @@ class EmailVerificationEdgeCaseTest {
                     .andExpect(status().is3xxRedirection());
 
             // Verify user is enabled
-            assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isTrue();
+            assertThat(userRepository.findByEmail(testEmail).isEnabled()).isTrue();
         }
     }
 
@@ -239,7 +238,7 @@ class EmailVerificationEdgeCaseTest {
                         .andReturn();
 
                 // Verify user remains disabled
-                assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isFalse();
+                assertThat(userRepository.findByEmail(testEmail).isEnabled()).isFalse();
 
                 // Verify error message is user-friendly, not a stack trace
                 String responseBody = result.getResponse().getContentAsString();
@@ -277,7 +276,7 @@ class EmailVerificationEdgeCaseTest {
                         .andExpect(status().isOk()).andReturn();
 
                 // Verify user remains disabled
-                assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isFalse();
+                assertThat(userRepository.findByEmail(testEmail).isEnabled()).isFalse();
 
                 // Verify original token still exists (not consumed by tampered attempt)
                 assertThat(verificationTokenRepository.findByToken(originalToken)).isNotNull();
@@ -304,10 +303,10 @@ class EmailVerificationEdgeCaseTest {
                     .andExpect(status().isOk());
 
             // Verify our test user remains disabled
-            assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isFalse();
+            assertThat(userRepository.findByEmail(testEmail).isEnabled()).isFalse();
 
             // Verify other user also remains disabled (token not consumed)
-            assertThat(DatabaseStateValidator.isUserEnabled(otherEmail)).isFalse();
+            assertThat(userRepository.findByEmail(otherEmail).isEnabled()).isFalse();
 
             // Verify token still exists (not consumed)
             assertThat(verificationTokenRepository.findByToken(otherUserToken.getToken())).isNotNull();
@@ -329,7 +328,7 @@ class EmailVerificationEdgeCaseTest {
                     .andExpect(status().is3xxRedirection());
 
             // Verify user is enabled
-            assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isTrue();
+            assertThat(userRepository.findByEmail(testEmail).isEnabled()).isTrue();
 
             // Verify token was consumed
             assertThat(verificationTokenRepository.findByToken(tokenValue)).isNull();
@@ -402,7 +401,7 @@ class EmailVerificationEdgeCaseTest {
             assertThat(failureCount.get()).isEqualTo(threadCount - 1);
 
             // Verify user is enabled (successful verification)
-            assertThat(DatabaseStateValidator.isUserEnabled(testEmail)).isTrue();
+            assertThat(userRepository.findByEmail(testEmail).isEnabled()).isTrue();
 
             // Verify token was consumed
             assertThat(verificationTokenRepository.findByToken(tokenValue)).isNull();

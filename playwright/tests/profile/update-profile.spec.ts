@@ -16,7 +16,7 @@ test.describe('Update Profile', () => {
 
       // Navigate to update user page
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Update first name
       const newFirstName = 'UpdatedFirst';
@@ -44,7 +44,7 @@ test.describe('Update Profile', () => {
 
       // Navigate to update user page
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Update last name
       const newLastName = 'UpdatedLast';
@@ -72,7 +72,7 @@ test.describe('Update Profile', () => {
 
       // Navigate to update user page
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Update both names
       const newFirstName = 'NewFirst';
@@ -108,7 +108,7 @@ test.describe('Update Profile', () => {
 
       // Navigate to update user page
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Verify current values are shown
       const currentFirst = await updateUserPage.getFirstName();
@@ -134,7 +134,7 @@ test.describe('Update Profile', () => {
 
       // Navigate to update user page
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Navigate to change password
       await updateUserPage.goToChangePassword();
@@ -156,12 +156,66 @@ test.describe('Update Profile', () => {
 
       // Navigate to update user page
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Navigate to delete account
       await updateUserPage.goToDeleteAccount();
 
       expect(page.url()).toContain('delete-account');
+    });
+  });
+
+  test.describe('Validation', () => {
+    test('should handle empty field submission gracefully', async ({
+      page,
+      updateUserPage,
+      testApiClient,
+      cleanupEmails,
+    }) => {
+      const user = generateTestUser('update-empty');
+      cleanupEmails.push(user.email);
+
+      await createAndLoginUser(page, testApiClient, user);
+
+      await updateUserPage.goto();
+      await page.waitForLoadState('domcontentloaded');
+
+      // Clear both fields and attempt to submit
+      await updateUserPage.firstNameInput.fill('');
+      await updateUserPage.lastNameInput.fill('');
+      await updateUserPage.submit();
+
+      // HTML5 required validation should block submission — inputs should be invalid
+      const firstNameIsValid = await updateUserPage.firstNameInput.evaluate(
+        (el: HTMLInputElement) => el.checkValidity()
+      );
+      const lastNameIsValid = await updateUserPage.lastNameInput.evaluate(
+        (el: HTMLInputElement) => el.checkValidity()
+      );
+      expect(firstNameIsValid).toBe(false);
+      expect(lastNameIsValid).toBe(false);
+    });
+
+    test('should handle excessively long names gracefully', async ({
+      page,
+      updateUserPage,
+      testApiClient,
+      cleanupEmails,
+    }) => {
+      const user = generateTestUser('update-long');
+      cleanupEmails.push(user.email);
+
+      await createAndLoginUser(page, testApiClient, user);
+
+      await updateUserPage.goto();
+      await page.waitForLoadState('domcontentloaded');
+
+      // Submit with very long names (300+ chars) and wait for server response
+      const longName = 'A'.repeat(300);
+      await updateUserPage.updateProfileAndWait(longName, longName);
+
+      // App should handle gracefully — success or error message, not crash
+      expect(await updateUserPage.globalMessage.isVisible()).toBe(true);
     });
   });
 
@@ -172,7 +226,7 @@ test.describe('Update Profile', () => {
     }) => {
       // Try to access update page without logging in
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login
       expect(page.url()).toContain('login');
