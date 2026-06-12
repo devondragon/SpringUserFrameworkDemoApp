@@ -88,7 +88,7 @@ export default defineConfig({
    *
    * Tests tagged @mfa-enabled need the server running with the mfa profile and are excluded from
    * the default projects (whose specs assume MFA is off). Run them with:
-   *   SPRING_PROFILES=local,playwright-test,mfa npx playwright test --project=chromium-mfa
+   *   APP_PROFILES=local,playwright-test,mfa npx playwright test --project=chromium-mfa
    */
   projects: [
     {
@@ -132,7 +132,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: `cd .. && ./gradlew bootRun --args="--spring.profiles.active=${process.env.SPRING_PROFILES || 'local,playwright-test'}"`,
+    command: `cd .. && ./gradlew bootRun --args="--spring.profiles.active=${process.env.APP_PROFILES || 'local,playwright-test'}"`,
     url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

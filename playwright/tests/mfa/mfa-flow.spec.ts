@@ -4,7 +4,7 @@ import { test, expect, generateTestUser, createAndLoginUser } from '../../src/fi
  * Full MFA flow E2E test using Chromium's CDP WebAuthn virtual authenticator.
  *
  * Requires the app to run with MFA enabled:
- *   SPRING_PROFILES=local,playwright-test,mfa npx playwright test --project=chromium-mfa
+ *   APP_PROFILES=local,playwright-test,mfa npx playwright test --project=chromium-mfa
  * (or start the server yourself with those profiles; the mfa profile must come last so its
  * overrides win).
  *

@@ -82,13 +82,13 @@ jobs:
       - name: Run E2E tests (MFA disabled)
         working-directory: playwright
         env:
-          SPRING_PROFILES: playwright-test
+          APP_PROFILES: playwright-test
         run: npx playwright test --project=chromium
 
       - name: Run E2E tests (MFA enabled)
         working-directory: playwright
         env:
-          SPRING_PROFILES: playwright-test,mfa
+          APP_PROFILES: playwright-test,mfa
         run: npx playwright test --project=chromium-mfa
 
       - name: Upload Playwright report
