@@ -84,38 +84,55 @@ export default defineConfig({
     timeout: 10000,
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for major browsers.
+   *
+   * Tests tagged @mfa-enabled need the server running with the mfa profile and are excluded from
+   * the default projects (whose specs assume MFA is off). Run them with:
+   *   SPRING_PROFILES=local,playwright-test,mfa npx playwright test --project=chromium-mfa
+   */
   projects: [
     {
       name: 'chromium',
+      grepInvert: /@mfa-enabled/,
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
+      grepInvert: /@mfa-enabled/,
       use: { ...devices['Desktop Firefox'] },
     },
 
     {
       name: 'webkit',
+      grepInvert: /@mfa-enabled/,
       use: { ...devices['Desktop Safari'] },
     },
 
     /* Test against mobile viewports */
     {
       name: 'Mobile Chrome',
+      grepInvert: /@mfa-enabled/,
       use: { ...devices['Pixel 5'] },
     },
 
     {
       name: 'Mobile Safari',
+      grepInvert: /@mfa-enabled/,
       use: { ...devices['iPhone 12'] },
+    },
+
+    /* MFA flow tests: Chromium only (CDP virtual authenticator), MFA-enabled server required */
+    {
+      name: 'chromium-mfa',
+      grep: /@mfa-enabled/,
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'cd .. && ./gradlew bootRun --args="--spring.profiles.active=local,playwright-test"',
+    command: `cd .. && ./gradlew bootRun --args="--spring.profiles.active=${process.env.SPRING_PROFILES || 'local,playwright-test'}"`,
     url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
