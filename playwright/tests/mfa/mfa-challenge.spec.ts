@@ -35,10 +35,10 @@ test.describe('MFA', () => {
       await page.goto('/user/mfa/webauthn-challenge.html');
       await page.waitForLoadState('domcontentloaded');
 
-      // Verify cancel/sign out button is present (inside the logout form)
-      await page.waitForLoadState('networkidle');
+      // Verify cancel/sign out button is present (the navbar also has a logout
+      // form, so target this button by its accessible name)
       await expect(
-        page.locator('form[action*="logout"] button[type="submit"]')
+        page.getByRole('button', { name: 'Cancel and sign out' })
       ).toBeVisible();
     });
   });
@@ -62,14 +62,16 @@ test.describe('MFA', () => {
       expect(response.status()).toBe(404);
     });
 
-    test('should require authentication for MFA status endpoint', async ({ page }) => {
+    test('should not expose MFA status to unauthenticated requests', async ({ page }) => {
       // Call without authentication
       const response = await page.request.get('/user/mfa/status', {
         maxRedirects: 0,
       });
 
-      // MFA is disabled in playwright-test profile, so endpoint returns 404
-      expect(response.status()).toBe(404);
+      // With MFA disabled the endpoint is not in unprotectedURIs, so Spring
+      // Security redirects unauthenticated requests to the login page.
+      expect(response.status()).toBe(302);
+      expect(response.headers()['location']).toContain('/user/login.html');
     });
   });
 });
