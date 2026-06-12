@@ -261,6 +261,84 @@ async function handleRegisterPasskey() {
 }
 
 /**
+ * Update the MFA Status section in the auth-methods card.
+ * Hides the container if the MFA status endpoint returns 404 (MFA disabled).
+ * Logs a warning for other non-OK responses.
+ */
+async function updateMfaStatusUI() {
+    const container = document.getElementById('mfaStatusContainer');
+    const badgesEl = document.getElementById('mfaStatusBadges');
+    if (!container || !badgesEl) return;
+
+    try {
+        const response = await fetch('/user/mfa/status');
+
+        if (response.status === 404) {
+            // MFA feature disabled — silently hide
+            container.classList.add('d-none');
+            return;
+        }
+        if (!response.ok) {
+            console.warn('MFA status endpoint returned', response.status);
+            container.classList.add('d-none');
+            return;
+        }
+
+        // The endpoint wraps the status in the framework's JSONResponse envelope:
+        // { success, messages, data: { mfaEnabled, fullyAuthenticated, ... } }
+        const body = await response.json();
+        const status = body.data;
+        if (!status) {
+            console.warn('MFA status response missing data payload');
+            container.classList.add('d-none');
+            return;
+        }
+        container.classList.remove('d-none');
+
+        // Build MFA badges using safe DOM methods
+        badgesEl.textContent = '';
+
+        if (status.mfaEnabled) {
+            badgesEl.appendChild(createBadge('MFA Active', 'bg-primary', 'bi-shield-lock'));
+        }
+
+        if (status.fullyAuthenticated) {
+            badgesEl.appendChild(createBadge('Fully Authenticated', 'bg-success', 'bi-shield-check'));
+        } else {
+            badgesEl.appendChild(createBadge('Additional Factor Required', 'bg-warning text-dark', 'bi-shield-exclamation'));
+        }
+
+        if (Array.isArray(status.satisfiedFactors)) {
+            status.satisfiedFactors.forEach(factor => {
+                badgesEl.appendChild(createBadge(factor, 'bg-secondary', 'bi-check-circle'));
+            });
+        }
+
+        if (Array.isArray(status.missingFactors) && status.missingFactors.length > 0) {
+            status.missingFactors.forEach(factor => {
+                badgesEl.appendChild(createBadge(factor + ' (pending)', 'bg-danger', 'bi-x-circle'));
+            });
+        }
+    } catch (error) {
+        console.error('Failed to fetch MFA status:', error);
+        container.classList.add('d-none');
+    }
+}
+
+/**
+ * Create a Bootstrap badge span element with an icon.
+ */
+function createBadge(text, bgClass, iconClass) {
+    const badge = document.createElement('span');
+    badge.className = `badge ${bgClass} me-2`;
+    const icon = document.createElement('i');
+    icon.className = `bi ${iconClass} me-1`;
+    badge.appendChild(icon);
+    badge.appendChild(document.createTextNode(text));
+    return badge;
+}
+
+/**
  * Update the Authentication Methods UI card with current state.
  */
 async function updateAuthMethodsUI() {
@@ -304,6 +382,9 @@ async function updateAuthMethodsUI() {
         if (changePasswordLink) {
             changePasswordLink.textContent = auth.hasPassword ? 'Change Password' : 'Set a Password';
         }
+
+        // Update MFA status section
+        await updateMfaStatusUI();
     } catch (error) {
         console.error('Failed to update auth methods UI:', error);
         const section = document.getElementById('auth-methods-section');

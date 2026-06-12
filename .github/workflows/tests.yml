@@ -1,0 +1,99 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-report
+          path: build/reports/tests/test/
+
+  playwright-tests:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:12.2
+        env:
+          MARIADB_DATABASE: springuser
+          MARIADB_USER: springuser
+          MARIADB_PASSWORD: springuser
+          MARIADB_ROOT_PASSWORD: rootpassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      # The MariaDB service container replaces Spring Boot's Docker Compose integration
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build application
+        run: ./gradlew assemble
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: playwright/package-lock.json
+
+      - name: Install Playwright dependencies
+        working-directory: playwright
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run E2E tests (MFA disabled)
+        working-directory: playwright
+        env:
+          APP_PROFILES: playwright-test
+        run: npx playwright test --project=chromium
+
+      - name: Run E2E tests (MFA enabled)
+        working-directory: playwright
+        env:
+          APP_PROFILES: playwright-test,mfa
+        run: npx playwright test --project=chromium-mfa
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright/reports/

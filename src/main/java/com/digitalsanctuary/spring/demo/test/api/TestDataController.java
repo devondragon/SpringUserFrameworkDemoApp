@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.digitalsanctuary.spring.demo.user.profile.DemoUserProfileRepository;
+import com.digitalsanctuary.spring.user.event.UserPreDeleteEvent;
 import com.digitalsanctuary.spring.user.persistence.model.PasswordResetToken;
 import com.digitalsanctuary.spring.user.persistence.model.Role;
 import com.digitalsanctuary.spring.user.persistence.model.User;
@@ -50,6 +52,7 @@ public class TestDataController {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final DemoUserProfileRepository demoUserProfileRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Check if a user exists by email.
@@ -230,6 +233,10 @@ public class TestDataController {
             response.put("email", email);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
+
+        // Let framework listeners clean up their data first (e.g. WebAuthn credentials and user
+        // entities, which have a foreign key on the user account)
+        eventPublisher.publishEvent(new UserPreDeleteEvent(this, user));
 
         // Delete related entities first to avoid foreign key constraints
         demoUserProfileRepository.findById(user.getId()).ifPresent(demoUserProfileRepository::delete);

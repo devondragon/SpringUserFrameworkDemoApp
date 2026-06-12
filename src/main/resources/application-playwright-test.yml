@@ -19,6 +19,8 @@ spring:
 
 # Enable test API endpoints by adding them to unprotected URIs
 user:
+  mfa:
+    enabled: false
   registration:
     # Disable email sending since tests use Test API for token retrieval
     sendVerificationEmail: false

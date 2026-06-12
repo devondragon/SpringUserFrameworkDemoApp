@@ -51,5 +51,14 @@ public class PageController {
         return "terms";
     }
 
+    /**
+     * MFA WebAuthn Challenge Page.
+     *
+     * @return the path to the MFA WebAuthn challenge page
+     */
+    @GetMapping("/user/mfa/webauthn-challenge.html")
+    public String mfaWebAuthnChallenge() {
+        return "user/mfa/webauthn-challenge";
+    }
 
 }

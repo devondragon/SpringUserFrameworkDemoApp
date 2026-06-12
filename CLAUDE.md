@@ -62,10 +62,12 @@ This is a Spring Boot demo application showcasing the [Spring User Framework](ht
 
 1. **No Custom User Entity**: This demo uses the framework's User entity directly. Custom user data goes in separate entities (like UserProfile).
 
-2. **Configuration Profiles**: 
+2. **Configuration Profiles**:
    - `local`: Development with local database
    - `test`: Integration testing with H2
    - `docker-keycloak`: OIDC integration with Keycloak
+   - `registration-guard`: Enables domain-restricted registration (form/passwordless only)
+   - `mfa`: Enables multi-factor authentication (PASSWORD + WEBAUTHN); combine with another profile, e.g. `local,mfa`
 
 3. **Template Organization**: All Thymeleaf templates are in `src/main/resources/templates/` with subdirectories for user management (`email/`, `password/`, etc.)
 
