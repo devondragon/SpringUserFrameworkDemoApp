@@ -67,6 +67,7 @@ This is a Spring Boot demo application showcasing the [Spring User Framework](ht
    - `test`: Integration testing with H2
    - `docker-keycloak`: OIDC integration with Keycloak
    - `registration-guard`: Enables domain-restricted registration (form/passwordless only)
+   - `mfa`: Enables multi-factor authentication (PASSWORD + WEBAUTHN); combine with another profile, e.g. `local,mfa`
 
 3. **Template Organization**: All Thymeleaf templates are in `src/main/resources/templates/` with subdirectories for user management (`email/`, `password/`, etc.)
 
