@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   myapp-db:
-    image: mariadb:11.6.2
+    image: mariadb:12.2
     container_name: springuser-db  #
     volumes:
       - userdb:/var/lib/mysql

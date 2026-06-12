@@ -8,7 +8,7 @@ test.describe('Browse Events', () => {
     }) => {
       // Navigate to events page without logging in
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should display the events page
       expect(page.url()).toContain('event');
@@ -26,7 +26,7 @@ test.describe('Browse Events', () => {
     }) => {
       // Navigate to events page
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // If there are events, verify they have expected content
       const eventCount = await eventListPage.getEventCount();
@@ -49,13 +49,13 @@ test.describe('Browse Events', () => {
     }) => {
       // Navigate to events page
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // If there are events, click on one
       const eventCount = await eventListPage.getEventCount();
       if (eventCount > 0) {
         await eventListPage.clickEventByIndex(0);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         // Should be on event details page
         expect(page.url()).toContain('details');
@@ -71,13 +71,13 @@ test.describe('Browse Events', () => {
     }) => {
       // Navigate to events page
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // If there are events, go to details
       const eventCount = await eventListPage.getEventCount();
       if (eventCount > 0) {
         await eventListPage.clickEventByIndex(0);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         // Should show login prompt (not register/unregister buttons)
         const hasLoginPrompt = await eventDetailsPage.hasLoginPrompt();

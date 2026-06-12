@@ -71,7 +71,7 @@ test.describe('Complete User Journey', () => {
     // ==========================================
     await test.step('Update profile', async () => {
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Verify current values
       expect(await updateUserPage.getFirstName()).toBe(user.firstName);
@@ -94,7 +94,7 @@ test.describe('Complete User Journey', () => {
     // ==========================================
     await test.step('Change password', async () => {
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Change password
       await updatePasswordPage.changePasswordAndWait(user.password, newPassword);
@@ -114,12 +114,12 @@ test.describe('Complete User Journey', () => {
     let registeredForEvent = false;
     await test.step('Register for event', async () => {
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       const eventCount = await eventListPage.getEventCount();
       if (eventCount > 0) {
         await eventListPage.clickEventByIndex(0);
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         if (await eventDetailsPage.canRegister()) {
           registeredForEvent = await eventDetailsPage.register();
@@ -127,7 +127,7 @@ test.describe('Complete User Journey', () => {
             // Server-side rendered page may show stale state under concurrent load;
             // if the API confirmed success but the page hasn't caught up, reload once.
             if (!await eventDetailsPage.canUnregister()) {
-              await page.reload({ waitUntil: 'networkidle' });
+              await page.reload({ waitUntil: 'domcontentloaded' });
             }
             expect(await eventDetailsPage.canUnregister()).toBe(true);
           }
@@ -152,7 +152,7 @@ test.describe('Complete User Journey', () => {
     // ==========================================
     await test.step('Delete account', async () => {
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Delete account
       await deleteAccountPage.deleteAccountAndWait();
@@ -168,7 +168,7 @@ test.describe('Complete User Journey', () => {
       await loginPage.goto();
       await loginPage.fillCredentials(user.email, newPassword);
       await loginPage.submit();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error or be redirected
       expect(await loginPage.hasError() || !await loginPage.isLoggedIn()).toBe(true);
@@ -191,7 +191,7 @@ test.describe('Complete User Journey', () => {
       );
       await registerPage.acceptTerms();
       await registerPage.submit();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should stay on registration page or show error
       expect(page.url()).toContain('register');
@@ -220,7 +220,7 @@ test.describe('Complete User Journey', () => {
 
     await test.step('Access protected page without auth redirects to login', async () => {
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should redirect to login
       expect(page.url()).toContain('login');
@@ -229,14 +229,14 @@ test.describe('Complete User Journey', () => {
     await test.step('Login and verify access to protected page', async () => {
       await loginPage.fillCredentials(user.email, user.password);
       await loginPage.submit();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be logged in
       expect(await loginPage.isLoggedIn()).toBe(true);
 
       // Access protected page
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on protected page
       expect(page.url()).toContain('update-user');
@@ -276,7 +276,7 @@ test.describe('Complete User Journey', () => {
       expect(resetUrl).not.toBeNull();
 
       await page.goto(resetUrl!);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       await forgotPasswordChangePage.fillForm(newPassword);
       await forgotPasswordChangePage.submit();
@@ -295,7 +295,7 @@ test.describe('Complete User Journey', () => {
       await loginPage.goto();
       await loginPage.fillCredentials(user.email, originalPassword);
       await loginPage.submit();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       expect(await loginPage.hasError()).toBe(true);
     });

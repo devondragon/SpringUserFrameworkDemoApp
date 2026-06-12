@@ -12,6 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## 2026-03-22
 
 ### Changed
+- Refactored Docker Compose file naming to avoid V2 precedence conflict (#68)
+  - `compose.yaml` → `compose.dev.yaml` (dev dependencies for `bootRun`)
+  - `docker-compose.yml` → `compose.yaml` (full deployable stack)
+  - Added `spring.docker.compose.file` to `application-local.yml-example`
+  - Updated README with compose file descriptions and Docker Compose V2 syntax
 - Refactored `TestDataController` to use `Instant` instead of `Date` for registration dates, aligning with library changes (#65)
 
 ### Dependencies

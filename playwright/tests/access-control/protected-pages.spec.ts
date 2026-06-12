@@ -8,7 +8,7 @@ test.describe('Access Control', () => {
     }) => {
       // Try to access protected page without logging in
       await protectedPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login
       expect(page.url()).toContain('login');
@@ -28,7 +28,7 @@ test.describe('Access Control', () => {
 
       // Access protected page
       await protectedPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on protected page
       expect(page.url()).toContain('protected');
@@ -40,7 +40,7 @@ test.describe('Access Control', () => {
     }) => {
       // Try to access user profile without logging in
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login
       expect(page.url()).toContain('login');
@@ -52,7 +52,7 @@ test.describe('Access Control', () => {
     }) => {
       // Try to access password change without logging in
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login
       expect(page.url()).toContain('login');
@@ -64,7 +64,7 @@ test.describe('Access Control', () => {
     }) => {
       // Try to access delete account without logging in
       await deleteAccountPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login
       expect(page.url()).toContain('login');
@@ -76,7 +76,7 @@ test.describe('Access Control', () => {
       page,
     }) => {
       await page.goto('/');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should stay on home page
       expect(page.url()).not.toContain('login');
@@ -87,7 +87,7 @@ test.describe('Access Control', () => {
       loginPage,
     }) => {
       await loginPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on login page
       expect(page.url()).toContain('login');
@@ -98,7 +98,7 @@ test.describe('Access Control', () => {
       registerPage,
     }) => {
       await registerPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on registration page
       expect(page.url()).toContain('register');
@@ -109,7 +109,7 @@ test.describe('Access Control', () => {
       forgotPasswordPage,
     }) => {
       await forgotPasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on forgot password page
       expect(page.url()).toContain('forgot-password');
@@ -120,7 +120,7 @@ test.describe('Access Control', () => {
       eventListPage,
     }) => {
       await eventListPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on events page
       expect(page.url()).toContain('event');
@@ -130,7 +130,7 @@ test.describe('Access Control', () => {
       page,
     }) => {
       await page.goto('/about.html');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on about page (not redirected)
       expect(page.url()).toContain('about');
@@ -152,7 +152,7 @@ test.describe('Access Control', () => {
 
       // Try to access admin page
       await adminActionsPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be denied (403 or error page)
       // With @PreAuthorize, the URL stays the same but shows error page
@@ -184,11 +184,11 @@ test.describe('Access Control', () => {
 
       // Navigate to multiple protected pages
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       expect(page.url()).toContain('update-user');
 
       await page.goto('/event/my-events.html');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       expect(page.url()).toContain('my-events');
 
       // Should still be logged in
@@ -213,11 +213,11 @@ test.describe('Access Control', () => {
 
       // Logout
       await loginPage.logout();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Try to access protected page
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be redirected to login
       expect(page.url()).toContain('login');

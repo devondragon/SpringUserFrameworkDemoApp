@@ -3,6 +3,7 @@ package com.digitalsanctuary.spring.demo.test.api;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.context.annotation.Profile;
@@ -193,7 +194,7 @@ public class TestDataController {
         user.setEnabled(request.enabled() != null ? request.enabled() : true);
         user.setLocked(false);
         user.setFailedLoginAttempts(0);
-        user.setRegistrationDate(Instant.now());
+        user.setRegistrationDate(Date.from(Instant.now()));
 
         // Assign default role
         Role userRole = roleRepository.findByName("ROLE_USER");

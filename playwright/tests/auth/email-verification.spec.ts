@@ -33,7 +33,7 @@ test.describe('Email Verification', () => {
       expect(verificationUrl).not.toBeNull();
 
       await page.goto(verificationUrl!);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should redirect to registration complete page
       expect(page.url()).toContain('registration-complete');
@@ -83,7 +83,7 @@ test.describe('Email Verification', () => {
     }) => {
       // Navigate to verification URL with invalid token
       await page.goto('/user/registrationConfirm?token=invalid-token-12345');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error or redirect to error page
       const url = page.url();
@@ -121,7 +121,7 @@ test.describe('Email Verification', () => {
 
       // Use a fake expired token (any invalid UUID)
       await page.goto('/user/registrationConfirm?token=expired-invalid-token-12345');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should show error (same handling as invalid token)
       const url = page.url();
@@ -168,7 +168,7 @@ test.describe('Email Verification', () => {
 
       // Try to use the same token again
       await page.goto(verificationUrl!);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Should either show error or redirect to registration-complete (idempotent behavior)
       // Both are acceptable - key thing is user stays verified
@@ -197,7 +197,7 @@ test.describe('Email Verification', () => {
 
       // Navigate to resend verification page
       await page.goto('/user/request-new-verification-email.html');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Page should load (specific implementation may vary)
       expect(page.url()).toContain('verification');

@@ -13,7 +13,7 @@ test.describe('Authentication Methods', () => {
 
       await createAndLoginUser(page, testApiClient, user);
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Auth methods section should become visible after JS loads
       const authSection = page.locator('#auth-methods-section');
@@ -32,7 +32,7 @@ test.describe('Authentication Methods', () => {
 
       await createAndLoginUser(page, testApiClient, user);
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Wait for auth methods to load
       const badgesContainer = page.locator('#auth-method-badges');
@@ -54,7 +54,7 @@ test.describe('Authentication Methods', () => {
 
       await createAndLoginUser(page, testApiClient, user);
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Wait for auth methods section to load
       const authSection = page.locator('#auth-methods-section');
@@ -76,7 +76,7 @@ test.describe('Authentication Methods', () => {
 
       await createAndLoginUser(page, testApiClient, user);
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Wait for auth methods section to load
       const authSection = page.locator('#auth-methods-section');
@@ -100,7 +100,7 @@ test.describe('Authentication Methods', () => {
 
       await createAndLoginUser(page, testApiClient, user);
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Passkey section should be visible
       const passkeySection = page.locator('#passkey-section');
@@ -126,7 +126,7 @@ test.describe('Authentication Methods', () => {
 
       await createAndLoginUser(page, testApiClient, user);
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Wait for passkeys to load
       const passkeysList = page.locator('#passkeys-list');
@@ -150,7 +150,7 @@ test.describe('Authentication Methods', () => {
 
       await createAndLoginUser(page, testApiClient, user);
       await updatePasswordPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Current password section should be visible
       const currentPasswordSection = page.locator('#currentPasswordSection');
@@ -179,7 +179,7 @@ test.describe('Authentication Methods', () => {
 
       await createAndLoginUser(page, testApiClient, user);
       await updateUserPage.goto();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       // Wait for auth methods to load so link text updates
       const authSection = page.locator('#auth-methods-section');
