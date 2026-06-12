@@ -284,7 +284,15 @@ async function updateMfaStatusUI() {
             return;
         }
 
-        const status = await response.json();
+        // The endpoint wraps the status in the framework's JSONResponse envelope:
+        // { success, messages, data: { mfaEnabled, fullyAuthenticated, ... } }
+        const body = await response.json();
+        const status = body.data;
+        if (!status) {
+            console.warn('MFA status response missing data payload');
+            container.classList.add('d-none');
+            return;
+        }
         container.classList.remove('d-none');
 
         // Build MFA badges using safe DOM methods
