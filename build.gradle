@@ -39,7 +39,7 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.4.0'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:5.0.0-SNAPSHOT'
 
     // WebAuthn support (Passkey authentication)
     implementation 'org.springframework.security:spring-security-webauthn'

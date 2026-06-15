@@ -21,7 +21,7 @@ public class UserProfileDeletionListener {
     @EventListener
     @Transactional // Joins the transaction started by UserService.deleteUserAccount
     public void handleUserPreDelete(UserPreDeleteEvent event) {
-        Long userId = event.getUser().getId();
+        Long userId = event.getUserId();
         log.info("Received UserPreDeleteEvent for userId: {}. Deleting associated DemoUserProfile...", userId);
 
         // Option 1: Delete profile directly (if no further cascades needed from profile)

@@ -60,7 +60,7 @@ test.describe('Registration', () => {
   });
 
   test.describe('Validation', () => {
-    test('should reject registration with existing email', async ({
+    test('should not reveal account existence when registering with an existing email (anti-enumeration)', async ({
       page,
       registerPage,
       testApiClient,
@@ -87,13 +87,32 @@ test.describe('Registration', () => {
         existingUser.password
       );
       await registerPage.acceptTerms();
-      await registerPage.submit();
 
-      // Registration uses async fetch — wait for the error element to appear
-      // rather than waiting for page navigation (which doesn't happen)
-      const globalError = page.locator('#globalError');
-      const existingAccountError = page.locator('#existingAccountError');
-      await expect(globalError.or(existingAccountError)).toBeVisible({ timeout: 10000 });
+      // SpringUserFramework 5.0.0 (task 4.2): registering an existing email returns the SAME
+      // uniform 200 response as a brand-new registration — it must NOT reveal that the account
+      // already exists. (Prior versions returned 409 and surfaced #globalError /
+      // #existingAccountError, which leaked account existence to an attacker.)
+      const [response] = await Promise.all([
+        page.waitForResponse(
+          (r) =>
+            r.url().endsWith('/user/registration') &&
+            r.request().method() === 'POST'
+        ),
+        registerPage.submit(),
+      ]);
+      expect(response.status()).toBe(200);
+
+      // No error revealing the existing account is shown...
+      await expect(page.locator('#globalError')).toBeHidden();
+      await expect(page.locator('#existingAccountError')).toBeHidden();
+
+      // ...and the flow lands on the generic pending page, indistinguishable from a
+      // new (unverified) registration.
+      await page.waitForURL(/registration-pending/, { timeout: 10000 });
+
+      // The original account is untouched — no duplicate created or overwritten.
+      const userExists = await testApiClient.userExists(existingUser.email);
+      expect(userExists.exists).toBe(true);
     });
 
     test('should reject mismatched passwords', async ({

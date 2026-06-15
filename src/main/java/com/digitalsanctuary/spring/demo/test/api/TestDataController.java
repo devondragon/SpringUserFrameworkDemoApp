@@ -236,7 +236,7 @@ public class TestDataController {
 
         // Let framework listeners clean up their data first (e.g. WebAuthn credentials and user
         // entities, which have a foreign key on the user account)
-        eventPublisher.publishEvent(new UserPreDeleteEvent(this, user));
+        eventPublisher.publishEvent(new UserPreDeleteEvent(this, user.getId(), user.getEmail()));
 
         // Delete related entities first to avoid foreign key constraints
         demoUserProfileRepository.findById(user.getId()).ifPresent(demoUserProfileRepository::delete);
