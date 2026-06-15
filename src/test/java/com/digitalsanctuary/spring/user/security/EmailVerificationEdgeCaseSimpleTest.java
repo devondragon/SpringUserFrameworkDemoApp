@@ -108,7 +108,7 @@ class EmailVerificationEdgeCaseSimpleTest {
     }
 
     @Test
-    @DisplayName("Valid token should enable user")
+    @DisplayName("Valid token enables the user and is consumed (single-use)")
     void testValidToken() throws Exception {
         // Create valid token
         VerificationToken validToken = new VerificationToken();
@@ -123,8 +123,14 @@ class EmailVerificationEdgeCaseSimpleTest {
 
         assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
 
-        // Verify token still exists (validation doesn't consume it, confirmation does)
-        assertThat(verificationTokenRepository.findByToken(validToken.getToken())).isNotNull();
+        // The user is now enabled...
+        User updatedUser = userRepository.findById(testUser.getId()).orElse(null);
+        assertThat(updatedUser).isNotNull();
+        assertThat(updatedUser.isEnabled()).isTrue();
+
+        // ...and the token is atomically consumed on the valid path: validation is now single-use
+        // (it both enables the user and deletes the token in one transaction), so it cannot be replayed.
+        assertThat(verificationTokenRepository.findByToken(validToken.getToken())).isNull();
     }
 
     @Test
@@ -233,16 +239,24 @@ class EmailVerificationEdgeCaseSimpleTest {
         otherUserToken.setExpiryDate(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)));
         verificationTokenRepository.saveAndFlush(otherUserToken);
 
-        // Token should be valid (it exists and isn't expired)
-        UserService.TokenValidationResult result = userVerificationService
-                .validateVerificationToken(otherUserToken.getToken());
-        assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
-
-        // But it should be associated with the correct user
+        // The token resolves to the correct user (read it before validation consumes the token).
         User userFromToken = userVerificationService.getUserByVerificationToken(otherUserToken.getToken());
         assertThat(userFromToken).isNotNull();
         assertThat(userFromToken.getEmail()).isEqualTo(otherEmail);
         assertThat(userFromToken.getEmail()).isNotEqualTo(testEmail);
+
+        // Validating it enables ONLY its owner, never the original test user.
+        UserService.TokenValidationResult result = userVerificationService
+                .validateVerificationToken(otherUserToken.getToken());
+        assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
+
+        User enabledOther = userRepository.findById(otherUser.getId()).orElse(null);
+        assertThat(enabledOther).isNotNull();
+        assertThat(enabledOther.isEnabled()).as("the token's owner is enabled").isTrue();
+
+        User stillDisabled = userRepository.findById(testUser.getId()).orElse(null);
+        assertThat(stillDisabled).isNotNull();
+        assertThat(stillDisabled.isEnabled()).as("a different user is NOT enabled by another user's token").isFalse();
     }
 
     @Test
@@ -273,20 +287,21 @@ class EmailVerificationEdgeCaseSimpleTest {
         validToken.setExpiryDate(Date.from(Instant.now().plus(24, ChronoUnit.HOURS)));
         verificationTokenRepository.saveAndFlush(validToken);
 
-        // Validate token
-        UserService.TokenValidationResult result = userVerificationService
-                .validateVerificationToken(validToken.getToken());
-        assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
-
-        // Get user from token
+        // The token resolves to the correct user (read it before validation consumes the token).
         User userFromToken = userVerificationService.getUserByVerificationToken(validToken.getToken());
         assertThat(userFromToken).isNotNull();
         assertThat(userFromToken.getEmail()).isEqualTo(testEmail);
 
-        // Check user status - the service may return the current state
-        // The important part is we can retrieve the correct user by token
+        // Validation enables the user and consumes the token in a single transaction.
+        UserService.TokenValidationResult result = userVerificationService
+                .validateVerificationToken(validToken.getToken());
+        assertThat(result).isEqualTo(UserService.TokenValidationResult.VALID);
 
-        // Token still exists (validation doesn't consume it)
-        assertThat(verificationTokenRepository.findByToken(validToken.getToken())).isNotNull();
+        User updatedUser = userRepository.findById(testUser.getId()).orElse(null);
+        assertThat(updatedUser).isNotNull();
+        assertThat(updatedUser.isEnabled()).isTrue();
+
+        // The token is consumed (single-use), so it no longer resolves.
+        assertThat(verificationTokenRepository.findByToken(validToken.getToken())).isNull();
     }
 }

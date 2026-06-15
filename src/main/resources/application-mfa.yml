@@ -7,9 +7,9 @@
 #   ./gradlew bootRun --args='--spring.profiles.active=local,mfa'
 #
 # Notes:
-# - The challenge page (user.mfa.webauthnEntryPointUri) must be in unprotectedURIs. The framework
-#   redirects partially-authenticated users to it; if the page itself required full authentication,
-#   the redirect would loop forever.
+# - The challenge page (user.mfa.webauthnEntryPointUri) is auto-unprotected by the framework: it
+#   unprotects the configured factor entry-point URIs so the partial-auth redirect cannot loop. (No
+#   need to list it in unprotectedURIs by hand.)
 # - The passkey registration endpoints (/webauthn/register/options, /webauthn/register) are also
 #   unprotected here so that a partially-authenticated user can enroll their first passkey. Spring
 #   Security still requires an authenticated principal to register a credential; this only relaxes
@@ -19,4 +19,4 @@ user:
   mfa:
     enabled: true
   security:
-    unprotectedURIs: /,/index.html,/favicon.ico,/apple-touch-icon-precomposed.png,/css/*,/js/*,/js/user/*,/js/event/*,/js/utils/*,/img/**,/user/registration,/user/registration/passwordless,/user/resendRegistrationToken,/user/resetPassword,/user/registrationConfirm,/user/changePassword,/user/savePassword,/oauth2/authorization/*,/login,/user/login,/user/login.html,/swagger-ui.html,/swagger-ui/**,/v3/api-docs/**,/event/,/event/list.html,/event/**,/about.html,/error,/error.html,/webauthn/authenticate/**,/login/webauthn,/user/mfa/webauthn-challenge.html,/webauthn/register/options,/webauthn/register
+    unprotectedURIs: /,/index.html,/favicon.ico,/apple-touch-icon-precomposed.png,/css/*,/js/*,/js/user/*,/js/event/*,/js/utils/*,/img/**,/user/registration,/user/registration/passwordless,/user/resendRegistrationToken,/user/resetPassword,/user/registrationConfirm,/user/changePassword,/user/savePassword,/oauth2/authorization/*,/login,/user/login,/user/login.html,/swagger-ui.html,/swagger-ui/**,/v3/api-docs/**,/event/,/event/list.html,/event/**,/about.html,/error,/error.html,/webauthn/authenticate/**,/login/webauthn,/webauthn/register/options,/webauthn/register
