@@ -75,6 +75,8 @@ This version uses:
   - WebAuthn/Passkey passwordless login (biometrics, security keys)
   - Passkey management (register, rename, delete)
   - OAuth2 login with Google, Facebook, and Keycloak
+  - Multi-factor authentication (PASSWORD + WEBAUTHN passkey) via the `mfa` profile
+  - Pluggable registration restrictions via the `RegistrationGuard` SPI (sample domain guard)
   - Role-based access control
   - CSRF protection
   - Security audit logging
@@ -292,12 +294,16 @@ For detailed API documentation, start the application and visit `/swagger-ui.htm
 
 The application supports multiple configuration profiles:
 
-| Profile           | Purpose              | Database           | Use Case                             |
-| ----------------- | -------------------- | ------------------ | ------------------------------------ |
-| `local`           | Local development    | MariaDB/MySQL      | Development with persistent database |
-| `test`            | Testing              | H2 (in-memory)     | Automated testing                    |
-| `dev`             | Development server   | MariaDB/MySQL      | Shared development environment       |
-| `docker-keycloak` | Docker with Keycloak | MariaDB + Keycloak | OIDC authentication testing          |
+| Profile             | Purpose                       | Database           | Use Case                                          |
+| ------------------- | ----------------------------- | ------------------ | ------------------------------------------------- |
+| `local`             | Local development             | MariaDB/MySQL      | Development with persistent database              |
+| `test`              | Testing                       | H2 (in-memory)     | Automated testing                                 |
+| `dev`               | Development server            | MariaDB/MySQL      | Shared development environment                    |
+| `docker-keycloak`   | Docker with Keycloak          | MariaDB + Keycloak | OIDC authentication testing                       |
+| `mfa`               | Multi-factor authentication   | (combine w/ above) | Require PASSWORD + WEBAUTHN; e.g. `local,mfa`     |
+| `registration-guard`| Restricted registration       | (combine w/ above) | Domain-restricted sign-up demo; e.g. `local,registration-guard` |
+
+> `mfa` and `registration-guard` are *opt-in add-on* profiles — activate them alongside a base profile (e.g. `--spring.profiles.active=local,registration-guard`). See [Registration Guard (restricting who can register)](#registration-guard-restricting-who-can-register) below.
 
 ### Quick Configuration Setup
 
@@ -324,6 +330,50 @@ docker run -p 127.0.0.1:3306:3306 --name springuserframework \
 ```
 
 If you're running the application in a production-like environment, ensure you set the appropriate database properties in `application.yml` or your active profile.
+
+---
+
+### Registration Guard (restricting who can register)
+
+The Spring User Framework exposes a `RegistrationGuard` SPI that lets a consuming app allow or deny each registration attempt — useful for invite-code gating, email allowlists, or domain restrictions. The framework calls every `RegistrationGuard` bean for form, passwordless, and OAuth2/OIDC sign-ups; if any guard denies, registration is rejected with the guard's message.
+
+This demo ships a sample implementation, [`DomainRegistrationGuard`](src/main/java/com/digitalsanctuary/spring/demo/registration/DomainRegistrationGuard.java), that restricts **form and passwordless** registration to a single email domain while allowing **all OAuth2/OIDC** registrations. It is gated behind the `registration-guard` Spring profile so the default demo experience is unaffected.
+
+**Try it:**
+
+```bash
+# Only @example.com email addresses can register via the form (OAuth2/OIDC still allowed)
+./gradlew bootRun --args='--spring.profiles.active=local,registration-guard'
+
+# Override the allowed domain — pass it inside --args as a Spring Boot argument so it reaches the
+# forked application (a -D after the task sets it on the Gradle JVM only and is not forwarded)
+./gradlew bootRun \
+  --args='--spring.profiles.active=local,registration-guard --registration.guard.allowed-domain=@mycompany.com'
+```
+
+| Setting | Default | Purpose |
+| ------- | ------- | ------- |
+| `registration-guard` profile | off | Activates the sample guard bean |
+| `registration.guard.allowed-domain` | `@example.com` | Domain that form/passwordless registrations must match |
+
+With the profile active, registering a non-matching email returns the friendly denial message `Registration is restricted to <domain> email addresses.`
+
+**Writing your own guard:** implement `RegistrationGuard` as a Spring bean and return `RegistrationDecision.allow()` or `RegistrationDecision.deny(reason)`. The `RegistrationContext` exposes the email, `RegistrationSource` (FORM / PASSWORDLESS / OAUTH2 / OIDC), and provider name so you can apply different rules per source:
+
+```java
+@Component
+public class InviteCodeGuard implements RegistrationGuard {
+    @Override
+    public RegistrationDecision evaluate(RegistrationContext context) {
+        // e.g. look up an invite code carried on the request, check an allowlist, etc.
+        return isInvited(context.email())
+                ? RegistrationDecision.allow()
+                : RegistrationDecision.deny("An invitation is required to register.");
+    }
+}
+```
+
+Multiple guards compose — all must allow. See the framework's [Registration Guard documentation](https://github.com/devondragon/SpringUserFramework/blob/main/REGISTRATION-GUARD.md) for the full SPI reference.
 
 ---
 
