@@ -39,7 +39,7 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.3.1'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:4.4.0'
 
     // WebAuthn support (Passkey authentication)
     implementation 'org.springframework.security:spring-security-webauthn'
@@ -80,7 +80,9 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
     // Utility libraries
-    implementation 'org.passay:passay:1.6.6'
+    // (passay is provided transitively by ds-spring-user-framework at the version it requires; the demo
+    //  app does not use passay directly, so declaring/pinning it here previously forced a conflicting
+    //  downgrade of the library's required passay version.)
     implementation 'com.google.guava:guava:33.5.0-jre'
     implementation 'org.hibernate.validator:hibernate-validator'
 

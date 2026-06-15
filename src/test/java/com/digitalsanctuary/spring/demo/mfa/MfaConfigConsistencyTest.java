@@ -12,10 +12,11 @@ import org.yaml.snakeyaml.Yaml;
 /**
  * Guards the consistency of the MFA configuration files themselves.
  *
- * The MFA entry point pages must be listed in {@code user.security.unprotectedURIs}: the framework's
- * access-denied handler redirects partially-authenticated users to the entry point URI, and if that page is itself
- * protected the redirect loops forever. The framework only auto-unprotects {@code /user/mfa/status}, not the entry
- * point pages, so the demo config has to keep these two settings in sync by hand.
+ * As of the framework release containing the #313 fix, the framework auto-unprotects the configured MFA factor
+ * entry-point URIs ({@code user.mfa.passwordEntryPointUri} / {@code user.mfa.webauthnEntryPointUri}), so the demo no
+ * longer has to list the WebAuthn challenge page in {@code user.security.unprotectedURIs} by hand. These tests now only
+ * assert what is still the demo's own responsibility: MFA must be opt-in (disabled by default), and the passkey
+ * <em>enrollment</em> endpoints (which are not factor entry points) must be reachable by partially-authenticated users.
  */
 @DisplayName("MFA Config Consistency Tests")
 class MfaConfigConsistencyTest {
@@ -45,19 +46,6 @@ class MfaConfigConsistencyTest {
     }
 
     @Test
-    @DisplayName("application.yml unprotects the configured WebAuthn challenge page")
-    void baseConfigUnprotectsWebauthnEntryPoint() {
-        Map<String, Object> yaml = loadYaml("/application.yml");
-        Map<String, Object> mfa = section(yaml, "user", "mfa");
-
-        String webauthnEntryPoint = String.valueOf(mfa.get("webauthnEntryPointUri"));
-        assertThat(webauthnEntryPoint).as("user.mfa.webauthnEntryPointUri should be configured").isNotEqualTo("null");
-        assertThat(unprotectedUris(yaml))
-                .as("the WebAuthn challenge page must be unprotected or MFA redirects loop forever")
-                .contains(webauthnEntryPoint);
-    }
-
-    @Test
     @DisplayName("application.yml leaves MFA disabled by default (opt-in via the mfa profile)")
     void baseConfigLeavesMfaDisabled() {
         // A user who logs in with a password but has no registered passkey cannot satisfy the WEBAUTHN
@@ -67,16 +55,16 @@ class MfaConfigConsistencyTest {
     }
 
     @Test
-    @DisplayName("mfa profile enables MFA and unprotects the challenge page and passkey enrollment endpoints")
-    void mfaProfileEnablesMfaAndUnprotectsEntryPoint() {
+    @DisplayName("mfa profile enables MFA and unprotects the passkey enrollment endpoints")
+    void mfaProfileEnablesMfaAndUnprotectsEnrollmentEndpoints() {
         Map<String, Object> yaml = loadYaml("/application-mfa.yml");
         Map<String, Object> mfa = section(yaml, "user", "mfa");
         assertThat(mfa.get("enabled")).isEqualTo(Boolean.TRUE);
 
+        // The WebAuthn challenge page (the configured factor entry point) is now auto-unprotected by the
+        // framework, so it no longer needs to be listed here. The passkey ENROLLMENT endpoints are not factor
+        // entry points, so partially-authenticated users still need them unprotected to enroll a first passkey.
         List<String> uris = unprotectedUris(yaml);
-        assertThat(uris).contains("/user/mfa/webauthn-challenge.html");
-        // Partially-authenticated users need to be able to enroll their first passkey, otherwise new
-        // accounts can never satisfy the WEBAUTHN factor.
         assertThat(uris).contains("/webauthn/register/options", "/webauthn/register");
     }
 }

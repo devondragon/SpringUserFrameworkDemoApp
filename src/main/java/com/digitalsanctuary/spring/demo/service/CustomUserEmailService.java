@@ -12,6 +12,7 @@ import com.digitalsanctuary.spring.user.persistence.repository.PasswordResetToke
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.mail.MailService;
 import com.digitalsanctuary.spring.user.service.SessionInvalidationService;
+import com.digitalsanctuary.spring.user.service.TokenHasher;
 import com.digitalsanctuary.spring.user.service.UserEmailService;
 import com.digitalsanctuary.spring.user.service.UserVerificationService;
 
@@ -36,8 +37,9 @@ public class CustomUserEmailService extends UserEmailService {
             UserVerificationService userVerificationService,
             PasswordResetTokenRepository passwordTokenRepository,
             ApplicationEventPublisher eventPublisher,
-            SessionInvalidationService sessionInvalidationService) {
-        super(mailService, userVerificationService, passwordTokenRepository, eventPublisher, sessionInvalidationService);
+            SessionInvalidationService sessionInvalidationService,
+            TokenHasher tokenHasher) {
+        super(mailService, userVerificationService, passwordTokenRepository, eventPublisher, sessionInvalidationService, tokenHasher);
     }
 
     @Override

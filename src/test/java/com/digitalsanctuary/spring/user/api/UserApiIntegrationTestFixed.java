@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,12 +17,16 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import com.digitalsanctuary.spring.demo.UserDemoApplication;
 import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.mail.MailService;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
+import com.digitalsanctuary.spring.user.persistence.repository.VerificationTokenRepository;
 import com.digitalsanctuary.spring.user.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
@@ -50,22 +55,59 @@ class UserApiIntegrationTestFixed {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepository;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     @MockitoBean
     private MailService mailService;
 
     @PersistenceContext
     private EntityManager entityManager;
 
+    private static final String TEST_EMAIL = "test@example.com";
+
     private UserDto testUserDto;
 
     @BeforeEach
     void setUp() {
+        // Start from a clean slate. Registration (via the API and via UserService.registerNewUserAccount)
+        // commits the new user in its own transaction as of 4.4.0 — it does NOT roll back with the test's
+        // @Transactional. Without a committed cleanup, the user persisted by one test method collides with
+        // the next (UserAlreadyExistException / 409 Conflict).
+        deleteTestUserCommitted();
+
         testUserDto = new UserDto();
         testUserDto.setFirstName("Test");
         testUserDto.setLastName("User");
-        testUserDto.setEmail("test@example.com");
+        testUserDto.setEmail(TEST_EMAIL);
         testUserDto.setPassword("SecurePass123!");
         testUserDto.setMatchingPassword("SecurePass123!");
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Remove the user committed by this test so it cannot leak into other tests.
+        deleteTestUserCommitted();
+    }
+
+    /**
+     * Deletes the test user (and any verification token) in its own committed transaction. A
+     * REQUIRES_NEW transaction is required because the class is {@code @Transactional}: a plain delete here
+     * would roll back with the test and never actually remove the committed registration row.
+     */
+    private void deleteTestUserCommitted() {
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        tx.executeWithoutResult(status -> {
+            User existing = userRepository.findByEmail(TEST_EMAIL);
+            if (existing != null) {
+                verificationTokenRepository.deleteByUser(existing);
+                userRepository.delete(existing);
+            }
+        });
     }
 
     @Test
