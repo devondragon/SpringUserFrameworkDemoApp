@@ -68,6 +68,10 @@ class SecurityConfigurationTest {
                 passwordHistoryRepository.deleteAll();
                 userRepository.deleteAll();
                 roleRepository.deleteAll();
+                // Force the DELETEs to hit the DB before the role INSERTs below. The framework seeds the configured
+                // roles at startup, so without an explicit flush Hibernate's action-queue ordering would run the new
+                // role INSERTs before these DELETEs and trip the unique ROLE(NAME) index (added in 5.0.0).
+                roleRepository.flush();
 
                 // Create role
                 Role userRole = new Role("ROLE_USER");

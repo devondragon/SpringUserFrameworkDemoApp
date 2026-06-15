@@ -61,6 +61,12 @@ class AuthorityServiceIntegrationTest {
                 userRepository.deleteAll();
                 roleRepository.deleteAll();
                 privilegeRepository.deleteAll();
+                // Force the DELETEs to hit the DB before the role/privilege INSERTs below. The framework seeds the
+                // configured roles and privileges at startup, so without an explicit flush Hibernate's action-queue
+                // ordering would run the new INSERTs before these DELETEs and trip the unique ROLE(NAME) /
+                // PRIVILEGE(NAME) indexes (added in 5.0.0).
+                roleRepository.flush();
+                privilegeRepository.flush();
 
                 // Create privileges as defined in config
                 Privilege loginPrivilege = createAndSavePrivilege("LOGIN_PRIVILEGE", "Allows user login");

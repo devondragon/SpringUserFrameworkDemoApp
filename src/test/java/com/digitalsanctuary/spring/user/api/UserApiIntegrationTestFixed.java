@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -99,15 +100,35 @@ class UserApiIntegrationTestFixed {
      * would roll back with the test and never actually remove the committed registration row.
      */
     private void deleteTestUserCommitted() {
-        TransactionTemplate tx = new TransactionTemplate(transactionManager);
-        tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        tx.executeWithoutResult(status -> {
-            User existing = userRepository.findByEmail(TEST_EMAIL);
-            if (existing != null) {
-                verificationTokenRepository.deleteByUser(existing);
-                userRepository.delete(existing);
+        // Registration creates the verification token via an @Async listener (the demo app enables @Async on
+        // UserDemoApplication), so the token can be written shortly AFTER the registration request returns. A
+        // single committed delete can race that write: deleteByUser runs before the token row exists, then the
+        // user delete trips FK_VERIFY_USER. Retry the committed cleanup until the async token has settled and
+        // the delete succeeds (bounded so a genuine failure still surfaces).
+        DataAccessException last = null;
+        for (int attempt = 0; attempt < 10; attempt++) {
+            try {
+                TransactionTemplate tx = new TransactionTemplate(transactionManager);
+                tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                tx.executeWithoutResult(status -> {
+                    User existing = userRepository.findByEmail(TEST_EMAIL);
+                    if (existing != null) {
+                        verificationTokenRepository.deleteByUser(existing);
+                        userRepository.delete(existing);
+                    }
+                });
+                return;
+            } catch (DataAccessException ex) {
+                last = ex;
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while cleaning up the committed test user", ie);
+                }
             }
-        });
+        }
+        throw new IllegalStateException("Failed to delete the committed test user after retries", last);
     }
 
     @Test
@@ -118,7 +139,7 @@ class UserApiIntegrationTestFixed {
                 .perform(post(API_BASE_PATH + "/registration").contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testUserDto)).with(csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.messages[0]").value("Registration Successful!")).andReturn();
+                .andExpect(jsonPath("$.messages[0]").value("If your email address is eligible, you will receive a verification email shortly.")).andReturn();
 
         // Then - Verify user was created
         User savedUser = userRepository.findByEmail("test@example.com");
@@ -129,16 +150,18 @@ class UserApiIntegrationTestFixed {
     }
 
     @Test
-    @DisplayName("Should return conflict for duplicate email")
-    void shouldReturnConflictForDuplicateEmail() throws Exception {
+    @DisplayName("Should not reveal account existence for duplicate email (anti-enumeration)")
+    void shouldNotRevealAccountExistenceForDuplicateEmail() throws Exception {
         // Given - Register first user
         userService.registerNewUserAccount(testUserDto);
 
         // When - Try to register with same email
+        // Then - anti-enumeration: a duplicate email returns the SAME generic 200 success body as a new
+        // registration, so a caller cannot distinguish an already-registered address from a new one.
         mockMvc.perform(post(API_BASE_PATH + "/registration").contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testUserDto)).with(csrf())).andExpect(status().isConflict())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.messages[0]").value("An account already exists for the email address"));
+                .content(objectMapper.writeValueAsString(testUserDto)).with(csrf())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.messages[0]").value("If your email address is eligible, you will receive a verification email shortly."));
     }
 
     @Test
