@@ -345,9 +345,10 @@ This demo ships a sample implementation, [`DomainRegistrationGuard`](src/main/ja
 # Only @example.com email addresses can register via the form (OAuth2/OIDC still allowed)
 ./gradlew bootRun --args='--spring.profiles.active=local,registration-guard'
 
-# Override the allowed domain
-./gradlew bootRun --args='--spring.profiles.active=local,registration-guard' \
-  -Dregistration.guard.allowed-domain=@mycompany.com
+# Override the allowed domain — pass it inside --args as a Spring Boot argument so it reaches the
+# forked application (a -D after the task sets it on the Gradle JVM only and is not forwarded)
+./gradlew bootRun \
+  --args='--spring.profiles.active=local,registration-guard --registration.guard.allowed-domain=@mycompany.com'
 ```
 
 | Setting | Default | Purpose |
