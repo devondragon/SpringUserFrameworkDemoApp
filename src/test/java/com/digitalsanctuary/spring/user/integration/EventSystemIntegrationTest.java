@@ -67,7 +67,10 @@ class EventSystemIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        testUser = UserTestDataBuilder.aUser().withId(1L).withEmail("test@example.com").withFirstName("Test").withLastName("User").enabled().build();
+        // The user must be UNVERIFIED (disabled): as of 4.4.0 RegistrationListener skips sending the
+        // verification email when the user is already enabled, which is the realistic state for a brand-new
+        // registration. An enabled user here would make the registration-email assertions never fire.
+        testUser = UserTestDataBuilder.aUser().withId(1L).withEmail("test@example.com").withFirstName("Test").withLastName("User").unverified().build();
         eventCapture.clear();
     }
 

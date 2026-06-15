@@ -13,8 +13,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.digitalsanctuary.spring.user.persistence.model.Privilege;
@@ -40,6 +43,10 @@ import com.digitalsanctuary.spring.user.test.builders.UserTestDataBuilder;
  * - Account unlock functionality
  */
 @IntegrationTest
+// A positive lockout duration makes auto-unlock deterministic: a user locked longer ago than this window
+// is eligible to be unlocked on load, while one just locked stays locked. (The framework reads
+// user.security.accountLockoutDuration; >= 0 enables time-based auto-unlock.)
+@TestPropertySource(properties = "user.security.accountLockoutDuration=30")
 @DisplayName("DSUserDetailsService Integration Tests")
 class DSUserDetailsServiceIntegrationTest {
 
@@ -129,6 +136,7 @@ class DSUserDetailsServiceIntegrationTest {
                 .withEmail("autounlock@test.com")
                 .withLockedDate(oldLockDate)
                 .withFailedLoginAttempts(5)
+                .verified() // enabled, so that once auto-unlocked the account is fully usable
                 .withId(null)
                 .build();
         lockedUser.setRoles(new ArrayList<>(Arrays.asList(userRole)));
@@ -137,14 +145,14 @@ class DSUserDetailsServiceIntegrationTest {
         // Verify user is initially locked
         assertThat(lockedUser.isLocked()).isTrue();
 
-        // When
+        // When - the lock is older than accountLockoutDuration (30m), so loading auto-unlocks the account
         DSUserDetails result = dsUserDetailsService.loadUserByUsername("autounlock@test.com");
 
-        // Then - Depending on configuration, user might be unlocked
-        // Note: This behavior depends on accountLockoutDuration configuration
-        // If configured to auto-unlock after certain time, the user should be unlocked
+        // Then - the user is unlocked on load and authentication succeeds
         assertThat(result).isNotNull();
         assertThat(result.getUsername()).isEqualTo("autounlock@test.com");
+        assertThat(result.isAccountNonLocked()).isTrue();
+        assertThat(userRepository.findByEmail("autounlock@test.com").isLocked()).isFalse();
     }
 
     @Test
@@ -247,8 +255,8 @@ class DSUserDetailsServiceIntegrationTest {
 
     @Test
     @Transactional
-    @DisplayName("Should handle disabled user correctly")
-    void loadUserByUsername_disabledUser_returnsWithCorrectStatus() {
+    @DisplayName("Should reject loading a disabled user")
+    void loadUserByUsername_disabledUser_throwsDisabledException() {
         // Given
         User disabledUser = UserTestDataBuilder.anUnverifiedUser()
                 .withEmail("disabled@test.com")
@@ -257,27 +265,24 @@ class DSUserDetailsServiceIntegrationTest {
         disabledUser.setRoles(new ArrayList<>(Arrays.asList(userRole)));
         userRepository.save(disabledUser);
 
-        // When
-        DSUserDetails result = dsUserDetailsService.loadUserByUsername("disabled@test.com");
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.isEnabled()).isFalse();
-        assertThat(result.isAccountNonLocked()).isTrue();
-        assertThat(result.getUsername()).isEqualTo("disabled@test.com");
+        // When & Then - as of 4.4.0 the login helper enforces account status on every auth path, so loading
+        // a disabled (unverified) account throws rather than returning a principal with isEnabled()==false.
+        assertThatThrownBy(() -> dsUserDetailsService.loadUserByUsername("disabled@test.com"))
+                .isInstanceOf(DisabledException.class);
     }
 
     @Test
     @Transactional
-    @DisplayName("Should handle currently locked user correctly")
-    void loadUserByUsername_currentlyLockedUser_returnsWithLockedStatus() {
-        // Given - Create a recently locked user (should remain locked)
+    @DisplayName("Should reject loading a currently locked user")
+    void loadUserByUsername_currentlyLockedUser_throwsLockedException() {
+        // Given - a user locked just now: well inside the accountLockoutDuration window, so it must NOT
+        // auto-unlock and stays locked.
         Date recentLockDate = new Date();
 
         User lockedUser = UserTestDataBuilder.aLockedUser()
                 .withEmail("locked@test.com")
                 .withLockedDate(recentLockDate)
-                .verified() // Make the user enabled but locked
+                .verified() // enabled but locked, to prove lock (not disabled) is what rejects the load
                 .withId(null)
                 .build();
         lockedUser.setRoles(new ArrayList<>(Arrays.asList(userRole)));
@@ -286,26 +291,9 @@ class DSUserDetailsServiceIntegrationTest {
         // Verify user is initially locked
         assertThat(lockedUser.isLocked()).isTrue();
 
-        // When
-        DSUserDetails result = dsUserDetailsService.loadUserByUsername("locked@test.com");
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.isEnabled()).isTrue(); // Locked users can still be enabled
-
-        // Check the actual lock status - it depends on configuration
-        // If accountLockoutDuration is 0, the user might be unlocked immediately
-        // If it's > 0, the user should remain locked since we just locked them
-        User userAfterLoad = userRepository.findByEmail("locked@test.com");
-
-        // The test should verify the actual behavior based on configuration
-        // If the user is still locked, isAccountNonLocked should be false
-        // If the user was unlocked by the service, isAccountNonLocked should be true
-        if (userAfterLoad.isLocked()) {
-            assertThat(result.isAccountNonLocked()).isFalse();
-        } else {
-            // User was unlocked by the service
-            assertThat(result.isAccountNonLocked()).isTrue();
-        }
+        // When & Then - loading a still-locked account throws LockedException (checked before disabled status)
+        assertThatThrownBy(() -> dsUserDetailsService.loadUserByUsername("locked@test.com"))
+                .isInstanceOf(LockedException.class);
+        assertThat(userRepository.findByEmail("locked@test.com").isLocked()).isTrue();
     }
 }

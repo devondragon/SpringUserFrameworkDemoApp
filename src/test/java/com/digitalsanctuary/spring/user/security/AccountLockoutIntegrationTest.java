@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,12 +26,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import com.digitalsanctuary.spring.demo.UserDemoApplication;
-import com.digitalsanctuary.spring.user.dto.UserDto;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.service.LoginAttemptService;
 import com.digitalsanctuary.spring.user.service.UserService;
 import com.digitalsanctuary.spring.user.test.annotations.IntegrationTest;
+import com.digitalsanctuary.spring.user.test.builders.UserTestDataBuilder;
 import jakarta.persistence.EntityManager;
 
 /**
@@ -79,19 +80,15 @@ class AccountLockoutIntegrationTest {
         }
         entityManager.flush();
 
-        // Create test user
-        UserDto userDto = new UserDto();
-        userDto.setFirstName("Lockout");
-        userDto.setLastName("Test");
-        userDto.setEmail(TEST_EMAIL);
-        userDto.setPassword(TEST_PASSWORD);
-        userDto.setMatchingPassword(TEST_PASSWORD);
-
-        userService.registerNewUserAccount(userDto);
-
-        // Enable the user
-        entityManager.createNativeQuery("UPDATE user_account SET enabled = true WHERE email = :email").setParameter("email", TEST_EMAIL)
-                .executeUpdate();
+        // Create the test user directly via the repository so it lives inside the test's transaction and
+        // rolls back cleanly. As of 4.4.0, UserService.registerNewUserAccount runs with
+        // Propagation.NOT_SUPPORTED and commits the new user in its own transaction, which would survive
+        // the rollback and leak the same email into the next test method (UserAlreadyExistException). The
+        // lockout tests only need a persisted, enabled user row; they exercise LoginAttemptService directly.
+        User user = UserTestDataBuilder.aUser().withEmail(TEST_EMAIL).withFirstName("Lockout").withLastName("Test")
+                .withPassword(TEST_PASSWORD).verified().withId(null).build();
+        user.setRoles(new ArrayList<>());
+        userRepository.save(user);
         entityManager.flush();
     }
 

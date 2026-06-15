@@ -139,9 +139,9 @@ class AuthorityServiceIntegrationTest {
                 Collection<? extends GrantedAuthority> authorities = authorityService
                                 .getAuthoritiesFromUser(fetchedUser);
 
-                // Then
-                assertThat(authorities).hasSize(3).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
-                                "LOGIN_PRIVILEGE",
+                // Then - as of 4.4.0 the role name itself is also granted (needed for hasRole() checks)
+                assertThat(authorities).hasSize(4).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
+                                "ROLE_USER", "LOGIN_PRIVILEGE",
                                 "UPDATE_OWN_USER_PRIVILEGE", "RESET_OWN_PASSWORD_PRIVILEGE");
         }
 
@@ -159,9 +159,10 @@ class AuthorityServiceIntegrationTest {
                 Collection<? extends GrantedAuthority> authorities = authorityService
                                 .getAuthoritiesFromUser(multiRoleUser);
 
-                // Then
-                assertThat(authorities).hasSize(6) // 3 from user role + 3 from manager role
-                                .extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder("LOGIN_PRIVILEGE",
+                // Then - 6 privileges + the two role names (ROLE_USER, ROLE_MANAGER) granted as of 4.4.0
+                assertThat(authorities).hasSize(8) // 3 user + 3 manager privileges + 2 role names
+                                .extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder("ROLE_USER",
+                                                "ROLE_MANAGER", "LOGIN_PRIVILEGE",
                                                 "UPDATE_OWN_USER_PRIVILEGE",
                                                 "RESET_OWN_PASSWORD_PRIVILEGE", "ADD_USER_TO_TEAM_PRIVILEGE",
                                                 "REMOVE_USER_FROM_TEAM_PRIVILEGE",
@@ -180,9 +181,9 @@ class AuthorityServiceIntegrationTest {
                 // When
                 Collection<? extends GrantedAuthority> authorities = authorityService.getAuthoritiesFromUser(adminUser);
 
-                // Then
-                assertThat(authorities).hasSize(5).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
-                                "ADMIN_PRIVILEGE",
+                // Then - 5 admin privileges + the ROLE_ADMIN role name granted as of 4.4.0
+                assertThat(authorities).hasSize(6).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
+                                "ROLE_ADMIN", "ADMIN_PRIVILEGE",
                                 "INVITE_USER_PRIVILEGE", "READ_USER_PRIVILEGE", "ASSIGN_MANAGER_PRIVILEGE",
                                 "RESET_ANY_USER_PASSWORD_PRIVILEGE");
         }
@@ -206,9 +207,9 @@ class AuthorityServiceIntegrationTest {
                 Collection<? extends GrantedAuthority> authorities = authorityService
                                 .getAuthoritiesFromRoles(Arrays.asList(role1, role2));
 
-                // Then - Should only have 4 unique privileges (3 from user + 1 shared)
-                assertThat(authorities).hasSize(4).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
-                                "LOGIN_PRIVILEGE",
+                // Then - 4 unique privileges (3 from user + 1 shared) + the two role names granted as of 4.4.0
+                assertThat(authorities).hasSize(6).extracting(GrantedAuthority::getAuthority).containsExactlyInAnyOrder(
+                                "ROLE_TEST1", "ROLE_TEST2", "LOGIN_PRIVILEGE",
                                 "UPDATE_OWN_USER_PRIVILEGE", "RESET_OWN_PASSWORD_PRIVILEGE", "SHARED_PRIVILEGE");
         }
 
@@ -247,9 +248,11 @@ class AuthorityServiceIntegrationTest {
                 Collection<? extends GrantedAuthority> authorities = authorityService.getAuthoritiesFromRoles(
                                 Arrays.asList(loadedUserRole, loadedManagerRole, loadedAdminRole));
 
-                // Then - Should have all unique privileges from all three roles
-                assertThat(authorities).hasSize(11) // 3 + 3 + 5 unique privileges
+                // Then - all unique privileges from all three roles, plus the three role names granted as of 4.4.0
+                assertThat(authorities).hasSize(14) // 3 + 3 + 5 privileges + 3 role names
                                 .extracting(GrantedAuthority::getAuthority).contains(
+                                                // Role names
+                                                "ROLE_USER", "ROLE_MANAGER", "ROLE_ADMIN",
                                                 // User privileges
                                                 "LOGIN_PRIVILEGE", "UPDATE_OWN_USER_PRIVILEGE",
                                                 "RESET_OWN_PASSWORD_PRIVILEGE",
