@@ -72,6 +72,10 @@ class DSUserDetailsServiceIntegrationTest {
         passwordHistoryRepository.deleteAll();
         userRepository.deleteAll();
         roleRepository.deleteAll();
+        // Force the DELETEs to hit the DB before the role INSERTs below. The framework seeds the configured
+        // roles (ROLE_USER/ROLE_ADMIN/...) at startup, so without an explicit flush Hibernate's action-queue
+        // ordering would run the new-role INSERTs before these DELETEs and trip the unique ROLE(NAME) index.
+        roleRepository.flush();
 
         // Create privileges
         Privilege userPrivilege = new Privilege();

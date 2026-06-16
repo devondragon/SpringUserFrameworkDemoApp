@@ -75,8 +75,8 @@ class UserApiSimpleTest {
         // Then
         result.andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.messages[0]").value("Registration Successful!"));
-        
+                .andExpect(jsonPath("$.messages[0]").value("If your email address is eligible, you will receive a verification email shortly."));
+
         // Verify user created
         User user = userRepository.findByEmail("simple.test@example.com");
         assertThat(user).isNotNull();
@@ -86,8 +86,8 @@ class UserApiSimpleTest {
     }
     
     @Test
-    @DisplayName("Should return conflict for duplicate email")
-    void shouldReturnConflictForDuplicateEmail() throws Exception {
+    @DisplayName("Should not reveal account existence for duplicate email (anti-enumeration)")
+    void shouldNotRevealAccountExistenceForDuplicateEmail() throws Exception {
         // Given - Register first user
         UserDto firstUser = new UserDto();
         firstUser.setFirstName("First");
@@ -115,10 +115,11 @@ class UserApiSimpleTest {
                 .content(objectMapper.writeValueAsString(duplicateUser))
                 .with(csrf()));
         
-        // Then
-        result.andExpect(status().isConflict())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.messages[0]").value("An account already exists for the email address"));
+        // Then - anti-enumeration: a duplicate email returns the SAME generic 200 success body as a new
+        // registration, so a caller cannot distinguish an already-registered address from a new one.
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.messages[0]").value("If your email address is eligible, you will receive a verification email shortly."));
     }
     
     @Test

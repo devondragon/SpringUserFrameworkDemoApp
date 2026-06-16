@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import com.digitalsanctuary.spring.user.persistence.repository.PasswordResetTokenRepository;
+import com.digitalsanctuary.spring.user.persistence.repository.UserRepository;
 import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.mail.MailService;
 import com.digitalsanctuary.spring.user.service.SessionInvalidationService;
@@ -36,10 +37,11 @@ public class CustomUserEmailService extends UserEmailService {
             MailService mailService,
             UserVerificationService userVerificationService,
             PasswordResetTokenRepository passwordTokenRepository,
+            UserRepository userRepository,
             ApplicationEventPublisher eventPublisher,
             SessionInvalidationService sessionInvalidationService,
             TokenHasher tokenHasher) {
-        super(mailService, userVerificationService, passwordTokenRepository, eventPublisher, sessionInvalidationService, tokenHasher);
+        super(mailService, userVerificationService, passwordTokenRepository, userRepository, eventPublisher, sessionInvalidationService, tokenHasher);
     }
 
     @Override
