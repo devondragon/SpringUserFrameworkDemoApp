@@ -122,6 +122,13 @@ user:
     googleEnabled: true # Enable Google registration
     facebookEnabled: true # Enable Facebook registration
   security:
+    # Canonical base URL for security email links (SUF-01 / CWE-640). Inherits http://localhost:8080 from
+    # application.yml; if you expose the app via a tunnel (e.g. ngrok) for OAuth/WebAuthn testing, set this to that
+    # public URL so emailed reset/verification links are clickable and match your webauthn.allowedOrigins, e.g.:
+    # appUrl: https://your-tunnel.ngrok.io
+    # Allow the passkey-only "set initial password" flow to run without a StepUpService (SUF-02). Convenient for local
+    # demoing; in production provide a StepUpService bean and leave this false.
+    allowInitialPasswordSetWithoutStepUp: true
     # unprotectedURIs: /,/index.html,/favicon.ico,/css/*,/js/*,/js/user/*,/js/event/*,/img/*,/user/registration,/user/resendRegistrationToken,/user/resetPassword,/user/registrationConfirm,/user/changePassword,/user/savePassword,/oauth2/authorization/*,/login,/user/login,/user/login.html,/swagger-ui.html,/swagger-ui/**,/v3/api-docs/**
   mail:
     fromAddress: you@test.com # From address for outbound mail

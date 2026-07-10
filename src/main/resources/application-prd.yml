@@ -42,4 +42,12 @@ user:
     rpName: ${WEBAUTHN_RP_NAME:Spring User Framework Demo}
     allowedOrigins: ${WEBAUTHN_ALLOWED_ORIGINS:https://example.com}
   security:
+    # Canonical base URL for security email links; driven by an env var in production so links can never derive
+    # their authority from a spoofable Host header (SUF-01 / CWE-640).
+    appUrl: ${APP_URL:https://example.com}
+    # Fail startup unless a canonical appUrl (or trustedHosts) is configured - a hard guarantee for production.
+    requireCanonicalAppUrl: true
+    # NOTE: allowInitialPasswordSetWithoutStepUp is intentionally left at its secure default (false) here. In
+    # production, setting an initial password on a passkey-only account should require step-up (a StepUpService bean),
+    # not just an authenticated session (SUF-02).
     disableCSRFdURIs: # No CSRF disabled URIs in production for better security

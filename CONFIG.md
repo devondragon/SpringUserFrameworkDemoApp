@@ -39,13 +39,17 @@ Welcome to the User Framework SpringBoot Configuration Guide! This document outl
 
 ## Security Settings
 
-- **Failed Login Attempts (`spring.security.failedLoginAttempts`)**: Number of failed login attempts before account lockout. Set to `0` to disable lockout.
-- **Account Lockout Duration (`spring.security.accountLockoutDuration`)**: Duration (in minutes) for account lockout.
-- **BCrypt Strength (`spring.security.bcryptStrength`)**: Adjust the bcrypt strength for password hashing. Default is `12`.
+- **Failed Login Attempts (`user.security.failedLoginAttempts`)**: Number of failed login attempts before account lockout. Set to `0` to disable lockout.
+- **Account Lockout Duration (`user.security.accountLockoutDuration`)**: Duration (in minutes) for account lockout.
+- **BCrypt Strength (`user.security.bcryptStrength`)**: Adjust the bcrypt strength for password hashing. Default is `12`.
+- **Canonical App URL (`user.security.appUrl`)**: Canonical base URL for security email links (password reset, verification). Set this to prevent Host-header poisoning of those links (CWE-640); when it is unset the framework logs a startup warning and derives the host from the (spoofable) request `Host` header. This demo sets it per profile — `http://localhost:8080` for local/E2E, and an `${APP_URL}` env var in `prd`.
+- **Trusted Hosts (`user.security.trustedHosts`)**: Alternative to `appUrl` — a comma-separated allow-list of hosts honored for email links when `appUrl` is not set; a non-allow-listed request host falls back to the first trusted host.
+- **Require Canonical App URL (`user.security.requireCanonicalAppUrl`)**: When `true`, startup **fails** unless `appUrl` or a non-empty `trustedHosts` is configured (fail-fast instead of a warning). The `prd` profile enables this.
+- **Allow Initial Password Set Without Step-Up (`user.security.allowInitialPasswordSetWithoutStepUp`)**: Controls `POST /user/setPassword`, which lets a passwordless (passkey-only) account set an initial password. As of the framework's SUF-02 hardening this endpoint is **disabled by default** (returns `HTTP 403`) unless you provide a `StepUpService` bean or set this to `true`. This demo sets it `true` in the interactive profiles (`local`, `mfa`, `playwright-test`) so the passkey "set a password" flow works, and leaves it `false` (secure default) in `prd`.
 
 ## Mail Configuration
 
-- **From Address (`spring.mail.fromAddress`)**: The email address used as the sender in outgoing emails.
+- **From Address (`user.mail.fromAddress`)**: The email address used as the sender in outgoing emails.
 
 ## Copyright
 

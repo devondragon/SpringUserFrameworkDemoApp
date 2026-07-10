@@ -131,6 +131,10 @@ user:
 
   # Centralizing the URIs of common pages to make changing paths easier.  You can leave this section alone if you use the default page locations from this project.  These URLs do NOT have to be included in the unprotectedURIs list above as they will automatically be handled.
   security:
+    # Canonical base URL for security email links (password reset, verification). Setting this prevents Host-header
+    # poisoning of those links (SUF-01 / CWE-640) and silences the library's startup warning. Override per profile
+    # (e.g. your public/ngrok URL in local, an env var in prod). See application-prd.yml for the fail-fast option.
+    appUrl: http://localhost:8080
     failedLoginAttempts: 10 # The number of failed login attempts before the user account is locked out.  Set this to 0 to disable account lockout.
     accountLockoutDuration: 30 # The number of minutes to lock the user account after the maximum number of failed login attempts is reached.  Set this to 0 to disable account lockout.  Set this to -1 to lock the account until an administrator unlocks it.
     bcryptStrength: 12 # The bcrypt strength to use for password hashing.  The higher the number, the longer it takes to hash the password.  The default is 12.  The minimum is 4.  The maximum is 31.

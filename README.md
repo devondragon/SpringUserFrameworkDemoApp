@@ -43,7 +43,7 @@ This demo application tracks the latest version of the Spring User Framework:
 
 | Demo App Version | Spring Boot | Spring User Framework | Java | Branch/Tag |
 |------------------|-------------|----------------------|------|------------|
-| main (current) | 4.0.x | 4.0.x | 21+ | `main` |
+| main (current) | 4.0.x | 5.1.x | 21+ | `main` |
 | 1.0.0-springboot3 | 3.5.x | 3.5.x | 17+ | [`v1.0.0-springboot3`](https://github.com/devondragon/SpringUserFrameworkDemoApp/tree/v1.0.0-springboot3) |
 
 ### Using Spring Boot 3.x?
