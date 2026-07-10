@@ -27,6 +27,12 @@ user:
     googleEnabled: false
     facebookEnabled: false
   security:
+    # E2E runs against http://localhost:8080; pin appUrl here so it wins over any ngrok appUrl a developer's
+    # application-local.yml sets (this profile is typically activated as local,playwright-test).
+    appUrl: http://localhost:8080
+    # Allow the passkey-only "set initial password" flow to run without a StepUpService (SUF-02); the demo has no
+    # StepUpService bean, so without this the flow returns HTTP 403.
+    allowInitialPasswordSetWithoutStepUp: true
     # Test API endpoints are handled by TestApiSecurityConfig with IP whitelist restriction
     unprotectedURIs: /,/index.html,/favicon.ico,/apple-touch-icon-precomposed.png,/css/*,/js/*,/js/user/*,/js/event/*,/js/utils/*,/img/**,/user/registration,/user/resendRegistrationToken,/user/resetPassword,/user/registrationConfirm,/user/changePassword,/user/savePassword,/oauth2/authorization/*,/login,/user/login,/user/login.html,/swagger-ui.html,/swagger-ui/**,/v3/api-docs/**,/event/,/event/list.html,/event/**,/about.html,/error,/error.html
 
