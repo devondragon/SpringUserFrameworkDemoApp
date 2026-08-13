@@ -483,6 +483,9 @@ export FACEBOOK_CLIENT_SECRET=your-facebook-client-secret
 # Security
 export SPRING_SECURITY_BCRYPT_STRENGTH=12
 export SPRING_SECURITY_FAILED_LOGIN_ATTEMPTS=5
+
+# Remember-me token signing key (required by the prd profile; startup fails without it)
+export REMEMBER_ME_KEY=a-long-random-value-from-your-secret-manager
 ```
 
 ### Important Security Settings

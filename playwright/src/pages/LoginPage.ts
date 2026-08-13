@@ -10,6 +10,7 @@ export class LoginPage extends BasePage {
   // Form elements
   readonly emailInput: Locator;
   readonly passwordInput: Locator;
+  readonly rememberMeCheckbox: Locator;
   readonly submitButton: Locator;
 
   // Links
@@ -28,6 +29,7 @@ export class LoginPage extends BasePage {
     super(page);
     this.emailInput = page.locator('#username');
     this.passwordInput = page.locator('#password');
+    this.rememberMeCheckbox = page.locator('#remember-me');
     // Use specific button text to avoid matching other buttons
     this.submitButton = page.getByRole('button', { name: 'Log In' });
     // Use specific link text to avoid matching dropdown menu items
@@ -45,6 +47,13 @@ export class LoginPage extends BasePage {
   async fillCredentials(email: string, password: string): Promise<void> {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
+  }
+
+  /**
+   * Check the remember-me checkbox.
+   */
+  async checkRememberMe(): Promise<void> {
+    await this.rememberMeCheckbox.check();
   }
 
   /**

@@ -74,6 +74,10 @@
 												th:placeholder="#{label.form.login-pass}" aria-label="Password">
 										</div>
 									</div>
+									<div class="form-check text-start mb-3">
+										<input type="checkbox" id="remember-me" name="remember-me" class="form-check-input">
+										<label for="remember-me" class="form-check-label" th:utext="#{label.form.login-remember}">Remember me</label>
+									</div>
 									<div class="d-grid">
 										<button type="submit" th:utext="#{action.login}" class="btn btn-primary">
 											Log In

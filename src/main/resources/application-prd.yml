@@ -51,3 +51,11 @@ user:
     # production, setting an initial password on a passkey-only account should require step-up (a StepUpService bean),
     # not just an authenticated session (SUF-02).
     disableCSRFdURIs: # No CSRF disabled URIs in production for better security
+    rememberMe:
+      # No default on purpose: the demo signing key in application.yml must never reach production. Startup fails
+      # unless REMEMBER_ME_KEY is provided.
+      key: ${REMEMBER_ME_KEY}
+      # Force the Secure flag unconditionally, mirroring the session cookie above. Spring's default falls back to
+      # request.isSecure(), which is false behind a TLS-terminating proxy unless forwarded-header processing is
+      # configured - without this a ~14-day login token could be sent over plain HTTP.
+      useSecureCookie: true
