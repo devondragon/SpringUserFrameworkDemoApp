@@ -2,7 +2,7 @@ plugins {
   id 'java'
   id 'org.springframework.boot' version '4.0.4'
   id 'io.spring.dependency-management' version '1.1.7'
-  id "com.github.ben-manes.versions" version "0.53.0"
+  id "com.github.ben-manes.versions" version "0.61.0"
 
 }
 
@@ -56,24 +56,17 @@ dependencies {
 
     // Thymeleaf extras - Spring Boot 4 manages the version
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-    // Workaround for GROOVY-11745: Groovy 5.0.4 (shipped with Spring Boot 4.0.3) has a
-    // regression that causes an NPE when Groovy 5 code calls setters on objects from
-    // Groovy 4-compiled libraries. This breaks thymeleaf-layout-dialect 3.4.0 (compiled
-    // with Groovy 4.0.25) in DecorateProcessor.doProcess().
-    // See: https://issues.apache.org/jira/browse/GROOVY-11745
-    // See: https://github.com/ultraq/thymeleaf-layout-dialect/issues/251
-    // TODO: Remove this workaround when Groovy 5.0.5+ is available and adopted by Spring Boot
-    implementation('nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0') {
-        exclude group: 'org.apache.groovy'
-    }
-    implementation 'org.apache.groovy:groovy:5.0.3'
+    // thymeleaf-layout-dialect 4.0.x is compiled against Groovy 5 and aligned with Spring
+    // Boot 4, so the earlier GROOVY-11745 workaround (a Groovy exclude plus an explicit
+    // Groovy 5.0.3 pin, needed only because 3.4.0 was a Groovy 4 build) is no longer required.
+    implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:4.0.1'
 
     // OpenAPI (Swagger)
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
 
     // Runtime dependencies
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.7'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.10'
     runtimeOnly 'org.postgresql:postgresql'
 
     // Docker Compose support for local development
@@ -83,7 +76,7 @@ dependencies {
     // (passay is provided transitively by ds-spring-user-framework at the version it requires; the demo
     //  app does not use passay directly, so declaring/pinning it here previously forced a conflicting
     //  downgrade of the library's required passay version.)
-    implementation 'com.google.guava:guava:33.5.0-jre'
+    implementation 'com.google.guava:guava:33.6.0-jre'
     implementation 'org.hibernate.validator:hibernate-validator'
 
     // Compile-only dependencies
