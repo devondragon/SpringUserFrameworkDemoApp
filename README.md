@@ -1,828 +1,191 @@
 # Spring User Framework Demo Application
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Java Version](https://img.shields.io/badge/Java-21%2B-brightgreen)](https://www.oracle.com/java/technologies/downloads/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-green)](https://spring.io/projects/spring-boot)
-[![Gradle](https://img.shields.io/badge/Gradle-8.0%2B-blue)](https://gradle.org/)
-[![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://www.docker.com/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](contributing)
-[![Documentation](https://img.shields.io/badge/docs-comprehensive-green)](README.md)
+[![Java](https://img.shields.io/badge/Java-21-brightgreen)](https://adoptium.net/temurin/releases/?version=21)
 
-A comprehensive demonstration application for the [Spring User Framework](https://github.com/devondragon/SpringUserFramework), showcasing how to implement user management features in a Spring Boot web application.
+A demo application for the [Spring User Framework](https://github.com/devondragon/SpringUserFramework). It
+runs the framework's user-management surface (registration with email verification, login, passkeys, MFA,
+OAuth2 and OIDC, password reset, profile editing, account deletion) behind a working Thymeleaf and Bootstrap
+UI, and adds a small event-management domain on top to show how application code builds on the framework's
+identity and authorization. The HTML, JavaScript, and configuration here are meant to be copied into your own
+application as a starting point.
 
-![Spring User Framework Demo Screenshot](/docs/images/Register.jpeg)
+![Registration page](docs/images/Register.jpeg)
 
-## Table of Contents
-- [Overview](#overview)
-- [Version Compatibility](#version-compatibility)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Testing](#testing)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [Running the Application](#running-the-application)
-- [Development Tools](#development-tools)
-- [API Documentation](#api-documentation)
-- [Architecture](#architecture)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [Changelog](#changelog)
-- [Notes](#notes)
+Documentation for this demo is in [docs/](docs); the framework's own documentation lives in
+[its repository](https://github.com/devondragon/SpringUserFramework/blob/main/README.md).
 
+## Version compatibility
 
-## Overview
+| Demo version | Spring Boot | Spring User Framework | Java | Branch or tag |
+| --- | --- | --- | --- | --- |
+| main | 4.1.x | 5.3.x | 21 | `main` |
+| 1.0.0-springboot3 | 3.5.x | 3.5.x | 17 | [`v1.0.0-springboot3`](https://github.com/devondragon/SpringUserFrameworkDemoApp/tree/v1.0.0-springboot3) |
 
-This demo application serves as a reference implementation of the [Spring User Framework](https://github.com/devondragon/SpringUserFramework), showing how to integrate user management features into a real-world Spring Boot application. It includes a complete user interface built with Bootstrap, Thymeleaf templates, and JavaScript.
+`main` is on Spring Boot 4.1.0 and framework 5.3.0 ([build.gradle](build.gradle)). For the Spring Boot 3.5.6
+and framework 3.5.1 combination on Java 17, `git checkout v1.0.0-springboot3` after cloning.
 
-The application implements an event management system where users can browse, register for, and manage events. This demonstrates how to build application-specific functionality on top of the user management framework.
+## What this demo shows
 
-## Version Compatibility
+| Capability | Where it lives | Details |
+| --- | --- | --- |
+| Application-specific user profile sharing the framework user's key | [`user/profile/`](src/main/java/com/digitalsanctuary/spring/demo/user/profile) | [EXTENDING.md](docs/EXTENDING.md#custom-user-profile-stack) |
+| Cleaning up application data when an account is deleted | [`UserProfileDeletionListener`](src/main/java/com/digitalsanctuary/spring/demo/user/profile/UserProfileDeletionListener.java) | [EXTENDING.md](docs/EXTENDING.md#cleaning-up-application-data-when-a-user-is-deleted) |
+| An application domain (events) using privilege-based access control | [`event/`](src/main/java/com/digitalsanctuary/spring/demo/event), roles in [`application.yml`](src/main/resources/application.yml) | [EXTENDING.md](docs/EXTENDING.md#building-your-own-domain-on-the-framework-events) |
+| Allowing or denying registrations through the `RegistrationGuard` SPI | [`DomainRegistrationGuard`](src/main/java/com/digitalsanctuary/spring/demo/registration/DomainRegistrationGuard.java), `registration-guard` profile | [AUTHENTICATION.md](docs/AUTHENTICATION.md#registration-guard) |
+| Passkey sign-in, enrollment, management, and passwordless registration | [`static/js/user/`](src/main/resources/static/js/user) (`webauthn-*.js`) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#passkeys) |
+| Two-factor login, password plus passkey | [`application-mfa.yml`](src/main/resources/application-mfa.yml), [`user/mfa/`](src/main/resources/templates/user/mfa) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#mfa) |
+| OAuth2 login with Google and Facebook | [`application-local.yml-example`](src/main/resources/application-local.yml-example) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#oauth2-with-google-and-facebook) |
+| OIDC login against a bundled Keycloak, as a runnable stack | [`docker-compose-keycloak.yml`](docker-compose-keycloak.yml), [`keycloak/`](keycloak) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#keycloak) |
+| Remember-me cookies | [`login.html`](src/main/resources/templates/user/login.html), [`application.yml`](src/main/resources/application.yml) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#remember-me) |
+| Admin page and API that lock and unlock accounts | [`AdminController`](src/main/java/com/digitalsanctuary/spring/demo/controller/AdminController.java), [`AdminAPIController`](src/main/java/com/digitalsanctuary/spring/demo/controller/AdminAPIController.java) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#admin) |
+| Reference templates, JavaScript, and message bundle to copy | [`templates/`](src/main/resources/templates), [`static/js/`](src/main/resources/static/js) | [EXTENDING.md](docs/EXTENDING.md#reference-templates-javascript-and-messages) |
+| Replacing a framework service with your own | [`CustomUserEmailService`](src/main/java/com/digitalsanctuary/spring/demo/service/CustomUserEmailService.java) | [EXTENDING.md](docs/EXTENDING.md#overriding-a-framework-service) |
+| A test-only API, profile-gated and loopback-only, for E2E runs | [`TestDataController`](src/main/java/com/digitalsanctuary/spring/demo/test/api/TestDataController.java) | [EXTENDING.md](docs/EXTENDING.md#profile-gated-test-only-endpoints) |
+| Browser tests covering the flows above | [`playwright/`](playwright) | [TESTING.md](docs/TESTING.md#playwright-e2e-tests) |
 
-This demo application tracks the latest version of the Spring User Framework:
+## Project layout
 
-| Demo App Version | Spring Boot | Spring User Framework | Java | Branch/Tag |
-|------------------|-------------|----------------------|------|------------|
-| main (current) | 4.0.x | 5.1.x | 21+ | `main` |
-| 1.0.0-springboot3 | 3.5.x | 3.5.x | 17+ | [`v1.0.0-springboot3`](https://github.com/devondragon/SpringUserFrameworkDemoApp/tree/v1.0.0-springboot3) |
-
-### Using Spring Boot 3.x?
-
-If you need to use Spring Boot 3.5.x with Java 17, use the tagged version:
-
-```bash
-git clone https://github.com/devondragon/SpringUserFrameworkDemoApp.git
-cd SpringUserFrameworkDemoApp
-git checkout v1.0.0-springboot3
+```
+src/main/java/com/digitalsanctuary/spring/demo/
+├── controller/       AdminController, AdminAPIController, PageController
+├── event/            the example domain: entity, repository, service, page and API controllers
+├── registration/     DomainRegistrationGuard, the RegistrationGuard SPI sample
+├── service/          CustomUserEmailService, a framework service replaced with @Primary
+├── test/             the test-only API and its security config, playwright-test profile only
+├── user/profile/     the profile entity, repository, service, session holder, and listeners
+├── util/             LocaleConfiguration
+└── web/              DemoTemplateModelAdvice
+src/main/resources/
+├── static/js/        user/ (one module per page), admin/, utils/, shared.js
+├── templates/        layout.html plus fragments/, user/, event/, admin/, mail/
+├── application.yml   base configuration, with one application-<profile>.yml per profile
+└── data-local.sql    sample events, loaded under the local profile
+src/test/java/com/digitalsanctuary/spring/
+├── demo/             tests for this application's own code
+└── user/             tests against the framework's user-management surface
+playwright/           E2E specs, fixtures, and playwright.config.ts
+keycloak/             realm export and TLS material for the Keycloak stack
 ```
 
-This version uses:
-- Spring Boot 3.5.6
-- Spring User Framework 3.5.1
-- Java 17+
+## Quick start
 
-## Features
+### Docker
 
-- **User Management**
-  - Registration with email verification
-  - Login/logout functionality
-  - Password reset workflow
-  - User profile management
-  - Account deletion/disabling
-
-- **Authentication & Security**
-  - Username/password authentication
-  - WebAuthn/Passkey passwordless login (biometrics, security keys)
-  - Passkey management (register, rename, delete)
-  - OAuth2 login with Google, Facebook, and Keycloak
-  - Multi-factor authentication (PASSWORD + WEBAUTHN passkey) via the `mfa` profile
-  - Pluggable registration restrictions via the `RegistrationGuard` SPI (sample domain guard)
-  - Role-based access control
-  - CSRF protection
-  - Security audit logging
-
-- **Application-Specific Features**
-  - Custom user profile with additional fields
-  - Event listing and management
-  - User-to-event registration
-  - Role-based permissions for events
-
-- **Technical Features**
-  - Spring Boot auto-configuration
-  - Thymeleaf templating with fragments
-  - REST API with JSON responses
-  - Responsive Bootstrap UI
-  - Docker integration
-
-## Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Java**: JDK 21 or higher ([Download](https://www.oracle.com/java/technologies/downloads/)) - *Note: For Spring Boot 3.x version, Java 17+ is sufficient*
-- **Database**: MariaDB, MySQL, or Docker for containerized database
-- **Build Tool**: Gradle (included via wrapper) or Maven
-- **Optional**: Docker and Docker Compose for containerized setup
-- **Git**: For cloning the repository
-
-### System Requirements
-- **Memory**: Minimum 2GB RAM (4GB recommended)
-- **Disk Space**: At least 1GB free space
-- **Network**: Internet connection for downloading dependencies
-
-## Quick Start
-
-### 🚀 Zero to Running in 5 Minutes (Docker)
-
-The fastest way to get started is using Docker Compose:
+Nothing to install but Docker:
 
 ```bash
-# Clone and start everything
 git clone https://github.com/devondragon/SpringUserFrameworkDemoApp.git
 cd SpringUserFrameworkDemoApp
 docker compose up --build
 ```
 
-**Access the Application**: `http://localhost:8080`
+The app image is built from source inside Docker, so the first build takes several minutes. When it is up,
+open http://localhost:8080 and register at http://localhost:8080/user/register.html. This stack sets
+`USER_REGISTRATION_SENDVERIFICATIONEMAIL=false`, so accounts are enabled at registration and you can log in
+immediately. Its `mailserver` container is a relay with no route to real inboxes, so nothing it accepts will
+reach an actual mailbox. The stack runs under the `dev` profile and loads no sample events.
 
-### Manual Setup
+Stop it with Ctrl-C, then `docker compose down -v` to remove the containers and their data.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/devondragon/SpringUserFrameworkDemoApp.git
-   cd SpringUserFrameworkDemoApp
-   ```
+### Locally with Gradle
 
-2. **Set up the database** (using Docker)
-   ```bash
-   docker run -d --name springuser-db \
-     -e MYSQL_ROOT_PASSWORD=root \
-     -e MYSQL_DATABASE=springuser \
-     -e MYSQL_USER=springuser \
-     -e MYSQL_PASSWORD=springuser \
-     -p 3306:3306 \
-     mariadb:latest
-   ```
+Needs JDK 21 ([mise.toml](mise.toml) pins it) and a running Docker daemon: `bootRun` starts the MariaDB
+container defined in [compose.dev.yaml](compose.dev.yaml) and stops it with the app.
 
-3. **Configure the application**
-   Copy the example configuration:
-   ```bash
-   cp src/main/resources/application-local.yml-example src/main/resources/application-local.yml
-   ```
+```bash
+git clone https://github.com/devondragon/SpringUserFrameworkDemoApp.git
+cd SpringUserFrameworkDemoApp
+cp src/main/resources/application-local.yml-example src/main/resources/application-local.yml
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
 
-      (Optional for Keycloak) Copy the Keycloak configuration:
-    ```bash
-     cp src/main/resources/application-docker-keycloak.yml-example src/main/resources/application-docker-keycloak.yml
-     ```
-   Then edit the copied file as needed.
+`application-local.yml` is gitignored, so credentials you put in it stay out of git. Copying it also turns off
+the verification email and loads the sample events in
+[`data-local.sql`](src/main/resources/data-local.sql). Then open http://localhost:8080, register at
+http://localhost:8080/user/register.html, and browse the API at http://localhost:8080/swagger-ui.html.
 
-4. **Run the application**
+To use a database you manage yourself instead of the container, set `spring.docker.compose.enabled: false` and
+your own `spring.datasource.*` values; see [CONFIGURATION.md](docs/CONFIGURATION.md).
 
-   Choose one of the following:
-     - Using Gradle:
-       ```bash
-       ./gradlew bootRun
-       ```
-     - Using Maven:
-       ```bash
-       mvn spring-boot:run
-       ```
-     - Using Docker Compose with Keycloak stack:
-       ```bash
-       docker compose -f docker-compose-keycloak.yml up --build
-       ```
+### With Keycloak
 
-5. **Access the Application**
-   Open your browser and navigate to:
-   `http://localhost:8080`
+`docker compose -f docker-compose-keycloak.yml up -d --build --wait` runs the app against a bundled Keycloak
+and its imported `demo` realm. Ports, credentials, and the login walkthrough are in
+[keycloak/README.md](keycloak/README.md) and [AUTHENTICATION.md](docs/AUTHENTICATION.md#keycloak).
 
-6. **Access Keycloak if enabled in Docker compose stack**
-   Open your browser and navigate to:
-   `https://localhost:8443`
+## Profiles
 
-### First Time Setup
+| Profile | What it is for |
+| --- | --- |
+| `local` | Everyday local development; needs `application-local.yml` copied from the example |
+| `dev` | Debug-heavy dev server; what the `compose.yaml` Docker stack runs |
+| `prd` | Production settings: env-driven datasource and URLs, strict cookies, template caching |
+| `test` | The JUnit suite on H2, applied automatically by `./gradlew test` |
+| `playwright-test` | Add-on: enables the loopback-only test API and disables outbound mail for E2E runs |
+| `docker-keycloak` | OIDC against the bundled Keycloak; set for you inside `docker-compose-keycloak.yml` |
+| `mfa` | Add-on: requires PASSWORD plus WEBAUTHN, for example `local,mfa` |
+| `registration-guard` | Add-on: activates the domain-restricted registration guard, for example `local,registration-guard` |
 
-After starting the application, you can:
-- Register a new account at `http://localhost:8080/user/register`
-- Use the demo data that may be pre-loaded
-- Check logs for any setup issues in the console output
+Pick a base profile with `--spring.profiles.active=`, and list add-ons after it, comma-separated. With no
+`--args` at all, `bootRun` still runs `local` ([build.gradle:114-124](build.gradle)). Full per-profile
+override lists are in [CONFIGURATION.md](docs/CONFIGURATION.md).
 
----
+## Documentation
+
+This demo:
+
+- [docs/CONFIGURATION.md](docs/CONFIGURATION.md): profiles, the properties this demo sets, environment
+  variables, mail, and security settings.
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): prerequisites, running the app, the Compose files, Gradle
+  tasks, logs, LiveReload, and IDE setup.
+- [docs/TESTING.md](docs/TESTING.md): the JUnit suite, disabled tests, the Playwright suite and its test
+  API, and CI.
+- [docs/EXTENDING.md](docs/EXTENDING.md): each framework extension point, the demo code that uses it, and
+  what to write in your own app.
+- [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md): every authentication path here, how to run it, and its
+  configuration.
+- [keycloak/README.md](keycloak/README.md): the Keycloak stack, its realm export, and its credentials.
+- [CHANGELOG.md](CHANGELOG.md): what changed, by date.
+
+The framework:
+
+- [README.md](https://github.com/devondragon/SpringUserFramework/blob/main/README.md): what the library does
+  and how to add it to an application.
+- [CONFIG.md](https://github.com/devondragon/SpringUserFramework/blob/main/CONFIG.md): the full property
+  reference.
+- [MIGRATION.md](https://github.com/devondragon/SpringUserFramework/blob/main/MIGRATION.md): upgrading
+  between framework versions.
+- [docs/PROFILE.md](https://github.com/devondragon/SpringUserFramework/blob/main/docs/PROFILE.md): the
+  user-profile extension contract.
+- [docs/REGISTRATION-GUARD.md](https://github.com/devondragon/SpringUserFramework/blob/main/docs/REGISTRATION-GUARD.md):
+  the `RegistrationGuard` SPI.
 
 ## Testing
 
-This project includes comprehensive testing with multiple approaches:
-
-### Running Tests
-
 ```bash
-# Run all tests
-./gradlew test
-
-# Run specific test class
-./gradlew test --tests UserApiTest
-
-# Run specific test method
-./gradlew test --tests UserApiTest.testUserRegistration
+./gradlew test                                     # JUnit suite, test profile, H2
+cd playwright && npm ci && npx playwright install  # once
+./gradlew playwrightTest                           # E2E, starts the app itself
 ```
 
-### Test Categories
-
-- **Unit Tests**: Fast tests for individual components
-- **Integration Tests**: Tests using `@IntegrationTest` with Spring context
-- **API Tests**: REST endpoint testing with MockMvc
-- **UI Tests**: End-to-end testing with Playwright
-- **Security Tests**: Authentication and authorization testing
-
-### Test Data
-
-Test data builders are available in `src/test/java/com/digitalsanctuary/spring/demo/test/data/` for consistent test data creation.
-
-### Test Profiles
-
-Tests run with the `test` profile using H2 in-memory database for isolation.
-
----
-
-## API Documentation
-
-The application provides REST API endpoints for user management and event operations:
-
-### User Management API
-
-| Endpoint           | Method | Description     | Authentication |
-| ------------------ | ------ | --------------- | -------------- |
-| `/api/users`       | GET    | List all users  | Admin          |
-| `/api/users/{id}`  | GET    | Get user by ID  | User/Admin     |
-| `/api/users`       | POST   | Create new user | Public         |
-| `/api/users/{id}`  | PUT    | Update user     | User/Admin     |
-| `/api/users/{id}`  | DELETE | Delete user     | User/Admin     |
-| `/api/auth/login`  | POST   | User login      | Public         |
-| `/api/auth/logout` | POST   | User logout     | Authenticated  |
-
-### Event Management API
-
-| Endpoint                    | Method | Description        | Authentication |
-| --------------------------- | ------ | ------------------ | -------------- |
-| `/api/events`               | GET    | List events        | Public         |
-| `/api/events/{id}`          | GET    | Get event details  | Public         |
-| `/api/events`               | POST   | Create event       | Admin          |
-| `/api/events/{id}/register` | POST   | Register for event | User           |
-
-### Response Format
-
-All API endpoints return JSON responses:
-
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Operation successful",
-  "errors": []
-}
-```
-
-For detailed API documentation, start the application and visit `/swagger-ui.html` (if Swagger is enabled).
-
----
-
-## Project Structure
-
-```
-└── src/
-    ├── main/
-    │   ├── java/
-    │   │   └── com/digitalsanctuary/spring/demo/
-    │   │       ├── controller/            # Page controllers
-    │   │       ├── event/                 # Event-related functionality
-    │   │       ├── user/
-    │   │       │   └── profile/           # User profile extensions
-    │   │       └── util/                  # Utility classes
-    │   └── resources/
-    │       ├── static/                    # Static resources (CSS, JS)
-    │       ├── templates/                 # Thymeleaf templates
-    │       │   ├── fragments/             # Reusable template fragments
-    │       │   ├── mail/                  # Email templates
-    │       │   └── user/                  # User management templates
-    │       └── application.yml            # Application configuration
-    └── test/                              # Test classes
-```
-
-
-## Configuration
-
-### Configuration Profiles
-
-The application supports multiple configuration profiles:
-
-| Profile             | Purpose                       | Database           | Use Case                                          |
-| ------------------- | ----------------------------- | ------------------ | ------------------------------------------------- |
-| `local`             | Local development             | MariaDB/MySQL      | Development with persistent database              |
-| `test`              | Testing                       | H2 (in-memory)     | Automated testing                                 |
-| `dev`               | Development server            | MariaDB/MySQL      | Shared development environment                    |
-| `docker-keycloak`   | Docker with Keycloak          | MariaDB + Keycloak | OIDC authentication testing                       |
-| `mfa`               | Multi-factor authentication   | (combine w/ above) | Require PASSWORD + WEBAUTHN; e.g. `local,mfa`     |
-| `registration-guard`| Restricted registration       | (combine w/ above) | Domain-restricted sign-up demo; e.g. `local,registration-guard` |
-
-> `mfa` and `registration-guard` are *opt-in add-on* profiles — activate them alongside a base profile (e.g. `--spring.profiles.active=local,registration-guard`). See [Registration Guard (restricting who can register)](#registration-guard-restricting-who-can-register) below.
-
-### Quick Configuration Setup
-
-1. **Copy example configurations:**
-   ```bash
-   cp src/main/resources/application-local.yml-example src/main/resources/application-local.yml
-   cp src/main/resources/application-docker-keycloak.yml-example src/main/resources/application-docker-keycloak.yml
-   ```
-
-2. **Edit configuration files** to match your environment
-3. **Set active profile:** `--spring.profiles.active=local`
-
-### Essential Configuration Settings
-
-#### **Database Configuration**
-The demo uses MariaDB as the default database. You can quickly spin up a MariaDB instance using Docker:
-```bash
-docker run -p 127.0.0.1:3306:3306 --name springuserframework \
-  -e MARIADB_ROOT_PASSWORD=springuserroot \
-  -e MARIADB_DATABASE=springuser \
-  -e MARIADB_USER=springuser \
-  -e MARIADB_PASSWORD=springuser \
-  -d mariadb:latest
-```
-
-If you're running the application in a production-like environment, ensure you set the appropriate database properties in `application.yml` or your active profile.
-
----
-
-### Registration Guard (restricting who can register)
-
-The Spring User Framework exposes a `RegistrationGuard` SPI that lets a consuming app allow or deny each registration attempt — useful for invite-code gating, email allowlists, or domain restrictions. The framework calls every `RegistrationGuard` bean for form, passwordless, and OAuth2/OIDC sign-ups; if any guard denies, registration is rejected with the guard's message.
-
-This demo ships a sample implementation, [`DomainRegistrationGuard`](src/main/java/com/digitalsanctuary/spring/demo/registration/DomainRegistrationGuard.java), that restricts **form and passwordless** registration to a single email domain while allowing **all OAuth2/OIDC** registrations. It is gated behind the `registration-guard` Spring profile so the default demo experience is unaffected.
-
-**Try it:**
-
-```bash
-# Only @example.com email addresses can register via the form (OAuth2/OIDC still allowed)
-./gradlew bootRun --args='--spring.profiles.active=local,registration-guard'
-
-# Override the allowed domain — pass it inside --args as a Spring Boot argument so it reaches the
-# forked application (a -D after the task sets it on the Gradle JVM only and is not forwarded)
-./gradlew bootRun \
-  --args='--spring.profiles.active=local,registration-guard --registration.guard.allowed-domain=@mycompany.com'
-```
-
-| Setting | Default | Purpose |
-| ------- | ------- | ------- |
-| `registration-guard` profile | off | Activates the sample guard bean |
-| `registration.guard.allowed-domain` | `@example.com` | Domain that form/passwordless registrations must match |
-
-With the profile active, registering a non-matching email returns the friendly denial message `Registration is restricted to <domain> email addresses.`
-
-**Writing your own guard:** implement `RegistrationGuard` as a Spring bean and return `RegistrationDecision.allow()` or `RegistrationDecision.deny(reason)`. The `RegistrationContext` exposes the email, `RegistrationSource` (FORM / PASSWORDLESS / OAUTH2 / OIDC), and provider name so you can apply different rules per source:
-
-```java
-@Component
-public class InviteCodeGuard implements RegistrationGuard {
-    @Override
-    public RegistrationDecision evaluate(RegistrationContext context) {
-        // e.g. look up an invite code carried on the request, check an allowlist, etc.
-        return isInvited(context.email())
-                ? RegistrationDecision.allow()
-                : RegistrationDecision.deny("An invitation is required to register.");
-    }
-}
-```
-
-Multiple guards compose — all must allow. See the framework's [Registration Guard documentation](https://github.com/devondragon/SpringUserFramework/blob/main/REGISTRATION-GUARD.md) for the full SPI reference.
-
----
-
-#### **Mail Sending (SMTP)**
-The application requires an SMTP server for sending emails (e.g., account verification and password reset). Update the SMTP settings in your configuration file:
-```yaml
-spring:
-  mail:
-    host: smtp.example.com
-    port: 587
-    username: your-username
-    password: your-password
-    properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-
-user:
-  mail:
-    fromAddress: noreply@yourdomain.com
-```
-
-For local testing, the Docker Compose configuration includes a mail server that captures all outgoing emails.
-
----
-
-#### **SSO OAuth2 with Google and Facebook**
-To enable SSO:
-1. Create OAuth credentials in Google and Facebook developer consoles.
-2. Update your `application.yml`:
-   ```yaml
-   spring:
-     security:
-       oauth2:
-         client:
-           registration:
-             google:
-               client-id: YOUR_GOOGLE_CLIENT_ID
-               client-secret: YOUR_GOOGLE_CLIENT_SECRET
-               redirect-uri: "{baseUrl}/login/oauth2/code/google"
-             facebook:
-               client-id: YOUR_FACEBOOK_CLIENT_ID
-               client-secret: YOUR_FACEBOOK_CLIENT_SECRET
-               redirect-uri: "{baseUrl}/login/oauth2/code/facebook"
-   ```
-
-3. Use a tool like [ngrok](https://ngrok.com/) for local testing of OAuth callbacks:
-   ```bash
-   ngrok http 8080
-   ```
-
-Then update your OAuth2 providers' callback URLs to use the ngrok domain.
-
----
-
-#### **WebAuthn / Passkeys**
-
-The demo app includes full WebAuthn/Passkey support for passwordless login. Users can register passkeys (biometrics, security keys) from their profile page and use them to log in without a password.
-
-**Configuration** (in `application.yml`):
-```yaml
-user:
-  webauthn:
-    enabled: true                                    # Enable passkey support
-    rpId: localhost                                  # Must match your domain
-    rpName: Spring User Framework Demo              # Display name shown during registration
-    allowedOrigins: http://localhost:8080            # Must match browser origin exactly
-```
-
-**Important**: You must also add the WebAuthn endpoints to your unprotected URIs:
-```yaml
-user:
-  security:
-    unprotectedURIs: ...,/webauthn/authenticate/**,/login/webauthn
-```
-
-**How it works:**
-- **Register a passkey**: Log in with username/password, go to your profile page, and click "Add Passkey"
-- **Log in with passkey**: On the login page, click the "Sign in with a Passkey" button
-- **Manage passkeys**: From your profile page, rename or delete registered passkeys
-
-**Development notes:**
-- HTTP works on `localhost` without HTTPS
-- For testing on other devices, use ngrok (`ngrok http 8080`) and update `rpId` and `allowedOrigins` to match the ngrok domain
-- The database tables (`user_entities`, `user_credentials`) are created automatically by Hibernate
-
-### Environment Variables
-
-For production deployments, use environment variables instead of hardcoding values:
-
-```bash
-# Database
-export SPRING_DATASOURCE_URL=jdbc:mariadb://localhost:3306/springuser
-export SPRING_DATASOURCE_USERNAME=springuser
-export SPRING_DATASOURCE_PASSWORD=springuser
-
-# Mail
-export SPRING_MAIL_HOST=smtp.gmail.com
-export SPRING_MAIL_USERNAME=your-email@gmail.com
-export SPRING_MAIL_PASSWORD=your-app-password
-
-# OAuth2
-export GOOGLE_CLIENT_ID=your-google-client-id
-export GOOGLE_CLIENT_SECRET=your-google-client-secret
-export FACEBOOK_CLIENT_ID=your-facebook-client-id
-export FACEBOOK_CLIENT_SECRET=your-facebook-client-secret
-
-# Security
-export SPRING_SECURITY_BCRYPT_STRENGTH=12
-export SPRING_SECURITY_FAILED_LOGIN_ATTEMPTS=5
-
-# Remember-me token signing key (required by the prd profile; startup fails without it)
-export REMEMBER_ME_KEY=a-long-random-value-from-your-secret-manager
-```
-
-### Important Security Settings
-
-- **BCrypt Strength**: Set to `12` or higher for production
-- **Session Timeout**: Default `30m`, adjust based on security requirements
-- **Account Lockout**: Configure failed login attempts and lockout duration
-- **CSRF Protection**: Enabled by default, ensure proper configuration for APIs
-
-### Framework-Specific Configuration
-
-See [CONFIG.md](CONFIG.md) for detailed framework configuration options or refer to the [Spring User Framework documentation](https://github.com/devondragon/SpringUserFramework) for complete configuration reference.
-
-
-
-
-#### **SSO OIDC with Keycloak**
-To enable SSO:
-1. Create OIDC client in Keycloak admin console.
-2. Update your `application-docker-keycloak.yml`:
-   ```yaml
-   spring:
-     security:
-       oauth2:
-         client:
-            registration:
-              keycloak:
-                client-id: ${DS_SPRING_USER_KEYCLOAK_CLIENT_ID} # Keycloak client ID for OAuth2
-                client-secret: ${DS_SPRING_USER_KEYCLOAK_CLIENT_SECRET} # Keycloak client secret for OAuth2
-                authorization-grant-type: authorization_code # Authorization grant type for OAuth2
-                scope:
-                  - email # Request email scope for OAuth2
-                  - profile # Request profile scope for OAuth2
-                  - openid # Request oidc scope for OAuth2
-                client-name: Keycloak # Name of the OAuth2 client
-                provider: keycloak
-            provider:
-              keycloak: # https://www.keycloak.org/securing-apps/oidc-layers
-                issuer-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_ISSUER_URI}
-                authorization-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_AUTHORIZATION_URI}
-                token-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_TOKEN_URI}
-                user-info-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_USER_INFO_URI}
-                user-name-attribute: preferred_username # https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
-                jwk-set-uri: ${DS_SPRING_USER_KEYCLOAK_PROVIDER_JWK_SET_URI}
-   ```
-3. Refer to `keycloak.env` for default values for the above environment variables
-4. You can directly start with Keycloak using the default realm provided in this project under `keycloak/realm/realm-export.json` that comes pre configured with a OIDC client and secret for this application Keycloak
-
----
-
-
-## Running the Application
-
-### Running Locally
-
-#### Using Gradle
-```bash
-./gradlew bootRun
-```
-
-#### Using Maven
-```bash
-mvn spring-boot:run
-```
-
-#### With specific profile
-```bash
-./gradlew bootRun --args='--spring.profiles.active=dev'
-```
-
-### Running with Docker
-
-The project includes a complete Docker setup with the application, MariaDB database, and a mail server.
-
-**Docker Compose files:**
-- **`compose.yaml`** — Full deployable stack (app + database + mail server). Use this to run the entire application in Docker.
-- **`compose.dev.yaml`** — Dev dependencies only (database). Used automatically by Spring Boot's Docker Compose integration during `bootRun` for local development.
-- **`docker-compose-keycloak.yml`** — Full stack with Keycloak for OIDC authentication testing.
-
-```bash
-docker compose up --build
-```
-
-To launch the Keycloak stack:
-```bash
-docker compose -f docker-compose-keycloak.yml up --build
-```
-
-**Note**: Test emails sent from the local Postfix server may not be accepted by all email providers. Use a real SMTP server for production use.
-
----
-
-## Development Tools
-
-### IDE Setup
-
-**IntelliJ IDEA (Recommended):**
-```bash
-# Import as Gradle project
-# Enable annotation processing: Settings > Build > Compiler > Annotation Processors
-# Install Lombok plugin if needed
-```
-
-**VS Code:**
-```bash
-# Install extensions:
-# - Extension Pack for Java
-# - Spring Boot Extension Pack
-# - Gradle for Java
-```
-
-### Common Development Tasks
-
-```bash
-# Quick development startup
-./gradlew bootRun --args='--spring.profiles.active=local'
-
-# Debug mode (port 5005)
-./gradlew bootRun --debug-jvm
-
-# Build and run with custom script
-./scripts/run.sh
-
-# Hot reload with DevTools (automatic)
-# Just save files and changes will be picked up
-
-# Check for security vulnerabilities
-./gradlew dependencyCheckAnalyze
-
-# Generate test reports
-./gradlew test jacocoTestReport
-```
-
-### Performance and Monitoring
-
-- **Application Metrics**: `/actuator/metrics`
-- **Health Check**: `/actuator/health`
-- **Database Console**: `/h2-console` (when using H2)
-- **Log Levels**: Configure in `application.yml` or via `/actuator/loggers`
-
-### Debugging Tips
-
-1. **Database Issues**: Enable SQL logging with `spring.jpa.show-sql=true`
-2. **Authentication Problems**: Enable security debug logging
-3. **Email Issues**: Check `logs/audit.log` for user events
-4. **Performance**: Use `/actuator/httptrace` to monitor requests
-
-### Spring Boot DevTools
-This project supports **Spring Boot DevTools** for live reload and auto-restart. If you are working with HTTPS locally, follow these steps to enable live reload:
-1. Set the following property in `application.yml`:
-   ```yaml
-   spring.devtools.livereload.https=true
-   ```
-
-   Or when using Keycloak stack set the following property in `application-docker-keycloak.yml`:
-   ```yaml
-   spring.devtools.livereload.https=true
-   ```
-
-2. Use a reverse proxy like mitmproxy for HTTPS traffic interception:
-   ```bash
-   mitmproxy --mode reverse:http://localhost:35729 -p 35739
-   ```
-
-#### Resources for Live Reload:
-- [Spring Boot Live Reload](https://www.digitalsanctuary.com/java/springboot-devtools-auto-restart-and-live-reload.html)
-- [HTTPS Live Reload Setup](https://www.digitalsanctuary.com/java/how-to-get-springboot-livereload-working-over-https.html)
-
----
-
-## Architecture
-
-### System Overview
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Web Browser   │    │   Load Balancer  │    │   Application   │
-│                 │◄──►│    (Optional)    │◄──►│   Spring Boot   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                                          │
-                                                          ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│  OAuth2 Providers│    │  Email Service   │    │    Database     │
-│ Google/Facebook │◄──►│     SMTP        │◄──►│  MariaDB/MySQL  │
-│   /Keycloak     │    │                 │    │                │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
-### Key Architectural Patterns
-
-1. **MVC Pattern**: Controllers handle HTTP requests, delegate to services
-2. **Service Layer**: Business logic separation with framework extension
-3. **Repository Pattern**: Data access abstraction through Spring Data JPA
-4. **Event-Driven**: Application events for user lifecycle management
-5. **Security Layered**: Spring Security with multiple authentication methods
-
-### Technology Stack
-
-| Layer          | Technology                  | Purpose                                        |
-| -------------- | --------------------------- | ---------------------------------------------- |
-| **Frontend**   | Thymeleaf + Bootstrap       | Server-side rendering with responsive UI       |
-| **Backend**    | Spring Boot 4.0+            | Application framework and dependency injection |
-| **Security**   | Spring Security 7           | Authentication, authorization, CSRF protection |
-| **Data**       | Spring Data JPA + Hibernate | Object-relational mapping and data access      |
-| **Database**   | MariaDB/MySQL               | Primary data persistence                       |
-| **Testing**    | JUnit 5 + Playwright        | Unit, integration, and UI testing              |
-| **Build**      | Gradle                      | Dependency management and build automation     |
-| **Containers** | Docker + Docker Compose     | Development and deployment                     |
-
----
-
-## Troubleshooting
-
-### Common Issues and Solutions
-
-#### Database Connection Issues
-**Problem**: `Connection refused` or `Access denied`
-```
-Solution:
-1. Verify database is running: docker ps
-2. Check credentials in application-local.yml
-3. Ensure database exists: SHOW DATABASES;
-4. Check firewall/network connectivity
-```
-
-#### Build Failures
-**Problem**: `Could not resolve dependencies`
-```
-Solution:
-1. ./gradlew clean build --refresh-dependencies
-2. Check internet connection
-3. Verify Java version: java -version (requires JDK 21+)
-4. Clear Gradle cache: rm -rf ~/.gradle/caches
-```
-
-#### OAuth2/OIDC Issues
-**Problem**: OAuth2 login fails or redirects incorrectly
-```
-Solution:
-1. Verify OAuth2 client credentials in application.yml
-2. Check redirect URI configuration in OAuth provider
-3. Use ngrok for local HTTPS testing
-4. Verify Keycloak realm and client settings
-```
-
-#### WebAuthn/Passkey Issues
-**Problem**: Passkey registration or login fails
-```
-Solution:
-1. Verify user.webauthn.enabled is true in application.yml
-2. Check that rpId matches your domain (localhost for local dev)
-3. Ensure allowedOrigins matches the exact browser URL (including port)
-4. Verify /webauthn/authenticate/** and /login/webauthn are in unprotectedURIs
-5. For non-localhost testing, HTTPS is required - use ngrok
-6. Check browser console for WebAuthn API errors
-```
-
-#### Email Not Sending
-**Problem**: Registration emails not received
-```
-Solution:
-1. Check SMTP configuration in application.yml
-2. Verify mail server credentials
-3. Check spam/junk folders
-4. Use Docker mail server for testing: docker compose logs mailserver
-```
-
-#### Application Won't Start
-**Problem**: Port conflicts or configuration errors
-```
-Solution:
-1. Check if port 8080 is in use: lsof -i :8080
-2. Change server.port in application.yml
-3. Review application logs for configuration errors
-4. Verify all required environment variables are set
-```
-
-### Getting Help
-
-- **Logs**: Check console output and log files in `logs/` directory
-- **Health Check**: Visit `/actuator/health` when application is running
-- **Documentation**: Review [Spring User Framework docs](https://github.com/devondragon/SpringUserFramework)
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/devondragon/SpringUserFrameworkDemoApp/issues)
-
----
+Details, including the MFA-only Playwright project and the test-only API, are in
+[docs/TESTING.md](docs/TESTING.md).
 
 ## Contributing
 
-We welcome contributions! Here's how to get started:
+Issues and pull requests are welcome at
+[SpringUserFrameworkDemoApp](https://github.com/devondragon/SpringUserFrameworkDemoApp/issues). Follow the
+patterns already in the code, add tests for new behavior, and make sure `./gradlew test` passes before
+opening a pull request. Changes to the library itself belong in the framework repository, which has its own
+[CONTRIBUTING.md](https://github.com/devondragon/SpringUserFramework/blob/main/CONTRIBUTING.md).
 
-### Development Setup
+## License
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Set up development environment following the Quick Start guide
-4. Make your changes following the existing code patterns
+Apache License 2.0; see [LICENSE](LICENSE).
 
-### Code Standards
+The application is based on the principles in the
+[Baeldung Spring Security Course](https://www.baeldung.com/learn-spring-security-course).
 
-- Follow existing code formatting and conventions
-- Write tests for new functionality
-- Update documentation as needed
-- Ensure all tests pass: `./gradlew test`
-
-### Submitting Changes
-
-1. Commit your changes: `git commit -m "Add amazing feature"`
-2. Push to your fork: `git push origin feature/amazing-feature`
-3. Create a Pull Request with description of changes
-
-### Development Commands
-
-```bash
-# Run with auto-restart
-./gradlew bootRun
-
-# Run specific test profile
-./gradlew bootRun --args='--spring.profiles.active=test'
-
-# Check for dependency updates
-./gradlew dependencyUpdates
-
-# Build without tests (faster)
-./gradlew build -x test
-```
-
----
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a full history of the project's evolution, including framework version updates, new features, and fixes.
-
----
-
-## Notes
-
-- This demo is based on the principles outlined in the [Baeldung Spring Security Course](https://www.baeldung.com/learn-spring-security-course).
-- Feel free to customize and extend the provided functionality to suit your needs.
-**Disclaimer:** This is a demo project provided as-is with no guarantees of performance, security, or production readiness.
-
+**Disclaimer:** This is a demo project provided as-is with no guarantees of performance, security, or
+production readiness.
