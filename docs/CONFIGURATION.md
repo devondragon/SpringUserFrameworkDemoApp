@@ -9,20 +9,29 @@ values for one scenario (local dev, production, tests, and so on). For the full 
 
 ## Profiles
 
-`local`, `dev`, `prd`, `test`, `playwright-test`, and `docker-keycloak` are base profiles: pick one.
-`mfa` and `registration-guard` are opt-in add-ons with no base settings of their own; activate one
-alongside a base profile by listing both, comma-separated, in `--spring.profiles.active` (Spring
-Boot applies later profiles' properties over earlier ones when the same key is set in both).
+```bash
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+`local`, `dev`, `prd`, and `docker-keycloak` are base profiles you choose directly, one at a time, the
+way the command above chooses `local`. `test` is not chosen by hand: `./gradlew test` applies it
+automatically. `playwright-test` is meant to be combined with a base profile rather than run alone
+(see its row below). `mfa` and `registration-guard` are opt-in add-ons with no base settings of their
+own; combine one with a base profile by listing both, comma-separated, in `--spring.profiles.active`
+(Spring Boot applies later profiles' properties over earlier ones when the same key is set in both).
+If you omit `--args` entirely, `bootRun` still defaults to `local`: `build.gradle:118-123` sets
+`SPRING_PROFILES_ACTIVE=local` unless you pass a Gradle project property, e.g.
+`./gradlew bootRun -Pprofiles=local,mfa`.
 
 | Profile | File | Purpose | What it overrides | Activate |
 | --- | --- | --- | --- | --- |
-| `local` | [`application-local.yml-example`](../src/main/resources/application-local.yml-example) → `application-local.yml` (gitignored, you create it) | Everyday local development | Debug logging, DevTools restart/LiveReload, seed-data loading, example OAuth2 client registrations, `sendVerificationEmail: false` | `--spring.profiles.active=local` |
+| `local` | [`application-local.yml-example`](../src/main/resources/application-local.yml-example) → `application-local.yml` (gitignored, you create it) | Everyday local development | Debug logging, DevTools restart/LiveReload, seed-data loading, example OAuth2 client registrations, `sendVerificationEmail: false`, `allowInitialPasswordSetWithoutStepUp: true` | `--spring.profiles.active=local` |
 | `dev` | [`application-dev.yml`](../src/main/resources/application-dev.yml) | Debug-heavy dev server; also what the Docker demo stack (`compose.yaml`) runs the app container as | Debug logging, insecure session cookie, `audit.flushOnWrite: true` | `--spring.profiles.active=dev` |
 | `prd` | [`application-prd.yml`](../src/main/resources/application-prd.yml) | Production | Thymeleaf caching on, `ddl-auto: validate`, env-driven datasource, strict/secure cookies, `WARN` logging, limited actuator exposure, env-driven WebAuthn RP identity and `appUrl`, `requireCanonicalAppUrl: true`, no fallback for the remember-me key | `--spring.profiles.active=prd` |
-| `test` | [`src/test/resources/application-test.properties`](../src/test/resources/application-test.properties) | Automated JUnit suite | Per-context isolated H2 database, MFA off, 3-attempt lockout, test-only `unprotectedURIs` | Applied automatically by `./gradlew test` |
+| `test` | [`src/test/resources/application-test.properties`](../src/test/resources/application-test.properties) | Automated JUnit suite | Per-context isolated H2 database, MFA off, test-only `unprotectedURIs`. It also sets `maxFailedLoginAttempts`/`lockoutDurationMinutes` (lines 16-17), but those aren't the framework's property names (`failedLoginAttempts`/`accountLockoutDuration`), so they don't bind; lockout stays at the inherited default (10 attempts / 30 min) | Applied automatically by `./gradlew test` |
 | `playwright-test` | [`application-playwright-test.yml`](../src/main/resources/application-playwright-test.yml) | Playwright E2E runs; enables the Test API (`TestDataController`, `TestApiSecurityConfig`, localhost-only) | Disables verification/reset emails, pins `appUrl` to `http://localhost:8080`, `allowInitialPasswordSetWithoutStepUp: true`, MFA off | Combine with a base profile, e.g. `local,playwright-test` (see [TESTING.md](TESTING.md)) |
 | `docker-keycloak` | [`application-docker-keycloak.yml-example`](../src/main/resources/application-docker-keycloak.yml-example) → `application-docker-keycloak.yml` (gitignored) | OIDC login against the bundled Keycloak stack | Keycloak OAuth2 client/provider from `DS_SPRING_USER_KEYCLOAK_*` env vars, insecure session cookie, `audit.flushOnWrite: true` | `--spring.profiles.active=docker-keycloak`, normally set for you as `SPRING_PROFILES_ACTIVE` inside `docker-compose-keycloak.yml` |
-| `mfa` | [`application-mfa.yml`](../src/main/resources/application-mfa.yml) | Add-on: require PASSWORD + WEBAUTHN | `user.mfa.enabled: true`, unprotects the WebAuthn challenge/enrollment endpoints, `allowInitialPasswordSetWithoutStepUp: true` | Combine with a base profile, e.g. `local,mfa` |
+| `mfa` | [`application-mfa.yml`](../src/main/resources/application-mfa.yml) | Add-on: require PASSWORD + WEBAUTHN | `user.mfa.enabled: true`; adds the passkey enrollment endpoints `/webauthn/register/options` and `/webauthn/register` to `unprotectedURIs` (line 25) so a partially-authenticated user can register their first passkey (the MFA challenge page itself is already unprotected in base `application.yml`, and the framework auto-unprotects the configured entry-point URIs); `allowInitialPasswordSetWithoutStepUp: true` | Combine with a base profile, e.g. `local,mfa` |
 | `registration-guard` | none (no yml; `@Profile("registration-guard")` on [`DomainRegistrationGuard`](../src/main/java/com/digitalsanctuary/spring/demo/registration/DomainRegistrationGuard.java)) | Add-on: domain-restricted registration demo | Activates a `RegistrationGuard` bean that restricts form/passwordless registration to one email domain (`registration.guard.allowed-domain`, default `@example.com`); OAuth2/OIDC registration is unaffected | Combine with a base profile, e.g. `local,registration-guard` |
 
 See [AUTHENTICATION.md](AUTHENTICATION.md) for the mechanics behind `mfa`
@@ -77,6 +86,8 @@ pattern works for any other key, e.g. `USER_SECURITY_BCRYPTSTRENGTH` for `user.s
 - **Session timeout**: `server.servlet.session.timeout: 30m`, with `secure` and `http-only` cookie flags (`application.yml:92-96`).
 - **Default action / protected surface**: `defaultAction: deny` with an explicit `unprotectedURIs` allowlist, plus `protectedURIs` and `disableCSRFdURIs` (`application.yml:150-162`).
 - **Remember-me**: `rememberMe.enabled: true`, signing key from `REMEMBER_ME_KEY` with a random-UUID fallback (`application.yml:151-158`).
+- **Canonical app URL** (`user.security.appUrl`): prevents Host-header poisoning of password-reset/verification email links (SUF-01 / CWE-640); when unset, the framework derives the host from the (spoofable) request `Host` header and logs a startup warning. Base `application.yml:145` sets `http://localhost:8080`; `prd` drives it from `${APP_URL:https://example.com}` (`application-prd.yml:47`) and also sets `requireCanonicalAppUrl: true` (`application-prd.yml:49`), so `prd` fails to start without it; `playwright-test` pins it explicitly to `http://localhost:8080` (`application-playwright-test.yml:32`).
+- **Allow initial password set without step-up** (`user.security.allowInitialPasswordSetWithoutStepUp`): controls `POST /user/setPassword`, which lets a passkey-only account set an initial password. As of the framework's SUF-02 hardening, this endpoint returns `403` unless a `StepUpService` bean exists or this is `true`. This demo has no `StepUpService`, so it sets the flag `true` in `local` (`application-local.yml-example:138`), `mfa` (`application-mfa.yml:24`), and `playwright-test` (`application-playwright-test.yml:35`) to keep the passkey flow usable, and leaves it at its secure default `false` in `prd` (`application-prd.yml:50`).
 
 For OAuth2/OIDC, WebAuthn passkeys, MFA, and the registration guard, see
 [AUTHENTICATION.md](AUTHENTICATION.md).

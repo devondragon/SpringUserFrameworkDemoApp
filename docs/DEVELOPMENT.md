@@ -29,7 +29,8 @@ here and no database gets started for you. Start one first, either
 `./scripts/run.sh`.
 
 Spring Boot DevTools (`runtimeOnly` dependency) restarts the app automatically when a class changes,
-in either run mode.
+but only under `bootRun`. It disables itself when the app is launched as a fully packaged jar via
+`java -jar`, which is exactly what `scripts/run.sh` does, so that path has no auto-restart.
 
 ### LiveReload
 
@@ -41,12 +42,25 @@ The LiveReload `<script>` tag in
 <!--<script th:if="${devOrLocalProfile}" th:src="'https://localhost:' + ${liveReloadPort} + '/livereload.js'"></script>-->
 ```
 
-Uncomment it to enable browser auto-refresh on template/static changes. For plain HTTP this works
-with DevTools' built-in LiveReload server (port 35729) as-is. For HTTPS local development, set
-`spring.devtools.livereload.https=true` in your profile (`application-local.yml` or
-`application-docker-keycloak.yml`) and put a reverse proxy in front of the LiveReload port, e.g.
-`mitmproxy --mode reverse:http://localhost:35729 -p 35739`. `.vscode/tasks.json` has "Start ngrok" and
-"Start mitmproxy" tasks (composed as "Start Dev Tools") that automate the tunnel + proxy pair. See:
+Uncomment it to enable browser auto-refresh on template/static changes, but note the URL is hardcoded
+to `https://`, not conditional on scheme. The port comes from the framework's
+[`LiveReloadGlobalControllerAdvice`](https://github.com/devondragon/SpringUserFramework/blob/main/src/main/java/com/digitalsanctuary/spring/user/util/LiveReloadGlobalControllerAdvice.java#L23-L37):
+35739 when `spring.devtools.livereload.https=true`, 35729 otherwise. The real DevTools LiveReload
+server always listens on plain HTTP at its default port, 35729, regardless of that flag, so:
+
+- `spring.devtools.livereload.https=true`, already set by
+  `application-local.yml-example:107` and `application-docker-keycloak.yml-example:60` (so copying
+  either example file puts you on this path immediately): the script requests
+  `https://localhost:35739/livereload.js`. Nothing listens there by default; run
+  `mitmproxy --mode reverse:http://localhost:35729 -p 35739` to terminate TLS on 35739 and forward to
+  the real server on 35729.
+- `spring.devtools.livereload.https=false` (the property's own default): the script requests
+  `https://localhost:35729/livereload.js`, HTTPS against a server that only speaks plain HTTP, which
+  does not connect. Uncommenting the tag with this setting does not work without also changing the
+  template or running a proxy in front of 35729.
+
+`.vscode/tasks.json` has "Start ngrok" and "Start mitmproxy" tasks (composed as "Start Dev Tools")
+that automate the tunnel + proxy pair for the first case. See:
 
 - [Spring Boot Live Reload](https://www.digitalsanctuary.com/java/springboot-devtools-auto-restart-and-live-reload.html)
 - [HTTPS Live Reload Setup](https://www.digitalsanctuary.com/java/how-to-get-springboot-livereload-working-over-https.html)
@@ -58,7 +72,7 @@ with DevTools' built-in LiveReload server (port 35729) as-is. For HTTPS local de
   up -d` works if you want the database without the app.
 - [`compose.yaml`](../compose.yaml): the full demo stack: app + MariaDB + a relay-only mail
   container. `docker compose up -d` builds the app image (multi-stage [`Dockerfile`](../Dockerfile):
-  a JDK-21 build stage runs `./gradlew bootJar`, a JRE-21 stage runs the resulting jar as a non-root
+  a JDK-21 build stage runs `./gradlew --no-daemon bootJar -x test` (`Dockerfile:14`), a JRE-21 stage runs the resulting jar as a non-root
   user) and runs all three. The app container's healthcheck polls `GET /actuator/health`
   (`compose.yaml:86-90`), the only actuator endpoint left unauthenticated.
 - [`docker-compose-keycloak.yml`](../docker-compose-keycloak.yml): the same app + MariaDB + mail
