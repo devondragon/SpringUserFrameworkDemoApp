@@ -11,16 +11,23 @@ logging:
         security: DEBUG # Set logging level for security
 
 spring:
-  docker:
-    compose:
-      file: compose.dev.yaml
   application:
     name: Spring User Framework Demo App # Change this as per your convenience
+  # These match the MariaDB service in compose.dev.yaml, which bootRun starts by default (see
+  # spring.docker.compose in application.yml). While that integration is active the URL, username and
+  # password below are overridden by the service connection it derives from the running container;
+  # they apply when you set spring.docker.compose.enabled to false and run your own database.
   datasource:
     driverClassName: org.mariadb.jdbc.Driver # If you use mariadb database
-    password: mydatabaseuserpassword
-    url: jdbc:mariadb://mymariadb:3306/mydb?createDatabaseIfNotExist=true
-    username: mydatabaseuser
+    password: springuser
+    url: jdbc:mariadb://localhost:3306/springuser?createDatabaseIfNotExist=true
+    username: springuser
+  sql:
+    init:
+      mode: always # Run the schema/data scripts on every start
+      platform: local # Loads src/main/resources/data-local.sql (sample events, INSERT IGNORE so reruns are safe)
+  jpa:
+    defer-datasource-initialization: true # Let Hibernate create the tables before data-local.sql runs
   mail: # Mail configuration
     username: AAAAAAAAA # Mail server username
     password: BBBBBBBBBBB # Mail server password
