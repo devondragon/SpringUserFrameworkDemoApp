@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Standard run
 ./gradlew bootRun
 
-# Run with specific profile (local, dev, test, docker-keycloak)
+# Run with specific profile (see "Configuration Profiles" below for the full list)
 ./gradlew bootRun --args='--spring.profiles.active=local'
 
 # Build and run with debugging
@@ -60,7 +60,7 @@ This is a Spring Boot demo application showcasing the [Spring User Framework](ht
 
 ### Important Conventions
 
-1. **No Custom User Entity**: This demo uses the framework's User entity directly. Custom user data goes in separate entities (like UserProfile).
+1. **No Custom User Entity**: This demo uses the framework's User entity directly. Custom user data goes in separate entities (like `DemoUserProfile`).
 
 2. **Configuration Profiles**:
    - `local`: Development with local database

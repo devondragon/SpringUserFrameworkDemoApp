@@ -25,7 +25,7 @@ failed logins and lockouts land in the audit log.
      ([`resend-verification.js`](../src/main/resources/static/js/user/resend-verification.js) posts
      `POST /user/resendRegistrationToken`).
    - `false`: the account is created enabled, the framework logs the user straight in, and the browser
-     lands on `/user/registration-complete.html`. `application-local.yml-example:128` sets it false and
+     lands on `/user/registration-complete.html`. `application-local.yml-example:131` sets it false and
      the Docker demo stack sets `USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"` (`compose.yaml:85`),
      so neither documented run path needs a working SMTP server.
 3. Log in at `/user/login.html` ([`login.js`](../src/main/resources/static/js/user/login.js)). The form
@@ -77,7 +77,7 @@ instead of `/user/updatePassword`
 That endpoint is guarded (framework SUF-02): with no current password to verify it requires a
 `StepUpService` bean, and returns `403` when none exists unless
 `user.security.allowInitialPasswordSetWithoutStepUp` is `true`. This demo has no `StepUpService`, so it
-sets the flag true where the flow has to be demonstrable (`application-local.yml-example:138`,
+sets the flag true where the flow has to be demonstrable (`application-local.yml-example:141`,
 `application-mfa.yml:24`, `application-playwright-test.yml:35`) and leaves it at the secure default
 `false` in `prd` (`application-prd.yml:50-52`).
 
@@ -119,7 +119,7 @@ plus its mapping in
 
 `user.registration.googleEnabled` and `user.registration.facebookEnabled` decide whether the buttons render
 on `/user/login.html` and `/user/register.html`; both are `false` in `application.yml:114-115` and `true` in
-`application-local.yml-example:129-130`. They link to `/oauth2/authorization/google` and
+`application-local.yml-example:132-133`. They link to `/oauth2/authorization/google` and
 `/oauth2/authorization/facebook`, already covered by `/oauth2/authorization/*` in `unprotectedURIs`
 (`application.yml:160`). Client IDs and secrets belong in `application-local.yml` (gitignored), never in
 `application.yml`; copy the filled-in shape at
@@ -132,7 +132,7 @@ the provider console and set as `redirect-uri`. Facebook enforces HTTPS on redir
 apps created since March 2018, so a plain-HTTP localhost callback there depends on the app's settings,
 normally while it is in development mode. Reach for `ngrok http 8080` when you need a public HTTPS callback
 or want to test from another device; then also set `user.security.appUrl` to the tunnel URL
-(`application-local.yml-example:132-135`), or emailed links still point at localhost.
+(`application-local.yml-example:135-138`), or emailed links still point at localhost.
 
 ## Keycloak
 
@@ -159,7 +159,9 @@ instructions are in [`keycloak/README.md`](../keycloak/README.md). The essential
 Open http://localhost:8080/user/login.html, click "Login with Keycloak", sign in as `demo` / `demo`.
 First login creates a local account with provider `KEYCLOAK` and email `demo@example.com`. The realm is
 `demo`, not `master`, so every OIDC URL is `/realms/demo/...`; `admin` / `admin` is a master realm
-account and cannot sign in to the demo app.
+account and cannot sign in to the demo app. The app's own registration form still works in this stack, and
+like the `compose.yaml` stack it sets `USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"`, so an account
+registered there is enabled immediately rather than waiting on mail the bundled relay cannot deliver.
 The compose file sets `SPRING_PROFILES_ACTIVE: docker-keycloak`, and every value in
 [`application-docker-keycloak.yml`](../src/main/resources/application-docker-keycloak.yml) comes from an
 environment variable in [`keycloak.env`](../keycloak.env): `DS_SPRING_USER_KEYCLOAK_CLIENT_ID`,
@@ -249,7 +251,9 @@ WHERE u.email = 'you@example.com';
 
 Get a shell on the right database first: `docker exec -it springuserframeworkdemoapp-mariadb-1 mariadb
 -uspringuser -pspringuser springuser` for `./gradlew bootRun`, or the same with `springuser-db` for the
-`docker compose up` stack. Log out and back in afterwards, since authorities are loaded at login.
+`docker compose up` stack. Compose derives the `bootRun` container's name from the checkout directory, so
+run `docker ps` to confirm it if you cloned into a differently named directory. Log out and back in
+afterwards, since authorities are loaded at login.
 
 ## Troubleshooting
 
@@ -264,8 +268,11 @@ browser console, not the server log.
 **OAuth2 or OIDC login fails or redirects wrongly.** Check the client ID and secret in
 `application-local.yml` (for Keycloak, `DS_SPRING_USER_KEYCLOAK_*` in `keycloak.env`) against what the
 provider has, and that the provider's registered callback matches your `redirect-uri`, default shape
-`{baseUrl}/login/oauth2/code/{registrationId}`. Google and Facebook will not call back to `localhost`;
-tunnel with `ngrok http 8080`. For Keycloak, remember the realm is `demo`, so URLs are
+`{baseUrl}/login/oauth2/code/{registrationId}`. A localhost callback is not ruled out: Google exempts
+`http://localhost` redirect URIs from its HTTPS requirement, and Facebook's depends on the app's settings,
+normally while it is in development mode (see [OAuth2 with Google and
+Facebook](#oauth2-with-google-and-facebook)). Tunnel with `ngrok http 8080` when you need a public HTTPS
+callback or want to test from another device. For Keycloak, remember the realm is `demo`, so URLs are
 `/realms/demo/...` and the app login is `demo` / `demo`, while `admin` / `admin` only opens the admin
 console at http://localhost:8180. A realm re-exported from that console masks the client secret as
 `**********`, which then no longer matches `keycloak.env` and breaks login: use the `kc.sh export`

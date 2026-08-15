@@ -33,7 +33,7 @@ tests written against `OAuth2TestConfiguration` but not currently used by an act
   management surface (`api/`, `concurrent/`, `config/`, `integration/`, `json/`, `oauth2/`,
   `security/`).
 - `src/test/java/com/digitalsanctuary/spring/demo/...`: tests for the demo app's own code
-  (`event/`, `mfa/`, `registration/`, `DemoTests.java`).
+  (`controller/`, `event/`, `mfa/`, `registration/`, `user/profile/session/`, `DemoTests.java`).
 
 [`IntegrationTest`](../src/test/java/com/digitalsanctuary/spring/user/test/annotations/IntegrationTest.java)
 composes `@SpringBootTest` (against `UserDemoApplication`), `@AutoConfigureMockMvc`,
@@ -50,7 +50,7 @@ Test data builders live in
 /usr/bin/find src/test -name '*.java' | xargs grep -l @Disabled | wc -l  # files with @Disabled
 ```
 
-As of this writing that's 62 test files, 17 with `@Disabled`. 15 were disabled during a REST API
+As of this writing that's 64 test files, 17 with `@Disabled`. 15 were disabled during a REST API
 alignment pass and point back to this file; they fall into these categories:
 
 - **Auth expectations**: test expects a specific JSON error body on auth failure; Spring
@@ -65,6 +65,10 @@ alignment pass and point back to this file; they fall into these categories:
 - **Transaction isolation**: a user created in test setup isn't visible to the REST endpoint
   within the same transaction.
 
+The categories are representative, not exhaustive: `AdminUserManagementTest` (role hierarchy and
+admin operations configuration) and one case in `SecurityConfigurationTest` (`/protected.html`
+returns 404) fit none of them.
+
 They're kept, not deleted: each documents an expected behavior or a gap worth revisiting as a
 framework improvement. The other two (`DisabledTestExample.java`,
 `AccountLockoutIntegrationTest.java`) are disabled for unrelated, self-contained reasons
@@ -72,16 +76,19 @@ documented inline.
 
 ## Playwright E2E tests
 
-Tests live in [`playwright/`](../playwright) (`@playwright/test`). Install once:
+Tests live in [`playwright/`](../playwright) (`@playwright/test`). To drive them through npm, install
+once:
 
 ```bash
 cd playwright && npm ci && npx playwright install
 ```
 
-Run via npm (`playwright/package.json`: `test`, `test:chromium`, `test:headed`, `test:ui`) or the
-Gradle wrapper tasks in [`build.gradle`](../build.gradle) (`verification` group):
-`./gradlew playwrightTest` / `playwrightTestChromium` (both depend on `playwrightBrowsers` /
-`playwrightInstall`).
+Then run the npm scripts from `playwright/` (`playwright/package.json`: `test`, `test:chromium`,
+`test:headed`, `test:ui`). The Gradle wrapper tasks in [`build.gradle`](../build.gradle)
+(`verification` group) are the other route, and they run from the repository root:
+`./gradlew playwrightTest` / `playwrightTestChromium`. Both depend on `playwrightBrowsers` and
+`playwrightInstall`, so the Gradle route installs the npm dependencies and the browsers itself and
+needs no separate install step.
 
 [`playwright.config.ts`](../playwright/playwright.config.ts) starts the app itself via
 `webServer`: `./gradlew bootRun --args="--spring.profiles.active=${APP_PROFILES:-local,playwright-test}"`

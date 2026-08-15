@@ -33,7 +33,7 @@ and framework 3.5.1 combination on Java 17, `git checkout v1.0.0-springboot3` af
 | Cleaning up application data when an account is deleted | [`UserProfileDeletionListener`](src/main/java/com/digitalsanctuary/spring/demo/user/profile/UserProfileDeletionListener.java) | [EXTENDING.md](docs/EXTENDING.md#cleaning-up-application-data-when-a-user-is-deleted) |
 | An application domain (events) using privilege-based access control | [`event/`](src/main/java/com/digitalsanctuary/spring/demo/event), roles in [`application.yml`](src/main/resources/application.yml) | [EXTENDING.md](docs/EXTENDING.md#building-your-own-domain-on-the-framework-events) |
 | Allowing or denying registrations through the `RegistrationGuard` SPI | [`DomainRegistrationGuard`](src/main/java/com/digitalsanctuary/spring/demo/registration/DomainRegistrationGuard.java), `registration-guard` profile | [AUTHENTICATION.md](docs/AUTHENTICATION.md#registration-guard) |
-| Passkey sign-in, enrollment, management, and passwordless registration | [`static/js/user/`](src/main/resources/static/js/user) (`webauthn-*.js`) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#passkeys) |
+| Passkey sign-in, enrollment, management, and passwordless registration | [`static/js/user/`](src/main/resources/static/js/user) (`register.js`, `webauthn-*.js`) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#passkeys) |
 | Two-factor login, password plus passkey | [`application-mfa.yml`](src/main/resources/application-mfa.yml), [`user/mfa/`](src/main/resources/templates/user/mfa) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#mfa) |
 | OAuth2 login with Google and Facebook | [`application-local.yml-example`](src/main/resources/application-local.yml-example) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#oauth2-with-google-and-facebook) |
 | OIDC login against a bundled Keycloak, as a runnable stack | [`docker-compose-keycloak.yml`](docker-compose-keycloak.yml), [`keycloak/`](keycloak) | [AUTHENTICATION.md](docs/AUTHENTICATION.md#keycloak) |
@@ -52,14 +52,15 @@ src/main/java/com/digitalsanctuary/spring/demo/
 ├── event/            the example domain: entity, repository, service, page and API controllers
 ├── registration/     DomainRegistrationGuard, the RegistrationGuard SPI sample
 ├── service/          CustomUserEmailService, a framework service replaced with @Primary
-├── test/             the test-only API and its security config, playwright-test profile only
+├── test/             api/ the test-only API, config/ its security config; playwright-test only
 ├── user/profile/     the profile entity, repository, service, session holder, and listeners
 ├── util/             LocaleConfiguration
 └── web/              DemoTemplateModelAdvice
 src/main/resources/
 ├── static/js/        user/ (one module per page), admin/, utils/, shared.js
 ├── templates/        layout.html plus fragments/, user/, event/, admin/, mail/
-├── application.yml   base configuration, with one application-<profile>.yml per profile
+├── messages/         messages.properties, the UI and validation message bundle
+├── application.yml   base configuration, overridden by application-<profile>.yml where needed
 └── data-local.sql    sample events, loaded under the local profile
 src/test/java/com/digitalsanctuary/spring/
 ├── demo/             tests for this application's own code
@@ -67,6 +68,10 @@ src/test/java/com/digitalsanctuary/spring/
 playwright/           E2E specs, fixtures, and playwright.config.ts
 keycloak/             realm export and TLS material for the Keycloak stack
 ```
+
+Not every profile has its own file: `local` is a gitignored copy of `application-local.yml-example`,
+`test` lives in `src/test/resources/application-test.properties`, and `registration-guard` has no
+file at all. [docs/CONFIGURATION.md](docs/CONFIGURATION.md) lists what each one overrides.
 
 ## Quick start
 
@@ -122,7 +127,7 @@ and its imported `demo` realm. Ports, credentials, and the login walkthrough are
 | `dev` | Debug-heavy dev server; what the `compose.yaml` Docker stack runs |
 | `prd` | Production settings: env-driven datasource and URLs, strict cookies, template caching |
 | `test` | The JUnit suite on H2, applied automatically by `./gradlew test` |
-| `playwright-test` | Add-on: enables the loopback-only test API and disables outbound mail for E2E runs |
+| `playwright-test` | Add-on: enables the loopback-only test API and turns off the verification and password-reset emails for E2E runs |
 | `docker-keycloak` | OIDC against the bundled Keycloak; set for you inside `docker-compose-keycloak.yml` |
 | `mfa` | Add-on: requires PASSWORD plus WEBAUTHN, for example `local,mfa` |
 | `registration-guard` | Add-on: activates the domain-restricted registration guard, for example `local,registration-guard` |
@@ -164,10 +169,12 @@ The framework:
 ## Testing
 
 ```bash
-./gradlew test                                     # JUnit suite, test profile, H2
-cd playwright && npm ci && npx playwright install  # once
-./gradlew playwrightTest                           # E2E, starts the app itself
+./gradlew test            # JUnit suite, test profile, H2
+./gradlew playwrightTest  # E2E; starts the app itself
 ```
+
+Run both from the repository root. `playwrightTest` depends on `playwrightBrowsers` and
+`playwrightInstall`, so it installs the npm dependencies and the browsers on its first run.
 
 Details, including the MFA-only Playwright project and the test-only API, are in
 [docs/TESTING.md](docs/TESTING.md).

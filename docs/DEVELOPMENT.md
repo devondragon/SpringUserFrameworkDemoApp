@@ -49,7 +49,7 @@ to `https://`, not conditional on scheme. The port comes from the framework's
 server always listens on plain HTTP at its default port, 35729, regardless of that flag, so:
 
 - `spring.devtools.livereload.https=true`, already set by
-  `application-local.yml-example:107` (so copying that example file puts you on this path
+  `application-local.yml-example:110` (so copying that example file puts you on this path
   immediately; the `docker-keycloak` profile does not set this property): the script requests
   `https://localhost:35739/livereload.js`. Nothing listens there by default; run
   `mitmproxy --mode reverse:http://localhost:35729 -p 35739` to terminate TLS on 35739 and forward to
