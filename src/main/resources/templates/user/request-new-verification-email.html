@@ -26,7 +26,7 @@
 						<div id="globalError" class="alert alert-danger d-none text-center" role="alert"></div>
 						<div id="alreadyEnabledMessage" class="alert alert-warning d-none text-center" role="alert">
 							<p
-								th:utext="#{registration.error.already-verified(${@environment.getProperty('user.security.loginPageURI')}, ${@environment.getProperty('user.security.forgotPasswordURI')})}">
+								th:utext="#{registration.error.already-verified(${userSecurity.loginPageUri}, ${userSecurity.forgotPasswordUri})}">
 							</p>
 						</div>
 

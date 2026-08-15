@@ -14,6 +14,7 @@ import com.digitalsanctuary.spring.user.persistence.model.User;
 import com.digitalsanctuary.spring.user.mail.MailService;
 import com.digitalsanctuary.spring.user.service.SessionInvalidationService;
 import com.digitalsanctuary.spring.user.service.TokenHasher;
+import com.digitalsanctuary.spring.user.security.UserSecurityConfigProperties;
 import com.digitalsanctuary.spring.user.service.UserEmailService;
 import com.digitalsanctuary.spring.user.service.UserVerificationService;
 
@@ -40,8 +41,10 @@ public class CustomUserEmailService extends UserEmailService {
             UserRepository userRepository,
             ApplicationEventPublisher eventPublisher,
             SessionInvalidationService sessionInvalidationService,
-            TokenHasher tokenHasher) {
-        super(mailService, userVerificationService, passwordTokenRepository, userRepository, eventPublisher, sessionInvalidationService, tokenHasher);
+            TokenHasher tokenHasher,
+            UserSecurityConfigProperties userSecurityConfig) {
+        super(mailService, userVerificationService, passwordTokenRepository, userRepository, eventPublisher, sessionInvalidationService, tokenHasher,
+                userSecurityConfig);
     }
 
     @Override
