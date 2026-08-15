@@ -154,7 +154,7 @@ class SecurityConfigurationTest {
         @Test
         @WithMockUser(username = "security@test.com", roles = { "USER" })
         @DisplayName("Should allow authenticated user to access protected endpoints")
-        @Disabled("Protected endpoint /protected.html returns 404 - endpoint may not exist. See docs/TEST-ANALYSIS.md")
+        @Disabled("Protected endpoint /protected.html returns 404 - endpoint may not exist. See docs/TESTING.md")
         void accessProtectedEndpoint_authenticated_allowsAccess() throws Exception {
                 // Test that authenticated user is properly authenticated
                 mockMvc.perform(get("/protected.html")).andExpect(status().isOk()).andExpect(authenticated());

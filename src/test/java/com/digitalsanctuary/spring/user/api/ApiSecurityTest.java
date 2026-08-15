@@ -44,7 +44,7 @@ import jakarta.persistence.EntityManager;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("API Security Tests")
-@Disabled("CSRF and authentication setup issues with REST API. See docs/TEST-ANALYSIS.md")
+@Disabled("CSRF and authentication setup issues with REST API. See docs/TESTING.md")
 class ApiSecurityTest {
 
     private static final String API_BASE_PATH = "/user";

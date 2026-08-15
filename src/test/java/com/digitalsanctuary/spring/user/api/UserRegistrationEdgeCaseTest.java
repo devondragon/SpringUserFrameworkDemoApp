@@ -43,7 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("User Registration Edge Case Tests")
-@Disabled("Concurrent registration and null handling expectations don't match API behavior. See docs/TEST-ANALYSIS.md")
+@Disabled("Concurrent registration and null handling expectations don't match API behavior. See docs/TESTING.md")
 class UserRegistrationEdgeCaseTest {
 
     private static final String REGISTRATION_URL = "/user/registration";

@@ -39,7 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("User Registration Core Tests")
-@Disabled("Email normalization expectations don't match API behavior. See docs/TEST-ANALYSIS.md")
+@Disabled("Email normalization expectations don't match API behavior. See docs/TESTING.md")
 class UserRegistrationCoreTest {
 
     private static final String REGISTRATION_URL = "/user/registration";

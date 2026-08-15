@@ -47,7 +47,7 @@ import jakarta.persistence.PersistenceContext;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Authenticated User API Tests - Simplified")
-@Disabled("Authentication setup issues with DSUserDetails. See docs/TEST-ANALYSIS.md")
+@Disabled("Authentication setup issues with DSUserDetails. See docs/TESTING.md")
 class AuthenticatedUserApiTestSimplified {
 
     private static final String API_BASE_PATH = "/user";
