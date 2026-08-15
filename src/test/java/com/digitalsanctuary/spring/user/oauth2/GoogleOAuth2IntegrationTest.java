@@ -57,7 +57,7 @@ import jakarta.persistence.EntityManager;
 @ExtendWith(OAuth2MockConfiguration.WireMockExtension.class)
 @Transactional
 @DisplayName("Google OAuth2 Integration Tests")
-@Disabled("Requires OAuth2 mock server infrastructure. See TEST-ANALYSIS.md")
+@Disabled("Requires OAuth2 mock server infrastructure. See docs/TEST-ANALYSIS.md")
 class GoogleOAuth2IntegrationTest {
 
     @Autowired

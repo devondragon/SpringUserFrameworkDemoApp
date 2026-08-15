@@ -78,7 +78,7 @@ public class UserApiTest {
     @ParameterizedTest
     @ArgumentsSource(ApiTestRegistrationArgumentsProvider.class)
     @Order(1)
-    @Disabled("Transaction isolation issue - user created in test setup not visible to REST endpoint. See TEST-ANALYSIS.md")
+    @Disabled("Transaction isolation issue - user created in test setup not visible to REST endpoint. See docs/TEST-ANALYSIS.md")
     // correctly run separately
     public void registerUserAccount(ApiTestArgumentsHolder argumentsHolder) throws Exception {
         UserDto userDto = argumentsHolder.getUserDto();
@@ -138,7 +138,7 @@ public class UserApiTest {
     @ParameterizedTest
     @ArgumentsSource(ApiTestUpdateUserArgumentsProvider.class)
     @Order(3)
-    @Disabled("Spring Security returns empty 401 response instead of JSON error. See TEST-ANALYSIS.md")
+    @Disabled("Spring Security returns empty 401 response instead of JSON error. See docs/TEST-ANALYSIS.md")
     public void updateUser(ApiTestArgumentsHolder argumentsHolder) throws Exception {
         // Ensure user exists
         if (userService.findUserByEmail(argumentsHolder.getUserDto().getEmail()) == null) {
@@ -169,7 +169,7 @@ public class UserApiTest {
     @ParameterizedTest
     @ArgumentsSource(ApiTestUpdatePasswordArgumentsProvider.class)
     @Order(4)
-    @Disabled("Authentication setup issues with DSUserDetails. See TEST-ANALYSIS.md")
+    @Disabled("Authentication setup issues with DSUserDetails. See docs/TEST-ANALYSIS.md")
     public void updatePassword(ApiTestArgumentsHolder argumentsHolder) throws Exception {
         // Ensure user exists
         if (userService.findUserByEmail(baseTestUser.getEmail()) == null) {
@@ -194,7 +194,7 @@ public class UserApiTest {
     @ParameterizedTest
     @ArgumentsSource(ApiTestDeleteAccountArgumentsProvider.class)
     @Order(5)
-    @Disabled("Authentication setup issues with DSUserDetails. See TEST-ANALYSIS.md")
+    @Disabled("Authentication setup issues with DSUserDetails. See docs/TEST-ANALYSIS.md")
     public void deleteAccount(ApiTestArgumentsHolder argumentsHolder) throws Exception {
         // Ensure user exists
         if (userService.findUserByEmail(baseTestUser.getEmail()) == null) {

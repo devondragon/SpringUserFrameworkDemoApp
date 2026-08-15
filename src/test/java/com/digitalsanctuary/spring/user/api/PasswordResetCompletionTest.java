@@ -40,7 +40,7 @@ import jakarta.persistence.PersistenceContext;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Password Reset Completion Tests")
-@Disabled("Password reset completion workflow issues. See TEST-ANALYSIS.md")
+@Disabled("Password reset completion workflow issues. See docs/TEST-ANALYSIS.md")
 class PasswordResetCompletionTest {
 
     private static final String SAVE_PASSWORD_URL = "/user/savePassword";
