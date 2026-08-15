@@ -48,7 +48,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Comprehensive User Registration API Tests")
-@Disabled("Validation error response expectations don't match API behavior. See docs/TEST-ANALYSIS.md")
+@Disabled("Validation error response expectations don't match API behavior. See docs/TESTING.md")
 class UserRegistrationComprehensiveTest {
 
     private static final String REGISTRATION_URL = "/user/registration";

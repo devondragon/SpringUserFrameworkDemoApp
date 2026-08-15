@@ -52,7 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @DisplayName("Audit Logging Integration Tests")
 @Import(AuditLoggingIntegrationTest.TestConfiguration.class)
-@Disabled("Audit logger initialization and async timing issues. See docs/TEST-ANALYSIS.md")
+@Disabled("Audit logger initialization and async timing issues. See docs/TESTING.md")
 class AuditLoggingIntegrationTest {
     
     @org.springframework.boot.test.context.TestConfiguration

@@ -58,7 +58,7 @@ import jakarta.persistence.PersistenceContext;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Password Reset API Tests")
-@Disabled("Password reset token workflow and email handling issues. See docs/TEST-ANALYSIS.md")
+@Disabled("Password reset token workflow and email handling issues. See docs/TESTING.md")
 class PasswordResetApiTest {
 
     private static final String RESET_PASSWORD_URL = "/user/resetPassword";

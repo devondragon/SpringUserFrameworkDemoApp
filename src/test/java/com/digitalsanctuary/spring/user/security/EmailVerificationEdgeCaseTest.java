@@ -67,7 +67,7 @@ import jakarta.persistence.EntityManager;
 @ActiveProfiles("test")
 @Import(EmailVerificationEdgeCaseTest.TestClockConfiguration.class)
 @DisplayName("Email Verification Edge Cases")
-@Disabled("Email verification timing issues and mock email service configuration. See docs/TEST-ANALYSIS.md")
+@Disabled("Email verification timing issues and mock email service configuration. See docs/TESTING.md")
 class EmailVerificationEdgeCaseTest {
 
     @Autowired
