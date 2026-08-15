@@ -1,0 +1,20 @@
+# Keep the build context small and keep local files out of the image.
+.git/
+.github/
+.gradle/
+build/
+build.bak/
+.superpowers/
+.vscode/
+.idea/
+docs/
+playwright/
+node_modules/
+**/node_modules/
+logs/
+*.log
+
+# Gitignored local config holding real credentials: must never reach an image.
+.env
+src/main/resources/application-local.yml
+src/main/resources/application-docker-keycloak.yml
