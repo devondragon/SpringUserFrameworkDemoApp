@@ -2,11 +2,12 @@
 
 `docker-compose-keycloak.yml` runs the demo app against a Keycloak OIDC provider alongside the
 built-in form login. Four containers: the app, Keycloak 25.0.6, one MariaDB shared by both, and a
-mail server. The image is built from source inside Docker, so a fresh clone needs no local Gradle
-build. `up` returns when Keycloak is answering and the app is healthy, about a minute cold.
+mail server. The image builds from source in Docker (no local Gradle build), but that first build
+resolves dependencies and runs `bootJar` in the image: several minutes. Later starts are under a
+minute. `--wait` holds until every container is healthy; plain `up -d` returns mid-boot.
 
 ```bash
-docker compose -f docker-compose-keycloak.yml up -d --build
+docker compose -f docker-compose-keycloak.yml up -d --build --wait
 docker compose -f docker-compose-keycloak.yml down -v   # stop and delete the data
 ```
 
@@ -24,24 +25,22 @@ All of these are dev-only credentials committed to the repository. Do not reuse 
 
 ## Log in through Keycloak
 
-1. Open http://localhost:8080/user/login.html
-2. Click "Login with Keycloak". The browser goes to Keycloak at http://localhost:8180.
-3. Sign in as `demo` / `demo`.
-4. You land back on http://localhost:8080/index.html?messageKey=message.login.success, signed in as
-   Demo User. The app creates a local account for the Keycloak identity on first login
-   (provider `KEYCLOAK`, email `demo@example.com`).
+1. Open http://localhost:8080/user/login.html and click "Login with Keycloak".
+2. Sign in at Keycloak (http://localhost:8180) as `demo` / `demo`.
+3. You land back on http://localhost:8080/index.html?messageKey=message.login.success, signed in as
+   Demo User. First login creates the local account (provider `KEYCLOAK`, `demo@example.com`).
 
 `admin` / `admin` is a master realm account for the admin console only, not a demo realm user.
 
 ## The realm
 
-`realm/realm-export.json` is imported by `--import-realm` on first start. It defines the realm `demo`,
-the confidential client `ds-spring-user-framework-demo`, and the `demo` user. The realm must not be
-`master`: Keycloak creates the master realm before the import runs and the import strategy is
-IGNORE_EXISTING, so a `master` export is skipped without an error.
+`realm/realm-export.json` is imported by `--import-realm` on first start: realm `demo`, the client
+`ds-spring-user-framework-demo` (callback `http://localhost:8080/login/oauth2/code/keycloak`), and
+the `demo` user. The realm must not be `master`: Keycloak creates that realm before the import runs
+with strategy IGNORE_EXISTING, so a `master` export is skipped without an error.
 
 To change the realm, edit it in the admin console, then export it back over the file. The management
-port has to be moved because the running server already holds 9000:
+port has to be moved, the running server holds 9000:
 
 ```bash
 docker exec keycloak.openid-provider /opt/keycloak/bin/kc.sh export \
@@ -50,11 +49,11 @@ docker cp keycloak.openid-provider:/tmp/realm-export.json keycloak/realm/realm-e
 ```
 
 This includes users and the real client secret. The admin console's own partial export writes the
-secret as `**********` instead, which then no longer matches
-`DS_SPRING_USER_KEYCLOAK_CLIENT_SECRET` in `keycloak.env` and breaks the login.
+secret as `**********`, which then stops matching `DS_SPRING_USER_KEYCLOAK_CLIENT_SECRET` in
+`keycloak.env` and breaks the login.
 
 ## Two hostnames
 
 Keycloak is one server on two addresses: `localhost:8180` for the host browser, `keycloak:8080` for
 the app container. `keycloak.env` splits the OIDC endpoints along that line, and
-`src/main/resources/application-docker-keycloak.yml` explains why there is no `issuer-uri`.
+`src/main/resources/application-docker-keycloak.yml` says why there is no `issuer-uri`.

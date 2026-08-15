@@ -119,6 +119,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+      # myapp-main gates on this probe, so a slow first start must not fail `up`. Failures inside the
+      # start period do not count against retries: Liquibase schema creation plus the realm import
+      # takes about 30s here and more on a cold or loaded machine.
+      start_period: 60s
     depends_on:
       myapp-db:
         condition: service_healthy

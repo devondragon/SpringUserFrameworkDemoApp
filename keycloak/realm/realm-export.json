@@ -479,7 +479,7 @@
       "clientAuthenticatorType": "client-secret",
       "secret": "FTp1j7sGvc4g3MFdghEX4n7RPhbu86PQ",
       "redirectUris": [
-        "*"
+        "http://localhost:8080/login/oauth2/code/keycloak"
       ],
       "webOrigins": [
         "http://localhost:8080"
