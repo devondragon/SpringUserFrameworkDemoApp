@@ -37,11 +37,11 @@ profile (`isRegisteredForEvent`, `getFavoriteColor`) plus `refreshProfile()`, wh
 repository after a write so the session is not stale. `DemoAuthenticationListener` is a constructor-only subclass; the
 framework base class loads the profile into the session on successful authentication.
 
-In your app: create the four types with your own field set, keep the profile entity's extra columns out of the
+In your app: create the five types with your own field set, keep the profile entity's extra columns out of the
 framework's `user_account` table, and let the base authentication listener populate the session. Note that Spring does
 not inherit `@Scope` into subclasses: annotate your `BaseSessionProfile` subclass with `@SessionScopedProfile` (or
-repeat the explicit `@Scope(SCOPE_SESSION, proxyMode = TARGET_CLASS)`), otherwise it registers as a singleton shared by
-every session. `DemoSessionProfile` currently declares only `@Component`, so it is not a model to copy on that point.
+repeat the explicit `@Scope(value = WebApplicationContext.SCOPE_SESSION, proxyMode = ScopedProxyMode.TARGET_CLASS)`),
+otherwise it registers as a singleton shared by every HTTP session.
 
 ## Cleaning up application data when a user is deleted
 
@@ -64,9 +64,11 @@ framework only for identity and authorization:
   [EventRepository](../src/main/java/com/digitalsanctuary/spring/demo/event/EventRepository.java) /
   [EventService](../src/main/java/com/digitalsanctuary/spring/demo/event/EventService.java).
 - [EventAPIController](../src/main/java/com/digitalsanctuary/spring/demo/event/EventAPIController.java): REST under
-  `/api/events`. `GET /api/events` and `GET /api/events/{id}` are open; `POST /api/events`,
-  `PUT /api/events/{id}`, `DELETE /api/events/{id}`, `POST /api/events/{eventId}/register` and
-  `POST /api/events/{eventId}/unregister` each carry a `@PreAuthorize`.
+  `/api/events`. `POST /api/events`, `PUT /api/events/{id}`, `DELETE /api/events/{id}`,
+  `POST /api/events/{eventId}/register` and `POST /api/events/{eventId}/unregister` each carry a `@PreAuthorize`.
+  `GET /api/events` and `GET /api/events/{id}` carry no method-level authorization, but URL-level security still
+  requires an authenticated user because `/api/events` is not listed in `unprotectedURIs`. The two layers are
+  independent: method annotations refine what URL rules already allow through.
 - [EventPageController](../src/main/java/com/digitalsanctuary/spring/demo/event/EventPageController.java): the
   Thymeleaf pages `/event/list.html`, `/event/{eventId}/details.html`, `/event/create.html`, `/event/my-events.html`.
 - [AdminController](../src/main/java/com/digitalsanctuary/spring/demo/controller/AdminController.java) gates
@@ -109,7 +111,8 @@ provider.
   framework's own `${userSecurity}` advice.
 - [LocaleConfiguration](../src/main/java/com/digitalsanctuary/spring/demo/util/LocaleConfiguration.java): a
   `CookieLocaleResolver` defaulting to `Locale.US` plus a `LocaleChangeInterceptor` bound to the `lang` request
-  parameter, so `?lang=fr` switches the bundle used by the pages.
+  parameter, so `?lang=fr` sets the session locale in a cookie. The demo ships one bundle only, so nothing visible
+  changes today; the wiring is there for when localized bundles are added.
 
 In your app: use a `@ControllerAdvice` for cross-cutting view data, and add a locale resolver only if you ship more
 than one message bundle.
@@ -136,24 +139,39 @@ reference set. What to copy:
   `forgot-password-change.html`, `forgot-password-pending-verification.html`, `update-user.html`,
   `update-password.html`, `delete-account.html`, `registration-complete.html`,
   `registration-pending-verification.html`, `request-new-verification-email.html`, and `mfa/webauthn-challenge.html`.
-  Forms post to the framework's `/user/*` endpoints and read URIs from the framework-provided `${userSecurity}` model
-  attribute rather than hard-coding paths.
+  The forms post to the fixed `/user/*` API paths (`login.html` is the exception: its action comes from
+  `${userSecurity.loginActionUri}`, since the login processing URL is configurable). The framework-provided
+  `${userSecurity}` model attribute supplies the configurable page URIs used in navigation, for example
+  `fragments/header.html` and `index.html` link to `${userSecurity.loginPageUri}` and `${userSecurity.registrationUri}`.
+  Page templates need a controller mapping: the framework serves its own known pages, but the demo maps
+  `/user/mfa/webauthn-challenge.html` itself in
+  [PageController](../src/main/java/com/digitalsanctuary/spring/demo/controller/PageController.java), because that path
+  is the `user.mfa.webauthnEntryPointUri` value at
+  [application.yml:125](../src/main/resources/application.yml). Copying `templates/user/mfa/` means copying that
+  mapping too.
 - [templates/layout.html](../src/main/resources/templates/layout.html) and
   [templates/fragments/](../src/main/resources/templates/fragments) (`header.html`, `footer.html`): the layout dialect
   shell, the CSRF meta tags every fetch call reads, and `sec:authorize` driven navigation.
 - [templates/mail/](../src/main/resources/templates/mail): `registration-token.html` and `forgot-password-token.html`
   are byte-identical copies of the framework's defaults, placed at the same classpath paths so they take precedence.
   Edit them in place to restyle the emails.
-- [static/js/user/](../src/main/resources/static/js/user), one module per page. Endpoints they call:
-  `register.js` → `POST /user/registration` and `POST /user/registration/passwordless`; `login.js` → the login form
-  action plus passkey sign-in; `forgot-password.js` → `POST /user/resetPassword`; `reset-password.js` →
-  `POST /user/savePassword`; `resend-verification.js` → `POST /user/resendRegistrationToken`; `update-user.js` →
-  `POST /user/updateUser`; `update-password.js` → `POST /user/updatePassword` and `POST /user/setPassword`;
-  `delete-account.js` → `DELETE /user/deleteAccount`; `auth-methods.js` → `GET /user/auth-methods`;
-  `webauthn-manage.js` → `GET|PUT|DELETE /user/webauthn/credentials*`, `DELETE /user/webauthn/password`, and
-  `GET /user/mfa/status`; `webauthn-register.js` and `webauthn-authenticate.js` → the Spring Security WebAuthn
-  endpoints `/webauthn/register/options`, `/webauthn/register`, `/webauthn/authenticate/options`, `/login/webauthn`;
-  `mfa-webauthn-challenge.js`, `webauthn-utils.js` are helpers with no endpoints of their own.
+- [static/js/user/](../src/main/resources/static/js/user), one module per page, calling these endpoints:
+
+  | Module | Endpoints |
+  | --- | --- |
+  | `register.js` | `POST /user/registration`, `POST /user/registration/passwordless` |
+  | `login.js` | the login form action, plus passkey sign-in via `webauthn-authenticate.js` |
+  | `forgot-password.js` | `POST /user/resetPassword` |
+  | `reset-password.js` | `POST /user/savePassword` |
+  | `resend-verification.js` | `POST /user/resendRegistrationToken` |
+  | `update-user.js` | `POST /user/updateUser` |
+  | `update-password.js` | `POST /user/updatePassword`, `POST /user/setPassword` |
+  | `delete-account.js` | `DELETE /user/deleteAccount` |
+  | `auth-methods.js` | `GET /user/auth-methods` |
+  | `webauthn-manage.js` | `GET /user/webauthn/credentials`, `PUT /user/webauthn/credentials/{id}/label`, `DELETE /user/webauthn/credentials/{id}`, `DELETE /user/webauthn/password`, `GET /user/mfa/status` |
+  | `webauthn-register.js`, `webauthn-authenticate.js` | the Spring Security WebAuthn endpoints `/webauthn/register/options`, `/webauthn/register`, `/webauthn/authenticate/options`, `/login/webauthn` |
+  | `mfa-webauthn-challenge.js`, `webauthn-utils.js` | none of their own; they delegate to the modules above |
+
 - [static/js/shared.js](../src/main/resources/static/js/shared.js) (message and error rendering) and
   [static/js/utils/password-validation.js](../src/main/resources/static/js/utils/password-validation.js) (strength
   meter) are imported by the page modules, so copy them too.
@@ -180,9 +198,11 @@ production configuration.
 
 These need no code in the demo at all:
 
-- MFA: `user.mfa` ([application.yml:114-125](../src/main/resources/application.yml)) is off by default; the `mfa`
-  profile ([application-mfa.yml](../src/main/resources/application-mfa.yml)) turns it on with factors `PASSWORD` and
-  `WEBAUTHN` and adds the passkey registration endpoints to the unprotected list so a new user can enroll.
+- MFA: `user.mfa` ([application.yml:114-125](../src/main/resources/application.yml)) declares the factors `PASSWORD`
+  and `WEBAUTHN` (lines 119-121) and the entry-point URIs, but is disabled at line 118. The `mfa` profile
+  ([application-mfa.yml](../src/main/resources/application-mfa.yml)) only flips `enabled: true`, allows the initial
+  password-set flow without a `StepUpService`, and adds the passkey registration endpoints to the unprotected list so a
+  new user can enroll.
 - URL protection: `user.security.defaultAction: deny` plus `user.security.unprotectedURIs`
   ([application.yml:142,152](../src/main/resources/application.yml)) decide what is public; the demo adds its own
   `/event/**` and static paths there.
