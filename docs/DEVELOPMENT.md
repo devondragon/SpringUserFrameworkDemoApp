@@ -49,8 +49,8 @@ to `https://`, not conditional on scheme. The port comes from the framework's
 server always listens on plain HTTP at its default port, 35729, regardless of that flag, so:
 
 - `spring.devtools.livereload.https=true`, already set by
-  `application-local.yml-example:107` and `application-docker-keycloak.yml-example:60` (so copying
-  either example file puts you on this path immediately): the script requests
+  `application-local.yml-example:107` (so copying that example file puts you on this path
+  immediately; the `docker-keycloak` profile does not set this property): the script requests
   `https://localhost:35739/livereload.js`. Nothing listens there by default; run
   `mitmproxy --mode reverse:http://localhost:35729 -p 35739` to terminate TLS on 35739 and forward to
   the real server on 35729.
@@ -76,7 +76,10 @@ that automate the tunnel + proxy pair for the first case. See:
   user) and runs all three. The app container's healthcheck polls `GET /actuator/health`
   (`compose.yaml:86-90`), the only actuator endpoint left unauthenticated.
 - [`docker-compose-keycloak.yml`](../docker-compose-keycloak.yml): the same app + MariaDB + mail
-  setup plus a Keycloak container, for testing OIDC login. See [AUTHENTICATION.md](AUTHENTICATION.md#keycloak).
+  setup plus a Keycloak container, for testing OIDC login. Start with
+  `docker compose -f docker-compose-keycloak.yml up -d --build --wait`. See
+  [`keycloak/README.md`](../keycloak/README.md) for ports, credentials, and the login walkthrough, and
+  [AUTHENTICATION.md#keycloak](AUTHENTICATION.md#keycloak) for the OIDC mechanics.
 
 ## Gradle tasks
 
