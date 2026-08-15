@@ -1,13 +1,20 @@
 package com.digitalsanctuary.spring.demo.user.profile.session;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import com.digitalsanctuary.spring.demo.event.Event;
 import com.digitalsanctuary.spring.demo.user.profile.DemoUserProfile;
 import com.digitalsanctuary.spring.demo.user.profile.DemoUserProfileRepository;
 import com.digitalsanctuary.spring.user.profile.session.BaseSessionProfile;
+import com.digitalsanctuary.spring.user.profile.session.SessionScopedProfile;
 
-@Component
+/**
+ * Session-scoped profile for the demo user.
+ *
+ * Annotated with {@link SessionScopedProfile} rather than plain {@code @Component}. Spring's {@code @Scope} is
+ * not inherited from {@link BaseSessionProfile}, so a plain {@code @Component} here would make this a singleton
+ * shared by every HTTP session and leak one user's profile to all other users.
+ */
+@SessionScopedProfile
 public class DemoSessionProfile extends BaseSessionProfile<DemoUserProfile> {
 
     @Autowired

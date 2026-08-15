@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  * property (defaults to {@code @example.com}).</p>
  *
  * <p>See the
- * <a href="https://github.com/devondragon/SpringUserFramework/blob/main/REGISTRATION-GUARD.md">
+ * <a href="https://github.com/devondragon/SpringUserFramework/blob/main/docs/REGISTRATION-GUARD.md">
  * Registration Guard documentation</a> for the full SPI reference.</p>
  *
  * @see RegistrationGuard
