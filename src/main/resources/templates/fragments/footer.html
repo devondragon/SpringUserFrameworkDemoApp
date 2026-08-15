@@ -6,7 +6,7 @@
 				<p th:utext="#{message.created-by}"></p>
 				<p>
 					<span th:utext="#{message.copyright}"></span>
-					<span th:text="${@environment.getProperty('user.copyrightFirstYear')}" />-
+					<span th:text="${userSecurity.copyrightFirstYear}" />-
 					<span th:text="${#dates.year(#dates.createNow())}" />
 				</p>
 			</div>

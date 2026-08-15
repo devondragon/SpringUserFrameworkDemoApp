@@ -46,8 +46,8 @@
                                 <div sec:authorize="!isAuthenticated()" class="mt-3">
                                     <p>
                                         To register for the event, please
-                                        <a th:href="${@environment.getProperty('user.security.loginPageURI')}" class="btn btn-secondary">Log In</a> or
-                                        <a th:href="${@environment.getProperty('user.security.registrationURI')}"
+                                        <a th:href="${userSecurity.loginPageUri}" class="btn btn-secondary">Log In</a> or
+                                        <a th:href="${userSecurity.registrationUri}"
                                             class="btn btn-secondary">Register</a>.
                                     </p>
                                 </div>

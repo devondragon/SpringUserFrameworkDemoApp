@@ -74,8 +74,8 @@
 					<p class="text-muted">
 						Ready to get started? Sign up or log in to begin your journey with us.
 					</p>
-					<a th:href="${@environment.getProperty('user.security.registrationURI')}" class="btn btn-outline-primary">Sign Up</a>
-					<a th:href="${@environment.getProperty('user.security.loginPageURI')}" class="btn btn-outline-secondary">Log In</a>
+					<a th:href="${userSecurity.registrationUri}" class="btn btn-outline-primary">Sign Up</a>
+					<a th:href="${userSecurity.loginPageUri}" class="btn btn-outline-secondary">Log In</a>
 
 				</div>
 
