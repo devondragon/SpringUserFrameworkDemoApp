@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Standard run
 ./gradlew bootRun
 
-# Run with specific profile (local, dev, test, docker-keycloak)
+# Run with specific profile (see "Configuration Profiles" below for the full list)
 ./gradlew bootRun --args='--spring.profiles.active=local'
 
 # Build and run with debugging
@@ -60,25 +60,32 @@ This is a Spring Boot demo application showcasing the [Spring User Framework](ht
 
 ### Important Conventions
 
-1. **No Custom User Entity**: This demo uses the framework's User entity directly. Custom user data goes in separate entities (like UserProfile).
+1. **No Custom User Entity**: This demo uses the framework's User entity directly. Custom user data goes in separate entities (like `DemoUserProfile`).
 
 2. **Configuration Profiles**:
    - `local`: Development with local database
-   - `test`: Integration testing with H2
+   - `dev`: Debug-heavy dev server; also what the `compose.yaml` Docker stack runs
+   - `prd`: Production settings (env-driven datasource and URLs, strict cookies)
+   - `test`: Integration testing with H2, applied automatically by `./gradlew test`
+   - `playwright-test`: Enables the test-only API for E2E runs; combine with a base profile
    - `docker-keycloak`: OIDC integration with Keycloak
    - `registration-guard`: Enables domain-restricted registration (form/passwordless only)
    - `mfa`: Enables multi-factor authentication (PASSWORD + WEBAUTHN); combine with another profile, e.g. `local,mfa`
 
-3. **Template Organization**: All Thymeleaf templates are in `src/main/resources/templates/` with subdirectories for user management (`email/`, `password/`, etc.)
+3. **Template Organization**: All Thymeleaf templates are in `src/main/resources/templates/`, with subdirectories `user/` (including `user/mfa/`), `mail/`, `event/`, `admin/`, and `fragments/`
 
-4. **Test Data Builders**: Use the builder classes in `src/test/java/com/devondragon/springdemo/test/data/` for consistent test data creation.
+4. **Test Data Builders**: Use the builder classes in `src/test/java/com/digitalsanctuary/spring/user/test/builders/` for consistent test data creation.
 
 ### Framework Integration Points
 
 The application demonstrates framework usage through:
-- Custom controllers that extend framework functionality (EventController)
-- Service extensions (CustomUserService extends UserService)
+- Custom controllers that build on framework functionality (`event/EventAPIController`, `event/EventPageController`)
+- Service extensions (`service/CustomUserEmailService` extends the framework's `UserEmailService` and is `@Primary`)
 - Configuration of framework components via application.yml
 - Event listeners for user lifecycle events
 
 When modifying user-related functionality, check if the Spring User Framework already provides it before implementing custom solutions.
+
+## Documentation
+
+Demo documentation lives in `docs/`: `CONFIGURATION.md` (profiles and properties), `DEVELOPMENT.md` (running and building), `TESTING.md` (JUnit and Playwright), `EXTENDING.md` (framework extension points), `AUTHENTICATION.md` (every auth path). The Keycloak stack has its own `keycloak/README.md`. Update these rather than growing `README.md`.

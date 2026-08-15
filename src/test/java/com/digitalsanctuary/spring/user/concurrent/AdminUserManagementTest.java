@@ -42,7 +42,7 @@ import jakarta.persistence.EntityManager;
 @ActiveProfiles("test")
 @DisplayName("Admin User Management Tests")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Disabled("Role hierarchy and admin operations configuration issues. See docs/TEST-ANALYSIS.md")
+@Disabled("Role hierarchy and admin operations configuration issues. See docs/TESTING.md")
 class AdminUserManagementTest {
 
     @Autowired

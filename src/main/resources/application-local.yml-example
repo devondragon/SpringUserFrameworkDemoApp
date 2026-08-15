@@ -11,16 +11,23 @@ logging:
         security: DEBUG # Set logging level for security
 
 spring:
-  docker:
-    compose:
-      file: compose.dev.yaml
   application:
     name: Spring User Framework Demo App # Change this as per your convenience
+  # These match the MariaDB service in compose.dev.yaml, which bootRun starts by default (see
+  # spring.docker.compose in application.yml). While that integration is active the URL, username and
+  # password below are overridden by the service connection it derives from the running container;
+  # they apply when you set spring.docker.compose.enabled to false and run your own database.
   datasource:
     driverClassName: org.mariadb.jdbc.Driver # If you use mariadb database
-    password: mydatabaseuserpassword
-    url: jdbc:mariadb://mymariadb:3306/mydb?createDatabaseIfNotExist=true
-    username: mydatabaseuser
+    password: springuser
+    url: jdbc:mariadb://localhost:3306/springuser?createDatabaseIfNotExist=true
+    username: springuser
+  sql:
+    init:
+      mode: always # Run the schema/data scripts on every start
+      platform: local # Loads src/main/resources/data-local.sql (sample events, INSERT IGNORE so reruns are safe)
+  jpa:
+    defer-datasource-initialization: true # Let Hibernate create the tables before data-local.sql runs
   mail: # Mail configuration
     username: AAAAAAAAA # Mail server username
     password: BBBBBBBBBBB # Mail server password
@@ -48,25 +55,28 @@ spring:
               - email # Request email scope for OAuth2
               - public_profile # Request public_profile scope for OAuth2
             client-name: Facebook # Name of the OAuth2 client
-          keycloak:
-            client-id: ds-spring-user-framework-demo # Keycloak client ID for OAuth2
-            client-secret: ******************************* # Keycloak client secret for OAuth2
-            authorization-grant-type: authorization_code # Authorization grant type for OAuth2
-            redirect-uri: 'https://yourtestdomain.ngrok.io/login/oauth2/code/{registrationId}' # Redirect URI for OAuth2
-            scope:
-              - email # Request email scope for OAuth2
-              - profile # Request profile scope for OAuth2
-              - openid # Request oidc scope for OAuth2
-            client-name: Keycloak # Name of the OAuth2 client
-            provider: keycloak
-        provider:
-          keycloak: # https://www.keycloak.org/securing-apps/oidc-layers
-            issuer-uri: http://keycloak.domain.name/realms/myrealmname
-            authorization-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/auth
-            token-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/token
-            user-info-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/userinfo
-            user-name-attribute: preferred_username # https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
-            jwk-set-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/certs
+        # Keycloak is commented out so the local profile starts as-is. Spring Boot resolves a provider
+        # issuer-uri at startup and the placeholder host below does not exist. For OIDC, run the Keycloak
+        # stack instead: docker-compose-keycloak.yml with src/main/resources/application-docker-keycloak.yml.
+        #   keycloak:
+        #     client-id: ds-spring-user-framework-demo
+        #     client-secret: XXXXXX
+        #     authorization-grant-type: authorization_code
+        #     redirect-uri: 'https://yourtestdomain.ngrok.io/login/oauth2/code/{registrationId}'
+        #     scope:
+        #       - email
+        #       - profile
+        #       - openid
+        #     client-name: Keycloak
+        #     provider: keycloak
+        # provider:
+        #   keycloak: # https://www.keycloak.org/securing-apps/oidc-layers
+        #     issuer-uri: http://keycloak.domain.name/realms/myrealmname
+        #     authorization-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/auth
+        #     token-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/token
+        #     user-info-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/userinfo
+        #     user-name-attribute: preferred_username
+        #     jwk-set-uri: http://keycloak.domain.name/realms/myrealmname/protocol/openid-connect/certs
         #   apple:   # This isn't working currently
         #     client-id: com.digitalsanctuary.springuserapp
         #     client-secret: XXXXXX

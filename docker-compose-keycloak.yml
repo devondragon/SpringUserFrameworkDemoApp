@@ -1,9 +1,7 @@
-version: "3.8"
-
 services:
   myapp-db:
     image: mariadb:12.2
-    container_name: springuser-db  #
+    container_name: springuser-db
     volumes:
       - userdb:/var/lib/mysql
     environment:
@@ -67,6 +65,10 @@ services:
         condition: service_healthy
       mailserver:
         condition: service_healthy
+      # Not strictly required to boot, but the demo is useless until Keycloak answers, and this makes
+      # `up` report the stack as ready only when a Keycloak login can actually be attempted.
+      keycloak:
+        condition: service_healthy
     ports:
       - "8080:8080"
     env_file: keycloak.env
@@ -80,8 +82,13 @@ services:
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "false"
+      # The mailserver container is a relay with no route to real inboxes, so a verification link
+      # would never arrive. With this false the framework enables new accounts immediately and you
+      # can log in straight after registering. To exercise verification instead, set this to true
+      # and point the SPRING_MAIL_* values above at a real SMTP server.
+      USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -108,10 +115,19 @@ services:
       KC_DB_USERNAME: springuser
       KC_DB_PASSWORD: springuser
     healthcheck:
-      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/auth/health/live']
+      # The image has no curl or wget, so the probe is a one-file Java program.
+      # It probes the realm's OIDC metadata rather than /health/live: Keycloak 25 serves health on the
+      # management port only, and because KC_HTTPS_CERTIFICATE_FILE is set that port speaks HTTPS with
+      # a self-signed certificate this probe cannot verify. The metadata document also proves the demo
+      # realm finished importing, which /health/live does not.
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/realms/demo/.well-known/openid-configuration']
       interval: 5s
       timeout: 5s
       retries: 20
+      # myapp-main gates on this probe, so a slow first start must not fail `up`. Failures inside the
+      # start period do not count against retries: Liquibase schema creation plus the realm import
+      # takes about 30s here and more on a cold or loaded machine.
+      start_period: 60s
     depends_on:
       myapp-db:
         condition: service_healthy
