@@ -17,10 +17,10 @@ java {
 
 // Define the configurations used in the project
 configurations {
+    // Keep developmentOnly out of runtimeOnly, and so out of the boot jar. spring-boot-docker-compose
+    // is declared developmentOnly precisely so a packaged jar never tries to start Docker Compose;
+    // extending runtimeOnly from it put it back in the jar. bootRun adds it to the classpath below.
     developmentOnly
-    runtimeOnly {
-        extendsFrom developmentOnly
-    }
     testImplementation {
         extendsFrom runtimeOnly
     }
