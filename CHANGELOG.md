@@ -46,6 +46,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `DemoSessionProfile` is now `@SessionScopedProfile`; as a plain `@Component` it was a singleton
   shared by every HTTP session
 - `DomainRegistrationGuard`'s Javadoc link to the framework's registration guard documentation
+- The `local` quick start, which died at startup once `application-local.yml-example` was copied into
+  place: the example's masked Keycloak `client-secret` was not valid YAML, and its Keycloak
+  `issuer-uri` pointed at a host that does not resolve but that Spring Boot fetches at startup. The
+  Keycloak client registration and provider blocks are now commented out, with a pointer to the
+  Keycloak stack for OIDC
+- `application-playwright-test.yml` replaced `user.security.unprotectedURIs` wholesale and lost
+  `/user/registration/passwordless`, `/webauthn/authenticate/**`, `/login/webauthn`, and
+  `/actuator/health`; the override now matches the base list
+- `docker-compose-keycloak.yml` sets `USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"` like
+  `compose.yaml`, so form registration in that stack no longer creates an account waiting on mail the
+  bundled relay cannot deliver
 
 ### Removed
 - Root `CONFIG.md` (a stale copy of the framework's property reference), `docs/HELP.md` (Spring
