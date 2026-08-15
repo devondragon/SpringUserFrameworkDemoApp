@@ -1,7 +1,7 @@
 services:
   myapp-db:
     image: mariadb:12.2
-    container_name: springuser-db  #
+    container_name: springuser-db
     volumes:
       - userdb:/var/lib/mysql
     environment:
@@ -82,6 +82,11 @@ services:
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "false"
+      # The mailserver container is a relay with no route to real inboxes, so a verification link
+      # would never arrive. With this false the framework enables new accounts immediately and you
+      # can log in straight after registering. To exercise verification instead, set this to true
+      # and point the SPRING_MAIL_* values above at a real SMTP server.
+      USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
