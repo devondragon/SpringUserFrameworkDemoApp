@@ -65,6 +65,10 @@ services:
         condition: service_healthy
       mailserver:
         condition: service_healthy
+      # Not strictly required to boot, but the demo is useless until Keycloak answers, and this makes
+      # `up` report the stack as ready only when a Keycloak login can actually be attempted.
+      keycloak:
+        condition: service_healthy
     ports:
       - "8080:8080"
     env_file: keycloak.env
@@ -106,7 +110,12 @@ services:
       KC_DB_USERNAME: springuser
       KC_DB_PASSWORD: springuser
     healthcheck:
-      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/auth/health/live']
+      # The image has no curl or wget, so the probe is a one-file Java program.
+      # It probes the realm's OIDC metadata rather than /health/live: Keycloak 25 serves health on the
+      # management port only, and because KC_HTTPS_CERTIFICATE_FILE is set that port speaks HTTPS with
+      # a self-signed certificate this probe cannot verify. The metadata document also proves the demo
+      # realm finished importing, which /health/live does not.
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:8080/realms/demo/.well-known/openid-configuration']
       interval: 5s
       timeout: 5s
       retries: 20
