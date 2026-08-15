@@ -46,7 +46,7 @@ import com.digitalsanctuary.spring.user.test.builders.UserTestDataBuilder;
 @IntegrationTest
 @AutoConfigureMockMvc
 @DisplayName("Authentication Integration Tests")
-@Disabled("Form-based login expectations don't match REST API architecture. See TEST-ANALYSIS.md")
+@Disabled("Form-based login expectations don't match REST API architecture. See docs/TEST-ANALYSIS.md")
 class AuthenticationIntegrationTest {
 
     @Autowired

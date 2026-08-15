@@ -607,7 +607,7 @@ docker compose -f docker-compose-keycloak.yml up --build
 ./gradlew bootRun --debug-jvm
 
 # Build and run with custom script
-./run.sh
+./scripts/run.sh
 
 # Hot reload with DevTools (automatic)
 # Just save files and changes will be picked up

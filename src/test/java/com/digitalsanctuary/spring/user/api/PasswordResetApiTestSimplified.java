@@ -42,7 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Password Reset API Tests - Simplified")
-@Disabled("Validation expectations don't match API behavior. See TEST-ANALYSIS.md")
+@Disabled("Validation expectations don't match API behavior. See docs/TEST-ANALYSIS.md")
 class PasswordResetApiTestSimplified {
 
     private static final String RESET_PASSWORD_URL = "/user/resetPassword";

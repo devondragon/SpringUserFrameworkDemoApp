@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew bootRun --args='--spring.profiles.active=local'
 
 # Build and run with debugging
-./run.sh
+./scripts/run.sh
 ```
 
 ### Testing
