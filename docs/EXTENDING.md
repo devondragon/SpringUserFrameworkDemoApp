@@ -53,7 +53,7 @@ it; `EventRegistration` rows go with it through `cascade = ALL, orphanRemoval = 
 
 In your app: register one such listener per aggregate that holds a foreign key to the user, and do the work in the
 event's transaction so a failed cleanup rolls the deletion back. Whether the account is deleted or only disabled is
-controlled by `user.actuallyDeleteAccount` ([application.yml:103](../src/main/resources/application.yml)).
+controlled by `user.actuallyDeleteAccount` ([application.yml:111](../src/main/resources/application.yml)).
 
 ## Building your own domain on the framework: events
 
@@ -76,9 +76,9 @@ framework only for identity and authorization:
   rather than an API.
 
 The authorities in those annotations are not hard-coded in Java; they come from the framework's role configuration in
-[application.yml:192-214](../src/main/resources/application.yml). `user.roles.roles-and-privileges` grants
-`CREATE_EVENT_PRIVILEGE`, `DELETE_EVENT_PRIVILEGE`, and `UPDATE_EVENT_PRIVILEGE` to `ROLE_ADMIN` (lines 200-202) and
-`REGISTER_FOR_EVENT_PRIVILEGE` to `ROLE_USER` (line 211). `user.roles.role-hierarchy` (lines 212-214) declares
+[application.yml:200-222](../src/main/resources/application.yml). `user.roles.roles-and-privileges` grants
+`CREATE_EVENT_PRIVILEGE`, `DELETE_EVENT_PRIVILEGE`, and `UPDATE_EVENT_PRIVILEGE` to `ROLE_ADMIN` (lines 208-210) and
+`REGISTER_FOR_EVENT_PRIVILEGE` to `ROLE_USER` (line 219). `user.roles.role-hierarchy` (lines 220-222) declares
 `ROLE_ADMIN > ROLE_MANAGER > ROLE_USER`, so an admin also holds the user privileges without being granted them twice.
 The framework creates the roles and privileges from this configuration at startup.
 
@@ -147,7 +147,7 @@ reference set. What to copy:
   `/user/mfa/webauthn-challenge.html` itself in
   [PageController](../src/main/java/com/digitalsanctuary/spring/demo/controller/PageController.java), because that path
   is the `user.mfa.webauthnEntryPointUri` value at
-  [application.yml:125](../src/main/resources/application.yml). Copying `templates/user/mfa/` means copying that
+  [application.yml:133](../src/main/resources/application.yml). Copying `templates/user/mfa/` means copying that
   mapping too.
 - [templates/layout.html](../src/main/resources/templates/layout.html) and
   [templates/fragments/](../src/main/resources/templates/fragments) (`header.html`, `footer.html`): the layout dialect
@@ -176,7 +176,7 @@ reference set. What to copy:
   [static/js/utils/password-validation.js](../src/main/resources/static/js/utils/password-validation.js) (strength
   meter) are imported by the page modules, so copy them too.
 - [messages/messages.properties](../src/main/resources/messages/messages.properties), wired by
-  `spring.messages.basename: messages/messages` ([application.yml:71-72](../src/main/resources/application.yml)). The
+  `spring.messages.basename: messages/messages` ([application.yml:79-80](../src/main/resources/application.yml)). The
   framework appends its own bundle after yours, so redefining a framework key here (the file overrides `auth.message.*`,
   `email.*`, and the password-policy messages) replaces the library text.
 
@@ -198,15 +198,15 @@ production configuration.
 
 These need no code in the demo at all:
 
-- MFA: `user.mfa` ([application.yml:114-125](../src/main/resources/application.yml)) declares the factors `PASSWORD`
-  and `WEBAUTHN` (lines 119-121) and the entry-point URIs, but is disabled at line 118. The `mfa` profile
+- MFA: `user.mfa` ([application.yml:122-133](../src/main/resources/application.yml)) declares the factors `PASSWORD`
+  and `WEBAUTHN` (lines 127-129) and the entry-point URIs, but is disabled at line 126. The `mfa` profile
   ([application-mfa.yml](../src/main/resources/application-mfa.yml)) only flips `enabled: true`, allows the initial
   password-set flow without a `StepUpService`, and adds the passkey registration endpoints to the unprotected list so a
   new user can enroll.
 - URL protection: `user.security.defaultAction: deny` plus `user.security.unprotectedURIs`
-  ([application.yml:142,152](../src/main/resources/application.yml)) decide what is public; the demo adds its own
+  ([application.yml:150,160](../src/main/resources/application.yml)) decide what is public; the demo adds its own
   `/event/**` and static paths there.
-- Remember-me: `user.security.rememberMe` ([application.yml:143-151](../src/main/resources/application.yml)) enables
+- Remember-me: `user.security.rememberMe` ([application.yml:151-159](../src/main/resources/application.yml)) enables
   the cookie, with the signing key read from `REMEMBER_ME_KEY` and a random per-start fallback.
 
 Every property above is documented in [CONFIGURATION.md](CONFIGURATION.md) and in the framework's
