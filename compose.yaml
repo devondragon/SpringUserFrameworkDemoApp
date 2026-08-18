@@ -35,8 +35,8 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
     healthcheck:
-      # The image is built from scratch: no curl, no wget, no nc. `mailpit readyz` is the shipped
-      # probe and exits non-zero until the /readyz endpoint answers.
+      # No curl in the image (Alpine + busybox, so wget/nc exist but curl doesn't). `mailpit readyz`
+      # is what the image bakes into its own default HEALTHCHECK; this override just makes it explicit.
       test: ["CMD", "/mailpit", "readyz"]
       interval: 10s
       timeout: 5s
