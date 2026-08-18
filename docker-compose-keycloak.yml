@@ -20,38 +20,25 @@ services:
       timeout: 5s
       retries: 3
 
-  mailserver:
-    image: docker.io/mailserver/docker-mailserver:latest
+  mailpit:
+    image: axllent/mailpit:v1.30
     container_name: springuser-mail
-    hostname: mailserver
-    domainname: local
-    env_file: mailserver.env
     ports:
-      - "25:25"
-      - "587:587"
-    volumes:
-      - maildata:/var/mail
-      - mailstate:/var/mail-state
-      - maillogs:/var/log/mail
-      - ./config/:/tmp/docker-mailserver/${SELINUX_LABEL}
+      # Web inbox. Open http://localhost:8025 to read the verification and password-reset mail the
+      # app sends. SMTP (1025) is not published: only the app container needs to reach it.
+      - "8025:8025"
     environment:
-      PERMIT_DOCKER: connected-networks
-      ONE_DIR: 1
-      DMS_DEBUG: 0
-      SPOOF_PROTECTION: 0
-      REPORT_RECIPIENT: 1
-      ENABLE_SPAMASSASSIN: 0
-      ENABLE_CLAMAV: 0
-      ENABLE_FAIL2BAN: 1
-      ENABLE_POSTGREY: 0
-      SMTP_ONLY: 1
-    cap_add:
-      - NET_ADMIN
-      - SYS_PTRACE
+      MP_MAX_MESSAGES: 5000
+      # The app connects without auth (see SPRING_MAIL_* below). These two keep Mailpit accepting the
+      # message if you point a client at it that insists on AUTH over a plaintext connection.
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "25"]
-      interval: 30s
-      timeout: 10s
+      # The image is built from scratch: no curl, no wget, no nc. `mailpit readyz` is the shipped
+      # probe and exits non-zero until the /readyz endpoint answers.
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
       retries: 5
 
   myapp-main:
@@ -63,7 +50,7 @@ services:
     depends_on:
       myapp-db:
         condition: service_healthy
-      mailserver:
+      mailpit:
         condition: service_healthy
       # Not strictly required to boot, but the demo is useless until Keycloak answers, and this makes
       # `up` report the stack as ready only when a Keycloak login can actually be attempted.
@@ -77,16 +64,15 @@ services:
       SPRING_DATASOURCE_USERNAME: springuser
       SPRING_DATASOURCE_PASSWORD: springuser
       SPRING_PROFILES_ACTIVE: docker-keycloak
-      SPRING_MAIL_HOST: mailserver
-      SPRING_MAIL_PORT: 25
+      # Mailpit captures everything the app sends and shows it at http://localhost:8025. It speaks
+      # plain SMTP on 1025 with no auth and no STARTTLS, so verification and password-reset mail is
+      # readable without any credentials. Registration verification is left at its base default of
+      # true (application.yml:113): register, open the web inbox, click the link, log in.
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: "false"
-      # The mailserver container is a relay with no route to real inboxes, so a verification link
-      # would never arrive. With this false the framework enables new accounts immediately and you
-      # can log in straight after registering. To exercise verification instead, set this to true
-      # and point the SPRING_MAIL_* values above at a real SMTP server.
-      USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -133,8 +119,5 @@ services:
         condition: service_healthy
 
 volumes:
-  maildata:
-  mailstate:
-  maillogs:
   userdb:
   keycloak:
