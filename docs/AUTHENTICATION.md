@@ -25,10 +25,9 @@ failed logins and lockouts land in the audit log.
      `/user/request-new-verification-email.html`
      ([`resend-verification.js`](../src/main/resources/static/js/user/resend-verification.js) posts
      `POST /user/resendRegistrationToken`). Under `docker compose up` the message is captured by Mailpit
-     rather than delivered: open <http://localhost:8025> and click the link there. The resend page itself
-     is currently broken against `ds-spring-user-framework:5.3.0`: the endpoint binds the full
-     registration `UserDto`, whose `firstName`/`lastName`/`password`/`matchingPassword` are `@NotBlank`,
-     so the email-only payload the page posts is rejected with HTTP 400 and no mail goes out.
+     rather than delivered: open <http://localhost:8025> and click the link there. The endpoint always
+     returns the same generic success response whether the address is unknown, already verified, or
+     genuinely awaiting verification, so it leaks nothing about which accounts exist.
    - `false`: the account is created enabled, the framework logs the user straight in, and the browser
      lands on `/user/registration-complete.html`. `application-local.yml-example:131` sets it false, so
      the Gradle `local` run path needs no SMTP server at all.
