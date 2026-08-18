@@ -70,12 +70,13 @@ that automate the tunnel + proxy pair for the first case. See:
 - [`compose.dev.yaml`](../compose.dev.yaml): database only. Started automatically by `bootRun`'s
   Docker Compose integration; not meant to be run directly, though `docker compose -f compose.dev.yaml
   up -d` works if you want the database without the app.
-- [`compose.yaml`](../compose.yaml): the full demo stack: app + MariaDB + a relay-only mail
-  container. `docker compose up -d` builds the app image (multi-stage [`Dockerfile`](../Dockerfile):
+- [`compose.yaml`](../compose.yaml): the full demo stack: app + MariaDB + a Mailpit mail catcher
+  whose web inbox is on <http://localhost:8025>. `docker compose up -d` builds the app image
+  (multi-stage [`Dockerfile`](../Dockerfile):
   a JDK-21 build stage runs `./gradlew --no-daemon bootJar -x test` (`Dockerfile:14`), a JRE-21 stage runs the resulting jar as a non-root
   user) and runs all three. The app container's healthcheck polls `GET /actuator/health`
-  (`compose.yaml:86-90`), the only actuator endpoint left unauthenticated.
-- [`docker-compose-keycloak.yml`](../docker-compose-keycloak.yml): the same app + MariaDB + mail
+  (`compose.yaml:72-76`), the only actuator endpoint left unauthenticated.
+- [`docker-compose-keycloak.yml`](../docker-compose-keycloak.yml): the same app + MariaDB + Mailpit
   setup plus a Keycloak container, for testing OIDC login. Start with
   `docker compose -f docker-compose-keycloak.yml up -d --build --wait`. See
   [`keycloak/README.md`](../keycloak/README.md) for ports, credentials, and the login walkthrough, and

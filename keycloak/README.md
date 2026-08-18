@@ -2,7 +2,7 @@
 
 `docker-compose-keycloak.yml` runs the demo app against a Keycloak OIDC provider alongside the
 built-in form login. Four containers: the app, Keycloak 25.0.6, one MariaDB shared by both, and a
-mail server. The image builds from source in Docker (no local Gradle build), but that first build
+Mailpit mail catcher. The image builds from source in Docker (no local Gradle build), but that first build
 resolves dependencies and runs `bootJar` in the image: several minutes. Later starts are under a
 minute. `--wait` holds until every container is healthy; plain `up -d` returns mid-boot.
 
@@ -16,6 +16,7 @@ docker compose -f docker-compose-keycloak.yml down -v   # stop and delete the da
 | What | URL | Login |
 | --- | --- | --- |
 | Demo app | http://localhost:8080 | see below |
+| Mailpit web inbox | http://localhost:8025 | none |
 | Keycloak | http://localhost:8180 | `admin` / `admin` (master realm) |
 | Keycloak HTTPS | https://localhost:8143 | self-signed, see `ssl/README.MD` |
 | Keycloak management | port 9001 (container 9000) | HTTPS, serves `/health/*` and `/metrics` |
@@ -31,6 +32,18 @@ All of these are dev-only credentials committed to the repository. Do not reuse 
    Demo User. First login creates the local account (provider `KEYCLOAK`, `demo@example.com`).
 
 `admin` / `admin` is a master realm account for the admin console only, not a demo realm user.
+
+## Register with the app's own form
+
+The Keycloak button is not the only way in: the app's built-in registration still works in this stack,
+with verification email on. Register at http://localhost:8080/user/register.html, open the Mailpit inbox
+at http://localhost:8025, click the verification link in the message, then log in at
+http://localhost:8080/user/login.html. Password reset from
+http://localhost:8080/user/forgot-password.html arrives in the same inbox.
+
+Mailpit captures everything the app sends and delivers nothing, so no address you type has to be real and
+no mail leaves the machine. It stores messages in memory only: `down` discards them. Keycloak's own realm
+has no SMTP server configured and sends nothing.
 
 ## The realm
 
