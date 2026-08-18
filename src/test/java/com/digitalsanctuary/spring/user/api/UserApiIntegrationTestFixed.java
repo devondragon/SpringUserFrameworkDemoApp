@@ -70,6 +70,9 @@ class UserApiIntegrationTestFixed {
 
     private static final String TEST_EMAIL = "test@example.com";
 
+    /** Generic, outcome-independent body /user/resendRegistrationToken returns (anti-enumeration). */
+    private static final String RESEND_GENERIC_MESSAGE = "If your account requires verification, a new verification email has been sent.";
+
     private UserDto testUserDto;
 
     @BeforeEach
@@ -178,6 +181,47 @@ class UserApiIntegrationTestFixed {
                 .content(objectMapper.writeValueAsString(resetRequest)).with(csrf())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.messages[0]").value("If account exists, password reset email has been sent!"));
+    }
+
+    @Test
+    @DisplayName("Should resend verification email from an email-only request body")
+    void shouldResendVerificationEmailForEmailOnlyBody() throws Exception {
+        // Given - an unverified account
+        userService.registerNewUserAccount(testUserDto);
+
+        // When - the resend page posts only an email (see resend-verification.js)
+        String requestBody = objectMapper.writeValueAsString(java.util.Map.of("email", TEST_EMAIL));
+
+        // Then - ds-spring-user-framework 5.3.1 binds ResendVerificationDto here. Under 5.3.0 the endpoint
+        // bound the full registration UserDto, so this payload failed @NotBlank validation with a 400.
+        mockMvc.perform(post(API_BASE_PATH + "/resendRegistrationToken").contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody).with(csrf())).andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.messages[0]").value(RESEND_GENERIC_MESSAGE));
+    }
+
+    @Test
+    @DisplayName("Should not reveal account existence on resend (anti-enumeration)")
+    void shouldNotRevealAccountExistenceOnResend() throws Exception {
+        // Given - no account for this address
+
+        // When - a resend is requested for an unknown email
+        String requestBody = objectMapper.writeValueAsString(java.util.Map.of("email", "nobody@example.com"));
+
+        // Then - the same generic 200 body as the unverified-account case above
+        mockMvc.perform(post(API_BASE_PATH + "/resendRegistrationToken").contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody).with(csrf())).andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.messages[0]").value(RESEND_GENERIC_MESSAGE));
+    }
+
+    @Test
+    @DisplayName("Should reject a malformed email on resend")
+    void shouldRejectMalformedEmailOnResend() throws Exception {
+        // When - the email fails @Email validation
+        String requestBody = objectMapper.writeValueAsString(java.util.Map.of("email", "not-an-email"));
+
+        // Then
+        mockMvc.perform(post(API_BASE_PATH + "/resendRegistrationToken").contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody).with(csrf())).andExpect(status().isBadRequest());
     }
 
     @Test

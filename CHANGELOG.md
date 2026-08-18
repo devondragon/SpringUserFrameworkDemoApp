@@ -9,6 +9,23 @@ the library.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-08-18
+
+### Changed
+- Spring User Framework upgraded from 5.3.0 to 5.3.1 (`build.gradle`). Patch release: no API,
+  configuration, or behavior changes for this app beyond the resend fix below
+
+### Fixed
+- The resend-verification page (`/user/request-new-verification-email.html`) works again.
+  `UserAPI.resendRegistrationToken` now binds `ResendVerificationDto` instead of the full registration
+  `UserDto`, so the email-only payload `resend-verification.js` posts passes validation and returns
+  HTTP 200 instead of 400. The fix is framework-side; this app needed only the version bump
+
+### Added
+- `UserApiIntegrationTestFixed` covers `POST /user/resendRegistrationToken`: an email-only body succeeds,
+  an unknown address returns the identical generic body (anti-enumeration), and a malformed email is
+  rejected with HTTP 400. The first two fail against 5.3.0 and pass against 5.3.1
+
 ## 2026-08-17
 
 ### Changed
