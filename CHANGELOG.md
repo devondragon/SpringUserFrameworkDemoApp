@@ -9,6 +9,30 @@ the library.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 2026-08-17
+
+### Changed
+- Both Docker stacks (`compose.yaml`, `docker-compose-keycloak.yml`) now run
+  [Mailpit](https://mailpit.axllent.org/) instead of `docker-mailserver`. Mailpit captures outbound
+  mail and serves it as a web inbox on http://localhost:8025, so the demo exercises the real
+  registration-verification and password-reset flows: register, read the message in the browser,
+  click the link, log in. (Resend-verification is still broken for an unrelated reason; see the
+  known-limitation note in `docs/CONFIGURATION.md`.)
+- Neither stack sets `USER_REGISTRATION_SENDVERIFICATIONEMAIL` any more; both use the base
+  `user.registration.sendVerificationEmail: true`
+- App containers point at `SPRING_MAIL_HOST: mailpit` / `SPRING_MAIL_PORT: 1025`, auth and STARTTLS off
+
+### Fixed
+- `page.title.registration-pending-verification` in `messages.properties` was spelled
+  `registration-ending-verification`, so the pending-verification page rendered
+  `??page.title.registration-pending-verification_en??` as its title. The page is on the Docker demo's
+  happy path now that verification is on, which is how the typo surfaced
+
+### Removed
+- `mailserver.env`, the `./config/` mail bind mount, the `maildata`/`mailstate`/`maillogs` volumes, the
+  `NET_ADMIN`/`SYS_PTRACE` capabilities, and the published SMTP ports 25/587. The `SELINUX_LABEL`
+  variable went with the bind mount, so `docker compose` no longer warns that it is unset
+
 ## 2026-08-15
 
 ### Added

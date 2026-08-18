@@ -86,10 +86,11 @@ docker compose up --build
 ```
 
 The app image is built from source inside Docker, so the first build takes several minutes. When it is up,
-open http://localhost:8080 and register at http://localhost:8080/user/register.html. This stack sets
-`USER_REGISTRATION_SENDVERIFICATIONEMAIL=false`, so accounts are enabled at registration and you can log in
-immediately. Its `mailserver` container is a relay with no route to real inboxes, so nothing it accepts will
-reach an actual mailbox. The stack runs under the `dev` profile and loads no sample events.
+open http://localhost:8080 and register at http://localhost:8080/user/register.html. The stack captures every
+mail the app sends in [Mailpit](https://mailpit.axllent.org/) instead of delivering it, so the real flows work
+end to end: open http://localhost:8025, click the verification link, then log in. Password reset from
+http://localhost:8080/user/forgot-password.html arrives in the same inbox. The stack runs under the `dev`
+profile and loads no sample events.
 
 Stop it with Ctrl-C, then `docker compose down -v` to remove the containers and their data.
 

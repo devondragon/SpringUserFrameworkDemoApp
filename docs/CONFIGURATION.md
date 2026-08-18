@@ -63,20 +63,19 @@ Recognized elsewhere (fall back to a demo default when unset):
 | `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD` | Production datasource (`application-prd.yml:10-12`). |
 | `WEBAUTHN_RP_ID`, `WEBAUTHN_RP_NAME`, `WEBAUTHN_ALLOWED_ORIGINS` | WebAuthn relying-party identity in `prd` (`application-prd.yml:41-43`). |
 | `DS_SPRING_USER_KEYCLOAK_CLIENT_ID`, `_CLIENT_SECRET`, `_PROVIDER_AUTHORIZATION_URI`, `_PROVIDER_TOKEN_URI`, `_PROVIDER_USER_INFO_URI`, `_PROVIDER_JWK_SET_URI` | Keycloak OAuth2 client and provider endpoints for `docker-keycloak`, consumed in `application-docker-keycloak.yml:19-20,35,48-50`; supplied by [`keycloak.env`](../keycloak.env) when you run `docker-compose-keycloak.yml`. There is no `_PROVIDER_ISSUER_URI`: `issuer-uri` is deliberately left unset, see [`keycloak/README.md`](../keycloak/README.md). |
-| `SELINUX_LABEL` | Suffix on the mailserver's bind-mounted config path in `compose.yaml`/`docker-compose-keycloak.yml`. Unset by default; Docker Compose prints a harmless warning about it. |
 
 Any framework property can also be set through Spring's relaxed binding (`SCREAMING_SNAKE_CASE` of
 the dotted key). The Docker demo stack (`compose.yaml`) does this for the app container:
-`SPRING_DATASOURCE_URL`/`_USERNAME`/`_PASSWORD` (→ `spring.datasource.*`), `SPRING_PROFILES_ACTIVE`,
-`SPRING_MAIL_HOST`/`_PORT` and the `SPRING_MAIL_PROPERTIES_MAIL_SMTP_*` keys (→ `spring.mail.*`), and
-`USER_REGISTRATION_SENDVERIFICATIONEMAIL` (→ `user.registration.sendVerificationEmail`). The same
-pattern works for any other key, e.g. `USER_SECURITY_BCRYPTSTRENGTH` for `user.security.bcryptStrength`.
+`SPRING_DATASOURCE_URL`/`_USERNAME`/`_PASSWORD` (→ `spring.datasource.*`), `SPRING_PROFILES_ACTIVE`, and
+`SPRING_MAIL_HOST`/`_PORT` plus the `SPRING_MAIL_PROPERTIES_MAIL_SMTP_*` keys (→ `spring.mail.*`). The same
+pattern works for any other key, e.g. `USER_SECURITY_BCRYPTSTRENGTH` for `user.security.bcryptStrength` or
+`USER_REGISTRATION_SENDVERIFICATIONEMAIL` for `user.registration.sendVerificationEmail`.
 
 ## Mail
 
 - `spring.mail.username`, `spring.mail.password`, `spring.mail.host`, `spring.mail.port` (`application.yml:2-6`) configure the SMTP transport used for verification, password-reset, and notification email. The base file's `host` is a placeholder SES endpoint; set real credentials in your profile.
 - `user.registration.sendVerificationEmail` (`application.yml:113`) controls whether a new account must click a verification link before it can log in. `false` enables the account immediately at registration.
-- The Docker demo stack's `mailserver` service (`compose.yaml`) is a relay only: `SMTP_ONLY: 1` (`compose.yaml:48`) with no route to real inboxes. That stack sets `USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"` (`compose.yaml:85`) so registered accounts activate immediately instead of waiting on mail nothing will deliver.
+- Both Docker stacks (`compose.yaml` and `docker-compose-keycloak.yml`) run a `mailpit` service ([Mailpit](https://mailpit.axllent.org/)) that captures outbound mail instead of delivering it, and serves it as a web inbox on <http://localhost:8025>. The app container reaches it over plain SMTP with `SPRING_MAIL_HOST: mailpit` and `SPRING_MAIL_PORT: 1025`, auth and STARTTLS off. Neither stack overrides `user.registration.sendVerificationEmail`, so registration verification and password reset run their real email flows: read the message in the web inbox and click the link. Nothing leaves the machine, and Mailpit keeps no volume, so `docker compose down` discards the captured mail. The resend-verification page does not work against `ds-spring-user-framework:5.3.0`: `UserAPI.resendRegistrationToken` binds the full registration `UserDto`, whose `firstName`, `lastName`, `password`, and `matchingPassword` are `@NotBlank`, so the email-only payload that `resend-verification.js` posts is rejected with HTTP 400 and no mail is sent. That is a framework-side bug, not a stack setting.
 - `user.mail.fromAddress` sets the `From` address on outbound mail; it is set per profile (e.g. `application-local.yml-example:144`), not in the base file.
 
 ## Security settings this demo sets

@@ -18,16 +18,20 @@ failed logins and lockouts land in the audit log.
    [`register.js`](../src/main/resources/static/js/user/register.js)), which posts JSON to
    `POST /user/registration`, not form data.
 2. What happens next depends on `user.registration.sendVerificationEmail`:
-   - `true` (base `application.yml:113`): the account is created disabled, a verification email is sent,
-     and the browser lands on `/user/registration-pending-verification.html`. The emailed link is
+   - `true` (base `application.yml:113`, and what both Docker stacks run): the account is created
+     disabled, a verification email is sent, and the browser lands on
+     `/user/registration-pending-verification.html`. The emailed link is
      `GET /user/registrationConfirm?token=...`, which enables the account. Lost it? Request another at
      `/user/request-new-verification-email.html`
      ([`resend-verification.js`](../src/main/resources/static/js/user/resend-verification.js) posts
-     `POST /user/resendRegistrationToken`).
+     `POST /user/resendRegistrationToken`). Under `docker compose up` the message is captured by Mailpit
+     rather than delivered: open <http://localhost:8025> and click the link there. The resend page itself
+     is currently broken against `ds-spring-user-framework:5.3.0`: the endpoint binds the full
+     registration `UserDto`, whose `firstName`/`lastName`/`password`/`matchingPassword` are `@NotBlank`,
+     so the email-only payload the page posts is rejected with HTTP 400 and no mail goes out.
    - `false`: the account is created enabled, the framework logs the user straight in, and the browser
-     lands on `/user/registration-complete.html`. `application-local.yml-example:131` sets it false and
-     the Docker demo stack sets `USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"` (`compose.yaml:85`),
-     so neither documented run path needs a working SMTP server.
+     lands on `/user/registration-complete.html`. `application-local.yml-example:131` sets it false, so
+     the Gradle `local` run path needs no SMTP server at all.
 3. Log in at `/user/login.html` ([`login.js`](../src/main/resources/static/js/user/login.js)). The form
    posts to `/user/login`; success redirects to `/index.html?messageKey=message.login.success`. Ten
    failed attempts lock the account for 30 minutes (`application.yml:146-147`).
@@ -36,7 +40,9 @@ failed logins and lockouts land in the audit log.
    `/user/forgot-password-change.html`, which posts `POST /user/savePassword`
    ([`forgot-password.js`](../src/main/resources/static/js/user/forgot-password.js),
    [`reset-password.js`](../src/main/resources/static/js/user/reset-password.js)). Both reset steps need
-   real mail, unlike registration. To change a password you know, `/user/update-password.html` posts
+   working mail in every profile: the Docker stacks capture it in Mailpit at <http://localhost:8025>,
+   and `playwright-test` turns the email off and reads the token through the test API instead
+   (`application-playwright-test.yml:8`). To change a password you know, `/user/update-password.html` posts
    `POST /user/updatePassword`.
 
 ## Passkeys
@@ -160,8 +166,8 @@ Open http://localhost:8080/user/login.html, click "Login with Keycloak", sign in
 First login creates a local account with provider `KEYCLOAK` and email `demo@example.com`. The realm is
 `demo`, not `master`, so every OIDC URL is `/realms/demo/...`; `admin` / `admin` is a master realm
 account and cannot sign in to the demo app. The app's own registration form still works in this stack, and
-like the `compose.yaml` stack it sets `USER_REGISTRATION_SENDVERIFICATIONEMAIL: "false"`, so an account
-registered there is enabled immediately rather than waiting on mail the bundled relay cannot deliver.
+like the `compose.yaml` stack it sends the verification email through the bundled Mailpit container: open
+<http://localhost:8025>, click the link in the message, and log in with the form.
 The compose file sets `SPRING_PROFILES_ACTIVE: docker-keycloak`, and every value in
 [`application-docker-keycloak.yml`](../src/main/resources/application-docker-keycloak.yml) comes from an
 environment variable in [`keycloak.env`](../keycloak.env): `DS_SPRING_USER_KEYCLOAK_CLIENT_ID`,
