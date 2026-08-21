@@ -2,13 +2,14 @@
  * WebAuthn credential management (list, rename, delete) for the user profile page.
  */
 import { getCsrfToken, getCsrfHeaderName, isWebAuthnSupported, escapeHtml } from '/js/user/webauthn-utils.js';
-import { registerPasskey } from '/js/user/webauthn-register.js';
+import { registerPasskey, PasskeyEnrollmentStepUpError } from '/js/user/webauthn-register.js';
 import { showMessage } from '/js/shared.js';
 import { getAuthMethods, invalidateAuthMethodsCache } from '/js/user/auth-methods.js';
 import { withStepUp, StepUpCancelledError } from '/js/user/step-up.js';
 
-const csrfHeader = getCsrfHeaderName();
-const csrfToken = getCsrfToken();
+// CSRF header/token are read live (getCsrfHeaderName/getCsrfToken) at each request rather than captured
+// once: an in-page step-up ceremony re-runs /login/webauthn, which rotates the session's CSRF token, and a
+// stale captured value would fail the next state-changing request until the page was reloaded.
 let renameModalInstance;
 let removePasswordModalInstance;
 
@@ -22,7 +23,7 @@ export async function loadPasskeys() {
 
     try {
         const response = await fetch('/user/webauthn/credentials', {
-            headers: { [csrfHeader]: csrfToken }
+            headers: { [getCsrfHeaderName()]: getCsrfToken() }
         });
 
         if (!response.ok) {
@@ -283,7 +284,12 @@ async function handleRegisterPasskey() {
     } catch (error) {
         console.error('Registration error:', error);
         if (globalMessage) {
-            showMessage(globalMessage, 'Failed to register passkey. Please try again.', 'alert-danger');
+            // A stale-session enrollment refusal (SUF-02) carries its own actionable message; other failures
+            // stay generic.
+            const message = error instanceof PasskeyEnrollmentStepUpError
+                ? error.message
+                : 'Failed to register passkey. Please try again.';
+            showMessage(globalMessage, message, 'alert-danger');
         }
     }
 }
@@ -460,7 +466,7 @@ function initRemovePassword() {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    [csrfHeader]: csrfToken
+                    [getCsrfHeaderName()]: getCsrfToken()
                 }
             });
 

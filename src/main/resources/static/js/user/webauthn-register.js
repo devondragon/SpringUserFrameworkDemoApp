@@ -4,6 +4,21 @@
 import { getCsrfToken, getCsrfHeaderName, base64urlToBuffer, bufferToBase64url } from '/js/user/webauthn-utils.js';
 
 /**
+ * Raised when passkey enrollment is refused because the session lacks a recent authentication (SUF-02).
+ *
+ * With step-up enabled the framework gates POST /webauthn/register on a factor issued within
+ * `enrollmentTtlSeconds`, enforced as an authorization rule that returns a plain 403 (not a
+ * `step-up-required` 401). Re-running the passkey ceremony cannot satisfy it: the user may have no passkey
+ * yet, and enrollment accepts any factor, so the remedy is a fresh login, not a ceremony retry.
+ */
+export class PasskeyEnrollmentStepUpError extends Error {
+    constructor() {
+        super('For your security, adding a passkey needs a recent sign-in. Please sign out and sign in again, then add the passkey.');
+        this.name = 'PasskeyEnrollmentStepUpError';
+    }
+}
+
+/**
  * Register a new passkey for the authenticated user.
  */
 export async function registerPasskey(labelInput) {
@@ -78,6 +93,12 @@ export async function registerPasskey(labelInput) {
     });
 
     if (!finishResponse.ok) {
+        // The enrollment step-up gate is an authorization rule, so a stale/factorless session is refused here
+        // with a bare 403 rather than the step-up-required 401 the other operations return. Surface it as its
+        // own error so the UI can tell the user to sign in again instead of offering a passkey retry.
+        if (finishResponse.status === 403) {
+            throw new PasskeyEnrollmentStepUpError();
+        }
         let msg = 'Registration failed';
         try {
             const data = await finishResponse.json();

@@ -1,5 +1,5 @@
 import { test, expect, generateTestUser, TestUser } from '../../src/fixtures';
-import type { Page } from '@playwright/test';
+import type { CDPSession, Page } from '@playwright/test';
 
 /**
  * WebAuthn step-up (SUF-02) E2E, using Chromium's CDP virtual authenticator.
@@ -20,13 +20,25 @@ import type { Page } from '@playwright/test';
  * Enable a CDP WebAuthn virtual authenticator that auto-approves create()/get() so no human touch is
  * needed. Mirrors playwright/tests/mfa/mfa-flow.spec.ts.
  */
-async function setupVirtualAuthenticator(page: Page): Promise<void> {
+async function setupVirtualAuthenticator(page: Page): Promise<CDPSession> {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('WebAuthn.enable');
+  await addVirtualAuthenticator(cdp);
+  return cdp;
+}
+
+/**
+ * Add one more virtual authenticator to an enabled CDP session. A second authenticator is needed to enroll a
+ * second passkey, because `excludeCredentials` makes the authenticator that already holds a credential decline
+ * a repeat enrollment.
+ */
+async function addVirtualAuthenticator(cdp: CDPSession, transport: 'internal' | 'usb' = 'internal'): Promise<void> {
+  // Chrome allows only one 'internal' (platform) authenticator per environment, so a second credential must
+  // come from a roaming ('usb') authenticator.
   await cdp.send('WebAuthn.addVirtualAuthenticator', {
     options: {
       protocol: 'ctap2',
-      transport: 'internal',
+      transport,
       hasResidentKey: true,
       hasUserVerification: true,
       isUserVerified: true,
@@ -67,6 +79,13 @@ async function createPasswordlessUserWithPasskey(page: Page, user: TestUser): Pr
   });
 }
 
+/** Return the servlet session cookie value, used to prove the id rotates across step-up (fixation). */
+async function getSessionCookie(page: Page): Promise<string | undefined> {
+  const cookies = await page.context().cookies();
+  const session = cookies.find((c) => c.name === 'JSESSIONID') || cookies.find((c) => /session/i.test(c.name));
+  return session?.value;
+}
+
 /** Read the current credential id list via the management API. */
 async function getCredentialIds(page: Page): Promise<string[]> {
   return page.evaluate(async () => {
@@ -79,6 +98,12 @@ async function getCredentialIds(page: Page): Promise<string[]> {
 }
 
 test.describe('WebAuthn Step-Up @step-up-enabled', () => {
+  // Run serially: each test creates a passwordless account, and concurrent inserts into user_account
+  // deadlock in MariaDB under the framework's registration path. Serial execution keeps these
+  // account-creating flows deterministic (the same reason auth-flow specs avoid racing registration).
+  test.describe.configure({ mode: 'serial' });
+
+
   test('setting a password on a passkey-only account requires step-up, then succeeds after the ceremony', async ({
     page,
     cleanupEmails,
@@ -95,6 +120,9 @@ test.describe('WebAuthn Step-Up @step-up-enabled', () => {
 
     await page.locator('#newPassword').fill(user.password);
     await page.locator('#confirmPassword').fill(user.password);
+
+    const sessionBefore = await getSessionCookie(page);
+    const csrfBefore = await page.evaluate(() => document.querySelector('meta[name="_csrf"]')?.getAttribute('content'));
     await page.locator('#updatePasswordForm button[type="submit"]').click();
 
     // The server refuses with 401 (code 6); the client shows the step-up modal rather than a raw error.
@@ -112,6 +140,58 @@ test.describe('WebAuthn Step-Up @step-up-enabled', () => {
       return response.json();
     });
     expect(auth.data.hasPassword).toBe(true);
+
+    // Browser-only verification the ticket exists to observe (step-up re-runs /login/webauthn mid-flow):
+    // - the login JSON landed mid-flow without navigating the page away, and the retry fired;
+    await expect(page).toHaveURL(/\/user\/update-password\.html/);
+    // - factor merging reuses the existing session rather than starting a fresh one, so the session id is
+    //   preserved and the user stays logged in (no fixation rotation: the principal is unchanged, so no
+    //   fixation vector is introduced);
+    const sessionAfter = await getSessionCookie(page);
+    expect(sessionAfter).toBeTruthy();
+    expect(sessionAfter).toBe(sessionBefore);
+    // - but Spring still rotates the CSRF token on the re-authentication; the client picked up the new one,
+    //   which is exactly what the /csrf refresh handles and why the retry did not fail with a 403;
+    const csrfAfter = await page.evaluate(() => document.querySelector('meta[name="_csrf"]')?.getAttribute('content'));
+    expect(csrfAfter).toBeTruthy();
+    expect(csrfAfter).not.toBe(csrfBefore);
+    // - authorities survived the merge: a protected page is still reachable without re-login.
+    await page.goto('/user/update-user.html');
+    await expect(page).toHaveURL(/\/user\/update-user\.html/);
+  });
+
+  test('deleting a passkey on a passkey-only account requires step-up, then succeeds after the ceremony', async ({
+    page,
+    cleanupEmails,
+  }) => {
+    const user = generateTestUser('stepup-delete');
+    cleanupEmails.push(user.email);
+
+    const cdp = await setupVirtualAuthenticator(page);
+    await createPasswordlessUserWithPasskey(page, user);
+
+    // Deleting the last passkey on a passwordless account is blocked (lockout protection), so enroll a second
+    // one first. It needs its own (roaming) authenticator, since the first one declines a repeat enrollment.
+    await addVirtualAuthenticator(cdp, 'usb');
+    await page.goto('/user/update-user.html');
+    await page.evaluate(async () => {
+      const { registerPasskey } = await import('/js/user/webauthn-register.js');
+      await registerPasskey('second-passkey');
+    });
+    await page.reload();
+    await page.locator('#passkeys-list button[data-action="delete"]').first().waitFor();
+    expect((await getCredentialIds(page)).length).toBe(2);
+
+    // The delete flow opens a native confirm() first; auto-accept it, then step up.
+    page.on('dialog', (dialog) => dialog.accept());
+    await page.locator('#passkeys-list button[data-action="delete"]').first().click();
+
+    const verifyBtn = page.locator('#stepUpVerifyBtn');
+    await expect(verifyBtn).toBeVisible();
+    await verifyBtn.click();
+
+    await expect(page.locator('#passkeyMessage')).toHaveClass(/alert-success/, { timeout: 15000 });
+    await expect.poll(async () => (await getCredentialIds(page)).length).toBe(1);
   });
 
   test('renaming a passkey on a passkey-only account requires step-up, then succeeds after the ceremony', async ({
@@ -151,8 +231,11 @@ test.describe('WebAuthn Step-Up @step-up-enabled', () => {
     await createPasswordlessUserWithPasskey(page, user);
 
     await page.goto('/user/update-user.html');
-    const [credentialId] = await getCredentialIds(page);
-    expect(credentialId).toBeTruthy();
+    // Enrollment shortly after a real login succeeds: createPasswordlessUserWithPasskey enrolled a passkey
+    // on the fresh post-registration session (FACTOR_PASSWORD within enrollmentTtlSeconds), so one exists.
+    const credentialIds = await getCredentialIds(page);
+    expect(credentialIds.length).toBe(1);
+    const [credentialId] = credentialIds;
 
     // Raw calls with no ceremony: the server gate alone must produce the two documented 401 shapes.
     const results = await page.evaluate(async (credId) => {
