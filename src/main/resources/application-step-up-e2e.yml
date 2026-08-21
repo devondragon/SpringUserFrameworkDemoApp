@@ -1,0 +1,18 @@
+# Step-Up E2E override profile (test-only)
+#
+# Layered on top of `step-up` for the chromium-step-up Playwright project only:
+#   APP_PROFILES=local,playwright-test,step-up,step-up-e2e npx playwright test --project=chromium-step-up
+#
+# It shrinks the freshness window and enables dev login so the timing- and factor-dependent acceptance
+# cases can be exercised deterministically, without degrading the realistic demo values in
+# application-step-up.yml (ttlSeconds 120). Never activate this profile outside E2E.
+user:
+  security:
+    stepUp:
+      # A 2s freshness window lets the "factor aged past ttlSeconds" case wait it out in a few seconds. The
+      # ceremony-then-retry cases are unaffected: their retry fires within milliseconds of the assertion.
+      ttlSeconds: 2
+  dev:
+    # Enables GET /dev/login-as/{email} (local profile only), which logs in without stamping any factor.
+    # Used to reach a factorless session deterministically for the "stale session -> enrollment 403" case.
+    auto-login-enabled: true

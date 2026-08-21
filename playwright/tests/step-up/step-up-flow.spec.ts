@@ -4,9 +4,10 @@ import type { CDPSession, Page } from '@playwright/test';
 /**
  * WebAuthn step-up (SUF-02) E2E, using Chromium's CDP virtual authenticator.
  *
- * Requires the app to run with step-up enabled:
- *   APP_PROFILES=local,playwright-test,step-up npx playwright test --project=chromium-step-up
- * (the step-up profile must come last so its overrides win).
+ * Requires the app to run with step-up enabled and the E2E override profile:
+ *   APP_PROFILES=local,playwright-test,step-up,step-up-e2e npx playwright test --project=chromium-step-up
+ * step-up-e2e shrinks ttlSeconds and enables dev login so the timing- and factor-dependent cases run
+ * deterministically; the later profiles must come last so their overrides win.
  *
  * Tagged @step-up-enabled so the default and MFA projects skip it: those servers run with step-up off.
  *
@@ -274,5 +275,114 @@ test.describe('WebAuthn Step-Up @step-up-enabled', () => {
     expect(results.rename.body.error).toBe('step-up-required');
     expect(results.del.status).toBe(401);
     expect(results.del.body.error).toBe('step-up-required');
+  });
+
+  test('a WEBAUTHN factor aged past ttlSeconds no longer authorizes a sensitive operation', async ({
+    page,
+    cleanupEmails,
+  }) => {
+    const user = generateTestUser('stepup-ttl');
+    cleanupEmails.push(user.email);
+
+    await setupVirtualAuthenticator(page);
+    await createPasswordlessUserWithPasskey(page, user);
+
+    // Make the WEBAUTHN factor fresh by running the passkey ceremony (a login assertion while already
+    // logged in), then let it age past the step-up-e2e window (ttlSeconds=2).
+    await page.goto('/user/update-user.html');
+    await page.evaluate(async () => {
+      const { authenticateWithPasskey } = await import('/js/user/webauthn-authenticate.js');
+      await authenticateWithPasskey();
+    });
+    await page.waitForTimeout(3000);
+    // The assertion rotated the CSRF token; reload to pick up the current one (the factor's age is server
+    // state, unaffected by a page GET).
+    await page.reload();
+
+    const result = await page.evaluate(async () => {
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')!.getAttribute('content')!;
+      const csrfToken = document.querySelector('meta[name="_csrf"]')!.getAttribute('content')!;
+      const response = await fetch('/user/setPassword', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+        body: JSON.stringify({ newPassword: 'Test@Pass123!', confirmPassword: 'Test@Pass123!' }),
+      });
+      return { status: response.status, body: await response.json() };
+    });
+
+    // The aged factor is refused exactly like an absent one: 401 code 6, before any mutation.
+    expect(result.status).toBe(401);
+    expect(result.body.code).toBe(6);
+    const auth = await page.evaluate(async () => (await fetch('/user/auth-methods')).json());
+    expect(auth.data.hasPassword).toBe(false);
+  });
+
+  test('enrollment from a factorless (stale) session is refused with 403 and an actionable message', async ({
+    page,
+    testApiClient,
+    cleanupEmails,
+  }) => {
+    const user = generateTestUser('stepup-stale-enroll');
+    cleanupEmails.push(user.email);
+    await testApiClient.createUser({
+      email: user.email,
+      password: user.password,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      enabled: true,
+    });
+
+    await setupVirtualAuthenticator(page);
+
+    // Dev login stamps no authentication factor, so the session cannot satisfy the enrollment gate. This is
+    // the deterministic stand-in for a session aged past enrollmentTtlSeconds.
+    const devLogin = await page.request.get(`/dev/login-as/${encodeURIComponent(user.email)}`);
+    expect(devLogin.ok()).toBeTruthy();
+
+    await page.goto('/user/update-user.html');
+    await page.locator('#registerPasskeyBtn').waitFor();
+    await page.locator('#passkeyLabel').fill('should-be-refused');
+    await page.locator('#registerPasskeyBtn').click();
+
+    // POST /webauthn/register returns a bare 403 (an authorization rule, not a step-up-required 401), which
+    // the client surfaces as its own "sign in again" message rather than offering a passkey retry.
+    await expect(page.locator('#passkeyMessage')).toHaveClass(/alert-danger/, { timeout: 15000 });
+    await expect(page.locator('#passkeyMessage')).toContainText(/sign in again/i);
+    // No passkey was added.
+    expect((await getCredentialIds(page)).length).toBe(0);
+  });
+
+  test('first-passkey enrollment works when the only session came from the verification link', async ({
+    page,
+    testApiClient,
+    cleanupEmails,
+  }) => {
+    const user = generateTestUser('stepup-verify-enroll');
+    cleanupEmails.push(user.email);
+    // A registered-but-unverified account; confirming the emailed link both enables it and logs it in.
+    await testApiClient.createUser({
+      email: user.email,
+      password: user.password,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      enabled: false,
+    });
+    await testApiClient.createVerificationToken(user.email);
+
+    await setupVirtualAuthenticator(page);
+
+    // Confirming the verification link auto-logs-in with FACTOR_OTT (not WEBAUTHN), which is a factor and so
+    // satisfies the enrollment gate: the user can register a first passkey right after verifying.
+    const verificationUrl = await testApiClient.getVerificationUrl(user.email);
+    await page.goto(verificationUrl!);
+    await expect(page).toHaveURL(/registration-complete/);
+
+    await page.goto('/user/update-user.html');
+    await page.evaluate(async () => {
+      const { registerPasskey } = await import('/js/user/webauthn-register.js');
+      await registerPasskey('verify-link-passkey');
+    });
+    await page.reload();
+    expect((await getCredentialIds(page)).length).toBe(1);
   });
 });
