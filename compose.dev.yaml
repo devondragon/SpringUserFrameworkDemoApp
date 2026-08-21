@@ -16,5 +16,24 @@ services:
     volumes:
       - mariadb-data:/var/lib/mysql
 
+  # Local mail catcher. bootRun starts it automatically (spring.docker.compose.file: compose.dev.yaml).
+  # Nothing sends to it unless a profile points spring.mail here: the base config uses real SMTP, and the
+  # step-up E2E profile (application-step-up-e2e.yml) redirects mail to localhost:1025 so the Playwright
+  # suite can assert the passkey-registration notification via the web API on 8025.
+  mailpit:
+    image: axllent/mailpit:v1.30.7
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # web UI + REST API
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   mariadb-data:

@@ -385,4 +385,31 @@ test.describe('WebAuthn Step-Up @step-up-enabled', () => {
     await page.reload();
     expect((await getCredentialIds(page)).length).toBe(1);
   });
+
+  test('registering a passkey notifies the account owner by email', async ({ page, cleanupEmails }) => {
+    const user = generateTestUser('stepup-notify');
+    cleanupEmails.push(user.email);
+
+    await setupVirtualAuthenticator(page);
+    // createPasswordlessUserWithPasskey enrolls a passkey, which (notifyOnRegistration is on by default)
+    // publishes a PasskeyRegistration audit event and emails the owner. Mail is redirected to Mailpit by the
+    // step-up-e2e profile; poll its REST API for the notification (delivery is asynchronous).
+    await createPasswordlessUserWithPasskey(page, user);
+
+    await expect
+      .poll(
+        async () => {
+          const response = await page.request.get(
+            `http://localhost:8025/api/v1/search?query=${encodeURIComponent(`to:${user.email}`)}`
+          );
+          if (!response.ok()) return 0;
+          const data = await response.json();
+          return (data.messages ?? []).filter((m: { Subject?: string }) =>
+            (m.Subject ?? '').includes('New passkey added')
+          ).length;
+        },
+        { timeout: 10000 }
+      )
+      .toBeGreaterThan(0);
+  });
 });

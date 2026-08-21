@@ -16,3 +16,17 @@ user:
     # Enables GET /dev/login-as/{email} (local profile only), which logs in without stamping any factor.
     # Used to reach a factorless session deterministically for the "stale session -> enrollment 403" case.
     auto-login-enabled: true
+
+# Redirect mail to the Mailpit catcher from compose.dev.yaml so the E2E can assert the passkey-registration
+# notification (user.webauthn.notifyOnRegistration is on by default) via Mailpit's REST API on 8025.
+spring:
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
