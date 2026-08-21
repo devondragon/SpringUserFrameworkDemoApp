@@ -39,7 +39,8 @@ repositories {
 
 dependencies {
     // DigitalSanctuary Spring User Framework
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:5.3.1'
+    // 5.3.3 adds the WebAuthn step-up primitive (SUF-02, library #365) this demo exercises.
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:5.3.3'
 
     // WebAuthn support (Passkey authentication)
     implementation 'org.springframework.security:spring-security-webauthn'

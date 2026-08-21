@@ -100,12 +100,21 @@ disables verification/reset emails (tests fetch tokens via the Test API instead)
 "set initial password" flow works without a `StepUpService` bean.
 
 The `chromium`, `firefox`, `webkit`, `Mobile Chrome`, and `Mobile Safari` projects skip specs
-tagged `@mfa-enabled` (`grepInvert`); a separate `chromium-mfa` project runs only those specs,
-against a server started with the `mfa` profile added:
+tagged `@mfa-enabled` and `@step-up-enabled` (`grepInvert`); separate Chromium-only projects run
+those, each against a server started with the matching add-on profile. Both use the CDP virtual
+authenticator, so they are Chromium-only.
 
 ```bash
+# MFA flow (@mfa-enabled)
 APP_PROFILES=local,playwright-test,mfa npx playwright test --project=chromium-mfa
+
+# WebAuthn step-up / SUF-02 (@step-up-enabled)
+APP_PROFILES=local,playwright-test,step-up npx playwright test --project=chromium-step-up
 ```
+
+The `playwright-test` profile also pins `user.webauthn.rpId=localhost` and
+`allowedOrigins=http://localhost:8080`, so the virtual authenticator ceremonies work even when a
+developer's `application-local.yml` points WebAuthn at an ngrok host.
 
 **Test API**:
 [`TestDataController`](../src/main/java/com/digitalsanctuary/spring/demo/test/api/TestDataController.java)

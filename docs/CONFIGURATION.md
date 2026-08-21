@@ -16,7 +16,7 @@ values for one scenario (local dev, production, tests, and so on). For the full 
 `local`, `dev`, `prd`, and `docker-keycloak` are base profiles you choose directly, one at a time, the
 way the command above chooses `local`. `test` is not chosen by hand: `./gradlew test` applies it
 automatically. `playwright-test` is meant to be combined with a base profile rather than run alone
-(see its row below). `mfa` and `registration-guard` are opt-in add-ons with no base settings of their
+(see its row below). `mfa`, `step-up`, and `registration-guard` are opt-in add-ons with no base settings of their
 own; combine one with a base profile by listing both, comma-separated, in `--spring.profiles.active`
 (Spring Boot applies later profiles' properties over earlier ones when the same key is set in both).
 If you omit `--args` entirely, `bootRun` still defaults to `local`: `build.gradle:118-123` sets
@@ -32,11 +32,13 @@ If you omit `--args` entirely, `bootRun` still defaults to `local`: `build.gradl
 | `playwright-test` | [`application-playwright-test.yml`](../src/main/resources/application-playwright-test.yml) | Playwright E2E runs; enables the Test API (`TestDataController`, `TestApiSecurityConfig`, localhost-only) | Disables verification/reset emails, points `spring.datasource.*` at the same local MariaDB the `local` profile uses, pins `appUrl` to `http://localhost:8080`, `allowInitialPasswordSetWithoutStepUp: true`, MFA off, and restates `user.security.unprotectedURIs` in full (a list property is replaced wholesale, not merged, so this copy has to match the base list in `application.yml:160`) | Combine with a base profile, e.g. `local,playwright-test` (see [TESTING.md](TESTING.md)) |
 | `docker-keycloak` | [`application-docker-keycloak.yml`](../src/main/resources/application-docker-keycloak.yml) (tracked; holds only `${...}` placeholders, nothing to copy) | OIDC login against the bundled Keycloak stack; see [`keycloak/README.md`](../keycloak/README.md) and [AUTHENTICATION.md#keycloak](AUTHENTICATION.md#keycloak) for the full walkthrough | Adds the Keycloak OAuth2 client/provider from `DS_SPRING_USER_KEYCLOAK_*` env vars (deliberately no `issuer-uri`), insecure session cookie | `--spring.profiles.active=docker-keycloak`, normally set for you as `SPRING_PROFILES_ACTIVE` inside `docker-compose-keycloak.yml` |
 | `mfa` | [`application-mfa.yml`](../src/main/resources/application-mfa.yml) | Add-on: require PASSWORD + WEBAUTHN | `user.mfa.enabled: true` (base `application.yml:126` has it `false`); once enabled, the framework auto-unprotects the configured MFA entry-point URIs at runtime, including the challenge page, so a partially-authenticated user can reach them; the profile's yml additionally adds the passkey enrollment endpoints `/webauthn/register/options` and `/webauthn/register` to `unprotectedURIs` (line 25) so that user can register their first passkey; `allowInitialPasswordSetWithoutStepUp: true` | Combine with a base profile, e.g. `local,mfa` |
+| `step-up` | [`application-step-up.yml`](../src/main/resources/application-step-up.yml) | Add-on: require a recent passkey assertion for credential-altering operations on passkey-only accounts (SUF-02) | `user.security.stepUp.enabled: true` (base default is `false`), `ttlSeconds: 120`, `factors: [WEBAUTHN]`; this registers the framework's built-in `StepUpService`, so `POST /user/setPassword` and passkey delete/rename return `401` until a fresh `WEBAUTHN` factor exists, and passkey enrollment is gated on a recent authentication. See [AUTHENTICATION.md#webauthn-step-up-suf-02](AUTHENTICATION.md#webauthn-step-up-suf-02) | Combine with a base profile, e.g. `local,step-up` |
 | `registration-guard` | none (no yml; `@Profile("registration-guard")` on [`DomainRegistrationGuard`](../src/main/java/com/digitalsanctuary/spring/demo/registration/DomainRegistrationGuard.java)) | Add-on: domain-restricted registration demo | Activates a `RegistrationGuard` bean that restricts form/passwordless registration to one email domain (`registration.guard.allowed-domain`, default `@example.com`); OAuth2/OIDC registration is unaffected | Combine with a base profile, e.g. `local,registration-guard` |
 
 See [AUTHENTICATION.md](AUTHENTICATION.md) for the mechanics behind `mfa`
 ([#mfa](AUTHENTICATION.md#mfa)), `docker-keycloak` ([#keycloak](AUTHENTICATION.md#keycloak)),
-WebAuthn passkeys ([#passkeys](AUTHENTICATION.md#passkeys)), and `registration-guard`
+WebAuthn passkeys ([#passkeys](AUTHENTICATION.md#passkeys)), `step-up`
+([#webauthn-step-up-suf-02](AUTHENTICATION.md#webauthn-step-up-suf-02)), and `registration-guard`
 ([#registration-guard](AUTHENTICATION.md#registration-guard)).
 
 ## Getting started locally

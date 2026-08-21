@@ -5,6 +5,7 @@ import { getCsrfToken, getCsrfHeaderName, isWebAuthnSupported, escapeHtml } from
 import { registerPasskey } from '/js/user/webauthn-register.js';
 import { showMessage } from '/js/shared.js';
 import { getAuthMethods, invalidateAuthMethodsCache } from '/js/user/auth-methods.js';
+import { withStepUp, StepUpCancelledError } from '/js/user/step-up.js';
 
 const csrfHeader = getCsrfHeaderName();
 const csrfToken = getCsrfToken();
@@ -144,14 +145,22 @@ function renamePasskey(credentialId, currentLabel) {
 
         const globalMessage = document.getElementById('passkeyMessage');
 
-        try {
-            const response = await fetch(`/user/webauthn/credentials/${credentialId}/label`, {
+        // Renaming a passkey is credential-altering: with step-up enabled the server returns 401
+        // (error "step-up-required") until a recent passkey assertion exists. Read the CSRF token live
+        // so the post-ceremony retry uses the token issued after re-authentication.
+        const renameRequest = () =>
+            fetch(`/user/webauthn/credentials/${credentialId}/label`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    [csrfHeader]: csrfToken
+                    [getCsrfHeaderName()]: getCsrfToken()
                 },
                 body: JSON.stringify({ label: newLabel })
+            });
+
+        try {
+            const response = await withStepUp(renameRequest, {
+                message: 'Renaming a passkey is a sensitive change. Confirm with your passkey to continue.'
             });
 
             if (!response.ok) {
@@ -174,10 +183,15 @@ function renamePasskey(credentialId, currentLabel) {
             loadPasskeys();
             updateAuthMethodsUI();
         } catch (error) {
-            console.error('Failed to rename passkey:', error);
-            errorEl.textContent = error.message;
-            errorEl.classList.remove('d-none');
-            input.classList.add('is-invalid');
+            if (error instanceof StepUpCancelledError) {
+                errorEl.textContent = 'Passkey not renamed — verification was cancelled.';
+                errorEl.classList.remove('d-none');
+            } else {
+                console.error('Failed to rename passkey:', error);
+                errorEl.textContent = error.message;
+                errorEl.classList.remove('d-none');
+                input.classList.add('is-invalid');
+            }
         } finally {
             confirmBtn.disabled = false;
             confirmBtn.textContent = 'Save';
@@ -203,10 +217,18 @@ async function deletePasskey(credentialId) {
 
     const globalMessage = document.getElementById('passkeyMessage');
 
-    try {
-        const response = await fetch(`/user/webauthn/credentials/${credentialId}`, {
+    // Deleting a passkey is credential-altering: with step-up enabled the server returns 401
+    // (error "step-up-required") until a recent passkey assertion exists. Read the CSRF token live so
+    // the post-ceremony retry uses the token issued after re-authentication.
+    const deleteRequest = () =>
+        fetch(`/user/webauthn/credentials/${credentialId}`, {
             method: 'DELETE',
-            headers: { [csrfHeader]: csrfToken }
+            headers: { [getCsrfHeaderName()]: getCsrfToken() }
+        });
+
+    try {
+        const response = await withStepUp(deleteRequest, {
+            message: 'Deleting a passkey is a sensitive change. Confirm with your passkey to continue.'
         });
 
         if (!response.ok) {
@@ -228,9 +250,15 @@ async function deletePasskey(credentialId) {
         loadPasskeys();
         updateAuthMethodsUI();
     } catch (error) {
-        console.error('Failed to delete passkey:', error);
-        if (globalMessage) {
-            showMessage(globalMessage, error.message || 'Failed to delete passkey. Please try again.', 'alert-danger');
+        if (error instanceof StepUpCancelledError) {
+            if (globalMessage) {
+                showMessage(globalMessage, 'Passkey not deleted — verification was cancelled.', 'alert-warning');
+            }
+        } else {
+            console.error('Failed to delete passkey:', error);
+            if (globalMessage) {
+                showMessage(globalMessage, error.message || 'Failed to delete passkey. Please try again.', 'alert-danger');
+            }
         }
     }
 }

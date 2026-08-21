@@ -1,0 +1,30 @@
+# Step-Up Re-Authentication Demo Profile (SUF-02)
+#
+# Turns on the framework's WebAuthn step-up primitive: credential-altering operations on a
+# passkey-only account require a recent passkey assertion before they proceed.
+#
+#   POST /user/setPassword ......... 401 (JSONResponse code 6) until a fresh WEBAUTHN factor exists
+#   passkey delete / rename ........ 401 (error "step-up-required") likewise
+#
+# Run alongside your normal profile, e.g.:
+#   ./gradlew bootRun --args='--spring.profiles.active=local,step-up'
+#
+# The client handling lives in src/main/resources/static/js/user/step-up.js: on a 401 it re-runs the
+# ordinary passkey login ceremony (which refreshes the session's WEBAUTHN freshness) and retries the
+# original request. There is no separate step-up endpoint or token.
+#
+# Notes:
+# - Enabling step-up registers the framework's built-in StepUpService, so setPassword is governed by
+#   step-up rather than by allowInitialPasswordSetWithoutStepUp (which only applies when no
+#   StepUpService bean is present).
+# - Enabling step-up also enables factor merging, so re-authenticating mid-session merges the fresh
+#   WEBAUTHN factor onto the existing session instead of replacing its authorities.
+# - Social-login (OAuth-only) accounts have no passkey and cannot satisfy WEBAUTHN step-up; for them
+#   setPassword falls back to allowInitialPasswordSetWithoutStepUp, exactly as before.
+
+user:
+  security:
+    stepUp:
+      enabled: true
+      ttlSeconds: 120        # how recently the WEBAUTHN factor must have been issued
+      factors: [WEBAUTHN]    # any one is sufficient; WEBAUTHN is the only one whose refresh proves presence

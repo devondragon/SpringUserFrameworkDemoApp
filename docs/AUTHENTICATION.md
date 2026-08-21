@@ -86,6 +86,45 @@ sets the flag true where the flow has to be demonstrable (`application-local.yml
 `application-mfa.yml:24`, `application-playwright-test.yml:35`) and leaves it at the secure default
 `false` in `prd` (`application-prd.yml:50-52`).
 
+## WebAuthn step-up (SUF-02)
+
+The `step-up` profile (`application-step-up.yml`) turns on the framework's step-up primitive with
+`user.security.stepUp.enabled=true`. It registers the built-in `StepUpService`, so on a passkey-only
+account the credential-altering operations require a recent WebAuthn assertion first:
+
+- `POST /user/setPassword` returns `401` with `JSONResponse` code `6`.
+- passkey delete (`DELETE /user/webauthn/credentials/{id}`) and rename (`PUT .../{id}/label`) return
+  `401` with `GenericResponse` `error: "step-up-required"`.
+
+Step-up is a freshness requirement on the `FACTOR_WEBAUTHN` authority Spring Security already issues, not
+a bespoke ceremony: the client re-runs the ordinary passkey login (the same
+`authenticateWithPasskey()` used at `/user/login.html`) while still logged in, which refreshes that factor
+on the session, then retries the original call. There is no separate step-up endpoint or token.
+
+The client handling lives in [`step-up.js`](../src/main/resources/static/js/user/step-up.js), wired into
+the set-password ([`update-password.js`](../src/main/resources/static/js/user/update-password.js)) and
+passkey delete/rename ([`webauthn-manage.js`](../src/main/resources/static/js/user/webauthn-manage.js))
+flows. On either `401` shape it shows a modal warning that a passkey check is coming (so the browser's
+authenticator dialog is not a surprise), runs the ceremony, and retries once. Because re-running
+`/login/webauthn` mid-session triggers Spring Security's authentication success handling — session-id
+change (fixation protection) and, with the default session-based repository, CSRF token rotation — the
+retry would otherwise fail with a stale token. `step-up.js` fetches the rotated token from `GET /csrf`
+([`CsrfController`](../src/main/java/com/digitalsanctuary/spring/demo/controller/CsrfController.java))
+and updates the page's `<meta>` tags before retrying. (The normal login path sidesteps this by fully
+navigating to a fresh page; step-up deliberately stays put.)
+
+Enabling step-up also gates passkey enrollment (`POST /webauthn/register`) on a recent authentication by
+any factor (`enrollmentTtlSeconds`, default `600`), and enables factor merging so the fresh factor merges
+onto the session instead of replacing its authorities. Social-login (OAuth-only) accounts have no passkey
+and cannot satisfy `WEBAUTHN` step-up; for them `setPassword` falls back to
+`allowInitialPasswordSetWithoutStepUp`, exactly as before.
+
+The `chromium-step-up` Playwright project
+([`step-up-flow.spec.ts`](../playwright/tests/step-up/step-up-flow.spec.ts)) verifies the enabled path in a
+browser (ceremony then retry succeeds) and the negative path (absent `WEBAUTHN` factor returns `401` and
+runs no ceremony). Run it with
+`APP_PROFILES=local,playwright-test,step-up npx playwright test --project=chromium-step-up`.
+
 ## MFA
 
 The `mfa` profile turns on `user.mfa.enabled` (`application-mfa.yml:20`), `false` in the base config
