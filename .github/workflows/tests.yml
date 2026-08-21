@@ -51,6 +51,22 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+      mailpit:
+        # Mail catcher for the step-up run's passkey-registration notification assertion. Compose is
+        # disabled in CI (SPRING_DOCKER_COMPOSE_ENABLED=false), so the compose.dev.yaml Mailpit is
+        # replaced by this service container; the step-up-e2e profile points spring.mail at localhost:1025.
+        image: axllent/mailpit:v1.30.7
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: "1"
+          MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd="/mailpit readyz"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     env:
       # The MariaDB service container replaces Spring Boot's Docker Compose integration
       SPRING_DOCKER_COMPOSE_ENABLED: "false"
@@ -90,6 +106,14 @@ jobs:
         env:
           APP_PROFILES: playwright-test,mfa
         run: npx playwright test --project=chromium-mfa
+
+      - name: Run E2E tests (step-up enabled)
+        working-directory: playwright
+        # `local` activates the dev-login controller (@Profile("local")) the factorless-session case needs;
+        # application-local.yml is absent in CI so it adds no overrides, and playwright-test pins rpId=localhost.
+        env:
+          APP_PROFILES: local,playwright-test,step-up,step-up-e2e
+        run: npx playwright test --project=chromium-step-up
 
       - name: Upload Playwright report
         if: failure()
