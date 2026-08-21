@@ -5,6 +5,8 @@ import {
     initPasswordRequirements,
 } from "/js/utils/password-validation.js";
 import { getAuthMethods } from "/js/user/auth-methods.js";
+import { withStepUp, StepUpCancelledError } from "/js/user/step-up.js";
+import { getCsrfToken, getCsrfHeaderName } from "/js/user/webauthn-utils.js";
 
 let isSetPasswordMode = false;
 
@@ -72,15 +74,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                 confirmPassword: confirmPassword,
             };
 
-            try {
-                const response = await fetch("/user/setPassword", {
+            // Setting an initial password on a passkey-only account is credential-altering, so with step-up
+            // enabled the server returns 401 (code 6) until a recent passkey assertion exists. withStepUp runs
+            // the passkey ceremony and retries; on servers with step-up off the first response is returned as-is.
+            const setPassword = () =>
+                fetch("/user/setPassword", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        [document.querySelector("meta[name='_csrf_header']").content]:
-                            document.querySelector("meta[name='_csrf']").content,
+                        [getCsrfHeaderName()]: getCsrfToken(),
                     },
                     body: JSON.stringify(requestData),
+                });
+
+            try {
+                const response = await withStepUp(setPassword, {
+                    message: "Setting a password is a sensitive change. Confirm with your passkey to continue.",
                 });
 
                 const data = await response.json();
@@ -93,8 +102,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     showMessage(globalMessage, errorMessage, "alert-danger");
                 }
             } catch (error) {
-                console.error("Request failed:", error);
-                showMessage(globalMessage, "An unexpected error occurred. Please try again later.", "alert-danger");
+                if (error instanceof StepUpCancelledError) {
+                    showMessage(globalMessage, "Password not set — passkey verification was cancelled.", "alert-warning");
+                } else {
+                    console.error("Request failed:", error);
+                    showMessage(globalMessage, "An unexpected error occurred. Please try again later.", "alert-danger");
+                }
             }
             return;
         }

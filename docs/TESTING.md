@@ -100,12 +100,31 @@ disables verification/reset emails (tests fetch tokens via the Test API instead)
 "set initial password" flow works without a `StepUpService` bean.
 
 The `chromium`, `firefox`, `webkit`, `Mobile Chrome`, and `Mobile Safari` projects skip specs
-tagged `@mfa-enabled` (`grepInvert`); a separate `chromium-mfa` project runs only those specs,
-against a server started with the `mfa` profile added:
+tagged `@mfa-enabled` and `@step-up-enabled` (`grepInvert`); separate Chromium-only projects run
+those, each against a server started with the matching add-on profile. Both use the CDP virtual
+authenticator, so they are Chromium-only.
 
 ```bash
+# MFA flow (@mfa-enabled)
 APP_PROFILES=local,playwright-test,mfa npx playwright test --project=chromium-mfa
+
+# WebAuthn step-up / SUF-02 (@step-up-enabled)
+APP_PROFILES=local,playwright-test,step-up,step-up-e2e npx playwright test --project=chromium-step-up
 ```
+
+The `playwright-test` profile also pins `user.webauthn.rpId=localhost` and
+`allowedOrigins=http://localhost:8080`, so the virtual authenticator ceremonies work even when a
+developer's `application-local.yml` points WebAuthn at an ngrok host.
+
+The step-up run adds `step-up-e2e` (`application-step-up-e2e.yml`), a test-only override that shrinks
+`stepUp.ttlSeconds` to 2 (so a factor can be aged past the window in a few seconds), enables dev login
+(`/dev/login-as`, for a deterministic factorless session), and redirects mail to the Mailpit catcher in
+`compose.dev.yaml` (published on 1025/8025) so the suite can assert the passkey-registration notification.
+`bootRun` starts Mailpit automatically alongside MariaDB. The realistic demo values stay in
+`application-step-up.yml` (`ttlSeconds: 120`). The step-up specs run serially
+(`test.describe.configure({ mode: 'serial' })`) because concurrent account registration deadlocks in
+MariaDB (framework issue devondragon/SpringUserFramework#368). One acceptance case is not covered here:
+social-login (OIDC) `setPassword` fallback, which needs the Keycloak stack (tracked separately).
 
 **Test API**:
 [`TestDataController`](../src/main/java/com/digitalsanctuary/spring/demo/test/api/TestDataController.java)

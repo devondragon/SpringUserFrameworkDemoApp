@@ -2,12 +2,14 @@
  * WebAuthn credential management (list, rename, delete) for the user profile page.
  */
 import { getCsrfToken, getCsrfHeaderName, isWebAuthnSupported, escapeHtml } from '/js/user/webauthn-utils.js';
-import { registerPasskey } from '/js/user/webauthn-register.js';
+import { registerPasskey, PasskeyEnrollmentStepUpError } from '/js/user/webauthn-register.js';
 import { showMessage } from '/js/shared.js';
 import { getAuthMethods, invalidateAuthMethodsCache } from '/js/user/auth-methods.js';
+import { withStepUp, StepUpCancelledError } from '/js/user/step-up.js';
 
-const csrfHeader = getCsrfHeaderName();
-const csrfToken = getCsrfToken();
+// CSRF header/token are read live (getCsrfHeaderName/getCsrfToken) at each request rather than captured
+// once: an in-page step-up ceremony re-runs /login/webauthn, which rotates the session's CSRF token, and a
+// stale captured value would fail the next state-changing request until the page was reloaded.
 let renameModalInstance;
 let removePasswordModalInstance;
 
@@ -21,7 +23,7 @@ export async function loadPasskeys() {
 
     try {
         const response = await fetch('/user/webauthn/credentials', {
-            headers: { [csrfHeader]: csrfToken }
+            headers: { [getCsrfHeaderName()]: getCsrfToken() }
         });
 
         if (!response.ok) {
@@ -144,14 +146,22 @@ function renamePasskey(credentialId, currentLabel) {
 
         const globalMessage = document.getElementById('passkeyMessage');
 
-        try {
-            const response = await fetch(`/user/webauthn/credentials/${credentialId}/label`, {
+        // Renaming a passkey is credential-altering: with step-up enabled the server returns 401
+        // (error "step-up-required") until a recent passkey assertion exists. Read the CSRF token live
+        // so the post-ceremony retry uses the token issued after re-authentication.
+        const renameRequest = () =>
+            fetch(`/user/webauthn/credentials/${credentialId}/label`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    [csrfHeader]: csrfToken
+                    [getCsrfHeaderName()]: getCsrfToken()
                 },
                 body: JSON.stringify({ label: newLabel })
+            });
+
+        try {
+            const response = await withStepUp(renameRequest, {
+                message: 'Renaming a passkey is a sensitive change. Confirm with your passkey to continue.'
             });
 
             if (!response.ok) {
@@ -174,10 +184,15 @@ function renamePasskey(credentialId, currentLabel) {
             loadPasskeys();
             updateAuthMethodsUI();
         } catch (error) {
-            console.error('Failed to rename passkey:', error);
-            errorEl.textContent = error.message;
-            errorEl.classList.remove('d-none');
-            input.classList.add('is-invalid');
+            if (error instanceof StepUpCancelledError) {
+                errorEl.textContent = 'Passkey not renamed — verification was cancelled.';
+                errorEl.classList.remove('d-none');
+            } else {
+                console.error('Failed to rename passkey:', error);
+                errorEl.textContent = error.message;
+                errorEl.classList.remove('d-none');
+                input.classList.add('is-invalid');
+            }
         } finally {
             confirmBtn.disabled = false;
             confirmBtn.textContent = 'Save';
@@ -203,10 +218,18 @@ async function deletePasskey(credentialId) {
 
     const globalMessage = document.getElementById('passkeyMessage');
 
-    try {
-        const response = await fetch(`/user/webauthn/credentials/${credentialId}`, {
+    // Deleting a passkey is credential-altering: with step-up enabled the server returns 401
+    // (error "step-up-required") until a recent passkey assertion exists. Read the CSRF token live so
+    // the post-ceremony retry uses the token issued after re-authentication.
+    const deleteRequest = () =>
+        fetch(`/user/webauthn/credentials/${credentialId}`, {
             method: 'DELETE',
-            headers: { [csrfHeader]: csrfToken }
+            headers: { [getCsrfHeaderName()]: getCsrfToken() }
+        });
+
+    try {
+        const response = await withStepUp(deleteRequest, {
+            message: 'Deleting a passkey is a sensitive change. Confirm with your passkey to continue.'
         });
 
         if (!response.ok) {
@@ -228,9 +251,15 @@ async function deletePasskey(credentialId) {
         loadPasskeys();
         updateAuthMethodsUI();
     } catch (error) {
-        console.error('Failed to delete passkey:', error);
-        if (globalMessage) {
-            showMessage(globalMessage, error.message || 'Failed to delete passkey. Please try again.', 'alert-danger');
+        if (error instanceof StepUpCancelledError) {
+            if (globalMessage) {
+                showMessage(globalMessage, 'Passkey not deleted — verification was cancelled.', 'alert-warning');
+            }
+        } else {
+            console.error('Failed to delete passkey:', error);
+            if (globalMessage) {
+                showMessage(globalMessage, error.message || 'Failed to delete passkey. Please try again.', 'alert-danger');
+            }
         }
     }
 }
@@ -255,7 +284,12 @@ async function handleRegisterPasskey() {
     } catch (error) {
         console.error('Registration error:', error);
         if (globalMessage) {
-            showMessage(globalMessage, 'Failed to register passkey. Please try again.', 'alert-danger');
+            // A stale-session enrollment refusal (SUF-02) carries its own actionable message; other failures
+            // stay generic.
+            const message = error instanceof PasskeyEnrollmentStepUpError
+                ? error.message
+                : 'Failed to register passkey. Please try again.';
+            showMessage(globalMessage, message, 'alert-danger');
         }
     }
 }
@@ -432,7 +466,7 @@ function initRemovePassword() {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    [csrfHeader]: csrfToken
+                    [getCsrfHeaderName()]: getCsrfToken()
                 }
             });
 

@@ -19,6 +19,13 @@ spring:
 
 # Enable test API endpoints by adding them to unprotected URIs
 user:
+  webauthn:
+    # E2E runs against http://localhost:8080 with a CDP virtual authenticator, so the WebAuthn RP identity
+    # must be localhost. Pin it here so it wins over any ngrok rpId/origin a developer's application-local.yml
+    # sets (this profile is typically activated as local,playwright-test). Without this the browser rejects
+    # create()/get() with "the relying party ID is not a registrable domain suffix of the current domain".
+    rpId: localhost
+    allowedOrigins: http://localhost:8080
   mfa:
     enabled: false
   registration:

@@ -93,32 +93,32 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      grepInvert: /@mfa-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled/,
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
-      grepInvert: /@mfa-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled/,
       use: { ...devices['Desktop Firefox'] },
     },
 
     {
       name: 'webkit',
-      grepInvert: /@mfa-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled/,
       use: { ...devices['Desktop Safari'] },
     },
 
     /* Test against mobile viewports */
     {
       name: 'Mobile Chrome',
-      grepInvert: /@mfa-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled/,
       use: { ...devices['Pixel 5'] },
     },
 
     {
       name: 'Mobile Safari',
-      grepInvert: /@mfa-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled/,
       use: { ...devices['iPhone 12'] },
     },
 
@@ -126,6 +126,16 @@ export default defineConfig({
     {
       name: 'chromium-mfa',
       grep: /@mfa-enabled/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+
+    /* Step-up (SUF-02) tests: Chromium only (CDP virtual authenticator), step-up-enabled server required.
+     * Run with:
+     *   APP_PROFILES=local,playwright-test,step-up npx playwright test --project=chromium-step-up
+     * (the step-up profile must come last so its overrides win). */
+    {
+      name: 'chromium-step-up',
+      grep: /@step-up-enabled/,
       use: { ...devices['Desktop Chrome'] },
     },
   ],
