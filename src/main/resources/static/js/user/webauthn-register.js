@@ -7,9 +7,11 @@ import { getCsrfToken, getCsrfHeaderName, base64urlToBuffer, bufferToBase64url }
  * Raised when passkey enrollment is refused because the session lacks a recent authentication (SUF-02).
  *
  * With step-up enabled the framework gates POST /webauthn/register on a factor issued within
- * `enrollmentTtlSeconds`, enforced as an authorization rule that returns a plain 403 (not a
- * `step-up-required` 401). Re-running the passkey ceremony cannot satisfy it: the user may have no passkey
- * yet, and enrollment accepts any factor, so the remedy is a fresh login, not a ceremony retry.
+ * `enrollmentTtlSeconds`. Framework versions before 5.3.4 denied with a plain 403; 5.3.4+ denies with a
+ * 401 carrying error code `step-up-required` (StepUpEnrollmentAccessDeniedHandler), matching the sibling
+ * credential-management endpoints. Re-running the passkey ceremony cannot satisfy it either way: the user
+ * may have no passkey yet, and enrollment accepts any factor, so the remedy is a fresh login, not a
+ * ceremony retry.
  */
 export class PasskeyEnrollmentStepUpError extends Error {
     constructor() {
@@ -93,19 +95,22 @@ export async function registerPasskey(labelInput) {
     });
 
     if (!finishResponse.ok) {
-        // The enrollment step-up gate is an authorization rule, so a stale/factorless session is refused here
-        // with a bare 403 rather than the step-up-required 401 the other operations return. Surface it as its
-        // own error so the UI can tell the user to sign in again instead of offering a passkey retry.
-        if (finishResponse.status === 403) {
-            throw new PasskeyEnrollmentStepUpError();
-        }
+        // A stale/factorless session is refused by the enrollment step-up gate. Framework versions before
+        // 5.3.4 denied with a bare 403 (an authorization rule with no body); 5.3.4+ denies with a 401
+        // carrying error code "step-up-required". Recognize both, and surface it as its own error so the UI
+        // can tell the user to sign in again instead of offering a passkey retry.
         let msg = 'Registration failed';
+        let errorCode;
         try {
             const data = await finishResponse.json();
             msg = data.message || msg;
+            errorCode = data.error;
         } catch {
             const text = await finishResponse.text();
             if (text) msg = text;
+        }
+        if (finishResponse.status === 403 || (finishResponse.status === 401 && errorCode === 'step-up-required')) {
+            throw new PasskeyEnrollmentStepUpError();
         }
         throw new Error(msg);
     }
