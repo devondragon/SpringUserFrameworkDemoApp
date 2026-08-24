@@ -100,9 +100,9 @@ disables verification/reset emails (tests fetch tokens via the Test API instead)
 "set initial password" flow works without a `StepUpService` bean.
 
 The `chromium`, `firefox`, `webkit`, `Mobile Chrome`, and `Mobile Safari` projects skip specs
-tagged `@mfa-enabled` and `@step-up-enabled` (`grepInvert`); separate Chromium-only projects run
-those, each against a server started with the matching add-on profile. Both use the CDP virtual
-authenticator, so they are Chromium-only.
+tagged `@mfa-enabled`, `@step-up-enabled`, and `@step-up-oidc` (`grepInvert`); separate Chromium-only
+projects run those, each against a server started with the matching add-on profile. They use the CDP
+virtual authenticator (and, for OIDC, a Keycloak provider), so they are Chromium-only.
 
 ```bash
 # MFA flow (@mfa-enabled)
@@ -123,8 +123,40 @@ The step-up run adds `step-up-e2e` (`application-step-up-e2e.yml`), a test-only 
 `bootRun` starts Mailpit automatically alongside MariaDB. The realistic demo values stay in
 `application-step-up.yml` (`ttlSeconds: 120`). The step-up specs run serially
 (`test.describe.configure({ mode: 'serial' })`) because concurrent account registration deadlocks in
-MariaDB (framework issue devondragon/SpringUserFramework#368). One acceptance case is not covered here:
-social-login (OIDC) `setPassword` fallback, which needs the Keycloak stack (tracked separately).
+MariaDB (framework issue devondragon/SpringUserFramework#368).
+
+The social-login (OIDC) `setPassword` fallback is covered separately by the `chromium-step-up-oidc`
+project ([`step-up-oidc.spec.ts`](../playwright/tests/step-up/step-up-oidc.spec.ts)), because it needs a
+real OpenID provider. `globalSetup` starts a dev-mode Keycloak (`quay.io/keycloak/keycloak:25.0.6
+start-dev --import-realm`, the `keycloak/realm` export mounted, no external database) whenever
+`KEYCLOAK_E2E` is set, and `globalTeardown` removes it; an already-running Keycloak is reused and left
+alone. The app runs on the host on `docker-keycloak,playwright-test,step-up`, with the
+`DS_SPRING_USER_KEYCLOAK_*` provider URIs pointed at the host's published Keycloak port (`localhost:8180`)
+rather than the compose-network `keycloak:8080`. The `allowInitialPasswordSetWithoutStepUp` flag is
+boot-time config, so each branch is its own app boot, selected by `STEP_UP_OIDC_ALLOW_INITIAL`:
+
+```bash
+# setPassword succeeds (flag true, from playwright-test)
+KEYCLOAK_E2E=1 STEP_UP_OIDC_ALLOW_INITIAL=true \
+  DS_SPRING_USER_KEYCLOAK_CLIENT_ID=ds-spring-user-framework-demo \
+  DS_SPRING_USER_KEYCLOAK_CLIENT_SECRET=FTp1j7sGvc4g3MFdghEX4n7RPhbu86PQ \
+  DS_SPRING_USER_KEYCLOAK_PROVIDER_AUTHORIZATION_URI=http://localhost:8180/realms/demo/protocol/openid-connect/auth \
+  DS_SPRING_USER_KEYCLOAK_PROVIDER_TOKEN_URI=http://localhost:8180/realms/demo/protocol/openid-connect/token \
+  DS_SPRING_USER_KEYCLOAK_PROVIDER_USER_INFO_URI=http://localhost:8180/realms/demo/protocol/openid-connect/userinfo \
+  DS_SPRING_USER_KEYCLOAK_PROVIDER_JWK_SET_URI=http://localhost:8180/realms/demo/protocol/openid-connect/certs \
+  APP_PROFILES=docker-keycloak,playwright-test,step-up \
+  npx playwright test --project=chromium-step-up-oidc
+
+# setPassword denied with 403, not a permanent 401 (flag false)
+#   ...same env, but: STEP_UP_OIDC_ALLOW_INITIAL=false and
+#   SPRING_APPLICATION_JSON='{"user":{"security":{"allowInitialPasswordSetWithoutStepUp":false}}}'
+```
+
+The spec logs in as the realm's single seeded user (`demo@example.com`) and resets the local
+KEYCLOAK-provisioned account before each test so re-runs stay deterministic. Run locally, `bootRun` uses
+your normal development database (`compose.dev.yaml`, port 3306), so the reset deletes any local account
+at that address: do not keep a real account you care about under `demo@example.com` in your dev database.
+In CI the database is a throwaway service container, so nothing persists.
 
 **Test API**:
 [`TestDataController`](../src/main/java/com/digitalsanctuary/spring/demo/test/api/TestDataController.java)
@@ -138,6 +170,10 @@ disables CSRF for `/api/test/**` and restricts it to requests from `127.0.0.1`,
 
 [`.github/workflows/tests.yml`](../.github/workflows/tests.yml) runs on pull requests and pushes
 to `main`: **`unit-tests`** runs `./gradlew test` on Java 21. **`playwright-tests`** builds the
-app, starts a `mariadb:12.2` service container, installs Playwright, then runs E2E twice: once
+app, starts a `mariadb:12.2` service container, installs Playwright, then runs E2E three times: once
 with `APP_PROFILES=playwright-test` against `chromium` (MFA off), once with
-`APP_PROFILES=playwright-test,mfa` against `chromium-mfa` (MFA on).
+`APP_PROFILES=playwright-test,mfa` against `chromium-mfa` (MFA on), and once with
+`APP_PROFILES=local,playwright-test,step-up,step-up-e2e` against `chromium-step-up`. **`playwright-tests-oidc`**
+covers the OIDC `setPassword` fallback: it starts the same MariaDB service, and `globalSetup` brings up a
+dev-mode Keycloak on the runner, then runs `chromium-step-up-oidc` twice (once per
+`allowInitialPasswordSetWithoutStepUp` branch).

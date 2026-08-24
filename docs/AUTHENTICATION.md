@@ -125,6 +125,13 @@ browser (ceremony then retry succeeds) and the negative path (absent `WEBAUTHN` 
 runs no ceremony). Run it with
 `APP_PROFILES=local,playwright-test,step-up npx playwright test --project=chromium-step-up`.
 
+The social-login fallback is covered by the `chromium-step-up-oidc` project
+([`step-up-oidc.spec.ts`](../playwright/tests/step-up/step-up-oidc.spec.ts)): after a real Keycloak OIDC
+login, `setPassword` on the passkey-less account is governed by `allowInitialPasswordSetWithoutStepUp`
+(`403` when false, success when true) rather than a permanent `401`, and a freshly logged-in OIDC user can
+enroll a first passkey. It needs a Keycloak provider and runs the app on
+`docker-keycloak,playwright-test,step-up`; see [TESTING.md](TESTING.md) for the run command.
+
 ## MFA
 
 The `mfa` profile turns on `user.mfa.enabled` (`application-mfa.yml:20`), `false` in the base config

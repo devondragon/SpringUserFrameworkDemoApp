@@ -20,6 +20,11 @@ export default defineConfig({
   /* Unique output directories for this project */
   outputDir: path.join(__dirname, 'test-results', PROJECT_ID),
 
+  /* Bring up a Keycloak OpenID provider for the chromium-step-up-oidc project. Both hooks no-op unless
+   * KEYCLOAK_E2E is set, so every other project runs without Docker. See src/utils/keycloak.ts. */
+  globalSetup: path.join(__dirname, 'global-setup.ts'),
+  globalTeardown: path.join(__dirname, 'global-teardown.ts'),
+
   /* Run tests in files in parallel */
   fullyParallel: true,
 
@@ -93,32 +98,32 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      grepInvert: /@mfa-enabled|@step-up-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled|@step-up-oidc/,
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
-      grepInvert: /@mfa-enabled|@step-up-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled|@step-up-oidc/,
       use: { ...devices['Desktop Firefox'] },
     },
 
     {
       name: 'webkit',
-      grepInvert: /@mfa-enabled|@step-up-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled|@step-up-oidc/,
       use: { ...devices['Desktop Safari'] },
     },
 
     /* Test against mobile viewports */
     {
       name: 'Mobile Chrome',
-      grepInvert: /@mfa-enabled|@step-up-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled|@step-up-oidc/,
       use: { ...devices['Pixel 5'] },
     },
 
     {
       name: 'Mobile Safari',
-      grepInvert: /@mfa-enabled|@step-up-enabled/,
+      grepInvert: /@mfa-enabled|@step-up-enabled|@step-up-oidc/,
       use: { ...devices['iPhone 12'] },
     },
 
@@ -136,6 +141,29 @@ export default defineConfig({
     {
       name: 'chromium-step-up',
       grep: /@step-up-enabled/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+
+    /* Step-up OIDC fallback (issue #90): Chromium only, needs both a Keycloak OpenID provider and the
+     * app on the docker-keycloak,playwright-test,step-up profiles. globalSetup starts Keycloak when
+     * KEYCLOAK_E2E is set. The two allowInitialPasswordSetWithoutStepUp branches are separate app boots,
+     * selected by STEP_UP_OIDC_ALLOW_INITIAL (and the matching SPRING_APPLICATION_JSON override):
+     *   # setPassword succeeds (flag true, from playwright-test):
+     *   KEYCLOAK_E2E=1 STEP_UP_OIDC_ALLOW_INITIAL=true \
+     *     DS_SPRING_USER_KEYCLOAK_CLIENT_ID=ds-spring-user-framework-demo \
+     *     DS_SPRING_USER_KEYCLOAK_CLIENT_SECRET=FTp1j7sGvc4g3MFdghEX4n7RPhbu86PQ \
+     *     DS_SPRING_USER_KEYCLOAK_PROVIDER_AUTHORIZATION_URI=http://localhost:8180/realms/demo/protocol/openid-connect/auth \
+     *     DS_SPRING_USER_KEYCLOAK_PROVIDER_TOKEN_URI=http://localhost:8180/realms/demo/protocol/openid-connect/token \
+     *     DS_SPRING_USER_KEYCLOAK_PROVIDER_USER_INFO_URI=http://localhost:8180/realms/demo/protocol/openid-connect/userinfo \
+     *     DS_SPRING_USER_KEYCLOAK_PROVIDER_JWK_SET_URI=http://localhost:8180/realms/demo/protocol/openid-connect/certs \
+     *     APP_PROFILES=docker-keycloak,playwright-test,step-up \
+     *     npx playwright test --project=chromium-step-up-oidc
+     *   # setPassword denied with 403, not a permanent 401 (flag false):
+     *   ... STEP_UP_OIDC_ALLOW_INITIAL=false \
+     *     SPRING_APPLICATION_JSON='{"user":{"security":{"allowInitialPasswordSetWithoutStepUp":false}}}' ... */
+    {
+      name: 'chromium-step-up-oidc',
+      grep: /@step-up-oidc/,
       use: { ...devices['Desktop Chrome'] },
     },
   ],
