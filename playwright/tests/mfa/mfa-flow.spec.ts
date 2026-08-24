@@ -1,4 +1,5 @@
 import { test, expect, generateTestUser, createAndLoginUser } from '../../src/fixtures';
+import { setupVirtualAuthenticator } from '../../src/utils';
 
 /**
  * Full MFA flow E2E test using Chromium's CDP WebAuthn virtual authenticator.
@@ -19,20 +20,9 @@ test.describe('MFA Full Flow @mfa-enabled', () => {
     const user = generateTestUser('mfa-e2e');
     cleanupEmails.push(user.email);
 
-    // Set up a virtual authenticator before any WebAuthn ceremony. automaticPresenceSimulation
-    // auto-approves create()/get() prompts so no human touch is needed.
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send('WebAuthn.enable');
-    await cdp.send('WebAuthn.addVirtualAuthenticator', {
-      options: {
-        protocol: 'ctap2',
-        transport: 'internal',
-        hasResidentKey: true,
-        hasUserVerification: true,
-        isUserVerified: true,
-        automaticPresenceSimulation: true,
-      },
-    });
+    // Set up a virtual authenticator before any WebAuthn ceremony. It auto-approves create()/get()
+    // prompts (automaticPresenceSimulation), so no human touch is needed.
+    await setupVirtualAuthenticator(page);
 
     // Password login leaves the user partially authenticated: PASSWORD satisfied, WEBAUTHN missing.
     await createAndLoginUser(page, testApiClient, user);

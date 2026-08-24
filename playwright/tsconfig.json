@@ -18,6 +18,6 @@
       "@utils/*": ["src/utils/*"]
     }
   },
-  "include": ["src/**/*", "tests/**/*", "playwright.config.ts"],
+  "include": ["src/**/*", "tests/**/*", "playwright.config.ts", "global-setup.ts", "global-teardown.ts"],
   "exclude": ["node_modules", "dist"]
 }
