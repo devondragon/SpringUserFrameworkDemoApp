@@ -138,8 +138,17 @@ export async function startKeycloak(): Promise<void> {
   fs.mkdirSync(path.dirname(OWNED_MARKER), { recursive: true });
   fs.writeFileSync(OWNED_MARKER, CONTAINER);
 
-  // Cold start does a Liquibase-free dev boot plus the realm import; allow generous headroom for CI.
-  await waitForMetadata(120_000);
+  try {
+    // Cold start does a Liquibase-free dev boot plus the realm import; allow generous headroom for CI.
+    await waitForMetadata(120_000);
+  } catch (err) {
+    // Readiness timed out on a container this run started. Playwright's separate globalTeardown is not
+    // guaranteed to run when globalSetup throws, so clean up here rather than leaving the container and
+    // marker behind (which the "already running but not answering" guard above would then reject on the
+    // next run, forcing a manual `docker rm -f`). stopKeycloak removes exactly what we own.
+    await stopKeycloak();
+    throw err;
+  }
 }
 
 /** Stop and remove the Keycloak container, but only if this run started it. */

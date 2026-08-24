@@ -1,5 +1,6 @@
 import { test, expect } from '../../src/fixtures';
-import type { CDPSession, Page } from '@playwright/test';
+import { setupVirtualAuthenticator, getCredentialIds } from '../../src/utils';
+import type { Page } from '@playwright/test';
 
 /**
  * Step-up (SUF-02) fallback for OIDC social-login accounts. Follow-up to #75, issue #90.
@@ -68,37 +69,6 @@ async function setPassword(page: Page, newPassword: string): Promise<{ status: n
     }
     return { status: response.status, body };
   }, newPassword);
-}
-
-/**
- * Enable a CDP WebAuthn virtual authenticator that auto-approves create()/get(), so a passkey can be
- * enrolled without a human touch. Mirrors the helper in step-up-flow.spec.ts.
- */
-async function setupVirtualAuthenticator(page: Page): Promise<CDPSession> {
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('WebAuthn.enable');
-  await cdp.send('WebAuthn.addVirtualAuthenticator', {
-    options: {
-      protocol: 'ctap2',
-      transport: 'internal',
-      hasResidentKey: true,
-      hasUserVerification: true,
-      isUserVerified: true,
-      automaticPresenceSimulation: true,
-    },
-  });
-  return cdp;
-}
-
-/** Read the current credential id list via the management API. */
-async function getCredentialIds(page: Page): Promise<string[]> {
-  return page.evaluate(async () => {
-    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')!.getAttribute('content')!;
-    const csrfToken = document.querySelector('meta[name="_csrf"]')!.getAttribute('content')!;
-    const response = await fetch('/user/webauthn/credentials', { headers: { [csrfHeader]: csrfToken } });
-    const creds = await response.json();
-    return creds.map((c: { id: string }) => c.id);
-  });
 }
 
 test.describe('Step-Up OIDC fallback @step-up-oidc', () => {

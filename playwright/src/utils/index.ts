@@ -14,3 +14,5 @@ export {
   type UnlockUserResponse,
   type HealthResponse,
 } from './test-api-client';
+
+export { setupVirtualAuthenticator, addVirtualAuthenticator, getCredentialIds } from './webauthn';

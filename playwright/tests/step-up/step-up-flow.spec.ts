@@ -1,5 +1,6 @@
 import { test, expect, generateTestUser, TestUser } from '../../src/fixtures';
-import type { CDPSession, Page } from '@playwright/test';
+import { setupVirtualAuthenticator, addVirtualAuthenticator, getCredentialIds } from '../../src/utils';
+import type { Page } from '@playwright/test';
 
 /**
  * WebAuthn step-up (SUF-02) E2E, using Chromium's CDP virtual authenticator.
@@ -16,37 +17,6 @@ import type { CDPSession, Page } from '@playwright/test';
  * until the passkey ceremony stamps a fresh WEBAUTHN factor. That makes both paths deterministic with no
  * reliance on the TTL elapsing.
  */
-
-/**
- * Enable a CDP WebAuthn virtual authenticator that auto-approves create()/get() so no human touch is
- * needed. Mirrors playwright/tests/mfa/mfa-flow.spec.ts.
- */
-async function setupVirtualAuthenticator(page: Page): Promise<CDPSession> {
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('WebAuthn.enable');
-  await addVirtualAuthenticator(cdp);
-  return cdp;
-}
-
-/**
- * Add one more virtual authenticator to an enabled CDP session. A second authenticator is needed to enroll a
- * second passkey, because `excludeCredentials` makes the authenticator that already holds a credential decline
- * a repeat enrollment.
- */
-async function addVirtualAuthenticator(cdp: CDPSession, transport: 'internal' | 'usb' = 'internal'): Promise<void> {
-  // Chrome allows only one 'internal' (platform) authenticator per environment, so a second credential must
-  // come from a roaming ('usb') authenticator.
-  await cdp.send('WebAuthn.addVirtualAuthenticator', {
-    options: {
-      protocol: 'ctap2',
-      transport,
-      hasResidentKey: true,
-      hasUserVerification: true,
-      isUserVerified: true,
-      automaticPresenceSimulation: true,
-    },
-  });
-}
 
 /**
  * Register a passkey-only account and enroll its first passkey, leaving the browser session
@@ -85,17 +55,6 @@ async function getSessionCookie(page: Page): Promise<string | undefined> {
   const cookies = await page.context().cookies();
   const session = cookies.find((c) => c.name === 'JSESSIONID') || cookies.find((c) => /session/i.test(c.name));
   return session?.value;
-}
-
-/** Read the current credential id list via the management API. */
-async function getCredentialIds(page: Page): Promise<string[]> {
-  return page.evaluate(async () => {
-    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')!.getAttribute('content')!;
-    const csrfToken = document.querySelector('meta[name="_csrf"]')!.getAttribute('content')!;
-    const response = await fetch('/user/webauthn/credentials', { headers: { [csrfHeader]: csrfToken } });
-    const creds = await response.json();
-    return creds.map((c: { id: string }) => c.id);
-  });
 }
 
 test.describe('WebAuthn Step-Up @step-up-enabled', () => {
