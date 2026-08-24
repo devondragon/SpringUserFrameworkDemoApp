@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'org.springframework.boot' version '4.1.0'
+  id 'org.springframework.boot' version '4.1.1'
   id 'io.spring.dependency-management' version '1.1.7'
   id "com.github.ben-manes.versions" version "0.61.0"
 
@@ -14,6 +14,12 @@ java {
         languageVersion = JavaLanguageVersion.of(21)
     }
 }
+
+// Force the patched PostgreSQL JDBC driver ahead of the Spring Boot 4.1.1 BOM (which still manages
+// 42.7.11). 42.7.12 fixes GHSA-j92g-9f8w-j867 (silent channel-binding auth downgrade). The demo defaults
+// to MariaDB and never opens a Postgres connection, so this is supply-chain hygiene rather than an active
+// fix; drop this override once a future Boot BOM manages 42.7.12+.
+ext['postgresql.version'] = '42.7.12'
 
 // Define the configurations used in the project
 configurations {
