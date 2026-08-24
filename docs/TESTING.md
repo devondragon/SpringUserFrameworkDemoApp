@@ -174,6 +174,7 @@ app, starts a `mariadb:12.2` service container, installs Playwright, then runs E
 with `APP_PROFILES=playwright-test` against `chromium` (MFA off), once with
 `APP_PROFILES=playwright-test,mfa` against `chromium-mfa` (MFA on), and once with
 `APP_PROFILES=local,playwright-test,step-up,step-up-e2e` against `chromium-step-up`. **`playwright-tests-oidc`**
-covers the OIDC `setPassword` fallback: it starts the same MariaDB service, and `globalSetup` brings up a
-dev-mode Keycloak on the runner, then runs `chromium-step-up-oidc` twice (once per
-`allowInitialPasswordSetWithoutStepUp` branch).
+covers the OIDC `setPassword` fallback: it starts the same MariaDB service (plus a Mailpit service), and
+`globalSetup` brings up a dev-mode Keycloak on the runner, then runs `chromium-step-up-oidc` twice (once per
+`allowInitialPasswordSetWithoutStepUp` branch). Because it is heavier (two app boots plus a Keycloak
+container), it runs only on pushes to `main`, not on every pull request.

@@ -124,6 +124,10 @@ jobs:
 
   playwright-tests-oidc:
     name: Playwright OIDC Step-Up Tests
+    # Heavier than the other jobs (two app boots plus a Keycloak container), so it runs only on pushes
+    # to main, not on every pull request. The `push` trigger is already scoped to main; the ref check
+    # keeps it correct if more push branches are added later.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
