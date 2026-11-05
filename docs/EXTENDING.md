@@ -1,6 +1,6 @@
 # Extending the Spring User Framework
 
-This demo depends on `com.digitalsanctuary:ds-spring-user-framework:5.4.0` ([build.gradle](../build.gradle)). Every
+This demo depends on `com.digitalsanctuary:ds-spring-user-framework:5.4.1` ([build.gradle](../build.gradle)). Every
 section below names one extension point the framework offers, the demo code that uses it, the configuration that wires
 it, and what you would write in your own application to do the same.
 
