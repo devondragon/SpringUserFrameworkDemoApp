@@ -47,7 +47,7 @@ dependencies {
     // DigitalSanctuary Spring User Framework
     // 5.3.4 aligns the passkey enrollment freshness denial to HTTP 401 + step-up-required (library #371),
     // which this demo's webauthn-register.js and step-up E2E exercise; 5.3.3 added the step-up primitive.
-    implementation 'com.digitalsanctuary:ds-spring-user-framework:5.3.4'
+    implementation 'com.digitalsanctuary:ds-spring-user-framework:5.4.0'
 
     // WebAuthn support (Passkey authentication)
     implementation 'org.springframework.security:spring-security-webauthn'

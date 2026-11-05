@@ -19,10 +19,10 @@ Documentation for this demo is in [docs/](docs); the framework's own documentati
 
 | Demo version | Spring Boot | Spring User Framework | Java | Branch or tag |
 | --- | --- | --- | --- | --- |
-| main | 4.1.x | 5.3.x | 21 | `main` |
+| main | 4.1.x | 5.4.x | 21 | `main` |
 | 1.0.0-springboot3 | 3.5.x | 3.5.x | 17 | [`v1.0.0-springboot3`](https://github.com/devondragon/SpringUserFrameworkDemoApp/tree/v1.0.0-springboot3) |
 
-`main` is on Spring Boot 4.1.0 and framework 5.3.1 ([build.gradle](build.gradle)). For the Spring Boot 3.5.6
+`main` is on Spring Boot 4.1.0 and framework 5.4.0 ([build.gradle](build.gradle)). For the Spring Boot 3.5.6
 and framework 3.5.1 combination on Java 17, `git checkout v1.0.0-springboot3` after cloning.
 
 ## What this demo shows
