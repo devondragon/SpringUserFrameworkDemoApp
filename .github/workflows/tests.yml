@@ -35,7 +35,9 @@ jobs:
 
   playwright-tests:
     name: Playwright E2E Tests
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, where Playwright 1.58 cannot install Chromium
+    # ("Playwright does not support chromium on ubuntu26.04-x64"). Revisit after a Playwright upgrade.
+    runs-on: ubuntu-24.04
     services:
       mariadb:
         image: mariadb:12.2
@@ -128,7 +130,9 @@ jobs:
     # to main, not on every pull request. The `push` trigger is already scoped to main; the ref check
     # keeps it correct if more push branches are added later.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, where Playwright 1.58 cannot install Chromium
+    # ("Playwright does not support chromium on ubuntu26.04-x64"). Revisit after a Playwright upgrade.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
       mariadb:
