@@ -74,7 +74,7 @@ dependencies {
 
     // Runtime dependencies
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.10'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.11'
     runtimeOnly 'org.postgresql:postgresql'
 
     // Docker Compose support for local development
@@ -84,7 +84,7 @@ dependencies {
     // (passay is provided transitively by ds-spring-user-framework at the version it requires; the demo
     //  app does not use passay directly, so declaring/pinning it here previously forced a conflicting
     //  downgrade of the library's required passay version.)
-    implementation 'com.google.guava:guava:33.6.0-jre'
+    implementation 'com.google.guava:guava:33.7.1-jre'
     implementation 'org.hibernate.validator:hibernate-validator'
 
     // Compile-only dependencies
