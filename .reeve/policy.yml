@@ -1,0 +1,57 @@
+# Reeve merge gate policy (https://github.com/devondragon/reeve). Read from main, never from a PR's head.
+# A PR's tier is the highest tier any changed file or dependency change matches; unmatched files are `reviewed`.
+version: 1
+tiers:
+  auto:
+    paths: ["docs/**"]
+    dependencies: [patch]
+  reviewed:
+    default: true
+  human:
+    paths:
+      # Agent and gate configuration
+      - "CLAUDE.md"
+      - ".claude/**"
+      - ".reeve/**"
+      - ".github/**"
+      # Build, packaging, and deployment
+      - "build.gradle"
+      - "settings.gradle"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "compose.yaml"
+      - "compose.dev.yaml"
+      - "docker-compose-keycloak.yml"
+      - "keycloak.env"
+      - "keycloak/**"
+      # Runtime configuration
+      - "src/main/resources/application*.yml"
+    dependencies: [new, major]
+gates:
+  auto: [ci, review_verdict]
+  reviewed: [ci, review_verdict]
+  human: [ci, approval]
+test_weakening:
+  # A PR that deletes or renames a test file, adds a skip or focus marker in one, or changes a test runner config is
+  # raised to reviewed (Reeve RV-144).
+  enabled: true
+merge:
+  method: merge
+  delete_branch: true
+  # A PR behind its base gets a branch update and a fresh CI run before it merges (Reeve RV-104).
+  require_up_to_date: true
+  resolve_conflicts:   # a merge-conflict park starts a Cyrus session that merges the base in (Reeve RV-108)
+    enabled: true
+    max_attempts: 1
+    max_files: 5
+ci:
+  required:
+    - { name: "Unit & Integration Tests", app: github-actions }
+    - { name: "Playwright E2E Tests", app: github-actions }
+  ignore:
+    - { name: copilot-pull-request-reviewer, app: github-actions }
+    # Advisory: Gradle dependency graph submission, which fails on pull requests without write access.
+    - { name: submit-gradle, app: github-actions }
